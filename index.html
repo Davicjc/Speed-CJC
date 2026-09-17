@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#081535">
+<meta name="theme-color" content="#050d1d">
 <title>Teste de Velocidade | Audicom Telecom</title>
 <meta name="description" content="Teste de velocidade Audicom: download, upload, ping, jitter e diagnóstico avançado de rede, numa tela só.">
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="css/tokens.css">
 <link rel="stylesheet" href="css/base.css">
@@ -19,112 +19,123 @@
 <body>
 
 <canvas id="fiber-canvas" aria-hidden="true"></canvas>
+<div class="ring-halo" aria-hidden="true"></div>
+<div class="grain" aria-hidden="true"></div>
 
-<div class="app">
-
-    <!-- ============ BARRA SUPERIOR ============ -->
-    <div class="top-bar">
-        <a class="brand" href="https://audicomtelecom.com.br" aria-label="Audicom Telecom">
-            <img src="assets/logo-audicom-branco.png" alt="Audicom Telecom">
-        </a>
-        <div class="mode-toggle" role="tablist" aria-label="Modo do teste">
-            <button type="button" class="active" data-mode="comum" role="tab" aria-selected="true">Comum</button>
-            <button type="button" data-mode="avancado" role="tab" aria-selected="false">Avançado</button>
-        </div>
+<!-- ============ BARRA SUPERIOR (flutuante) ============ -->
+<header class="floating-bar bar-top">
+    <a class="brand" href="https://audicomtelecom.com.br" aria-label="Audicom Telecom">
+        <img src="assets/logo-audicom-branco.png" alt="Audicom Telecom">
+    </a>
+    <div class="mode-toggle" role="tablist" aria-label="Modo do teste">
+        <span class="mode-toggle-indicator" id="modeIndicator" aria-hidden="true"></span>
+        <button type="button" class="active" data-mode="comum" role="tab" aria-selected="true">Comum</button>
+        <button type="button" data-mode="avancado" role="tab" aria-selected="false">Avançado</button>
     </div>
+</header>
 
-    <!-- ============ ANEL CENTRAL ============ -->
-    <div class="ring-area">
-        <div class="ring-wrap">
-            <svg class="ring-svg" viewBox="0 0 260 260">
-                <defs>
-                    <linearGradient id="dlGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#10B981"/>
-                        <stop offset="100%" stop-color="#34D399"/>
-                    </linearGradient>
-                    <linearGradient id="ulGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stop-color="#3B82F6"/>
-                        <stop offset="100%" stop-color="#60A5FA"/>
-                    </linearGradient>
-                </defs>
-                <circle class="ring-bg" cx="130" cy="130" r="120"/>
-                <circle class="ring-bg" cx="130" cy="130" r="108"/>
-                <circle id="dlRing" class="ring-dl" cx="130" cy="130" r="120"/>
-                <circle id="ulRing" class="ring-ul" cx="130" cy="130" r="108"/>
-            </svg>
+<!-- ============ PALCO CENTRAL (anel) ============ -->
+<main class="stage">
+    <div class="ring-wrap">
+        <svg class="ring-svg" viewBox="0 0 260 260">
+            <defs>
+                <linearGradient id="dlGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#10B981"/>
+                    <stop offset="100%" stop-color="#5EEAD4"/>
+                </linearGradient>
+                <linearGradient id="ulGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#3B82F6"/>
+                    <stop offset="100%" stop-color="#93C5FD"/>
+                </linearGradient>
+            </defs>
+            <circle class="ring-ticks" cx="130" cy="130" r="128"/>
+            <circle class="ring-bg" cx="130" cy="130" r="120"/>
+            <circle class="ring-bg" cx="130" cy="130" r="106"/>
+            <circle id="dlRing" class="ring-dl" cx="130" cy="130" r="120"/>
+            <circle id="ulRing" class="ring-ul" cx="130" cy="130" r="106"/>
+        </svg>
 
-            <div class="ring-content">
-                <!-- Estado: pronto / testando -->
-                <div class="ring-test" id="ringTest">
-                    <span class="ring-phase" id="ringPhase">Pronto para testar</span>
+        <div class="ring-content">
+            <!-- Estado: pronto / testando -->
+            <div class="ring-test" id="ringTest">
+                <div class="step-row" id="stepRow" aria-hidden="true"></div>
+                <span class="ring-phase" id="ringPhase">Pronto para testar</span>
 
-                    <div class="ring-main-stats">
-                        <div class="ring-stat dl">
-                            <span class="ring-stat-icon">↓</span>
-                            <span class="ring-stat-value" id="dlValue">0.0</span>
-                            <span class="ring-stat-unit">Mbps</span>
-                        </div>
-                        <div class="ring-stat-divider"></div>
-                        <div class="ring-stat ul">
-                            <span class="ring-stat-icon">↑</span>
-                            <span class="ring-stat-value" id="ulValue">0.0</span>
-                            <span class="ring-stat-unit">Mbps</span>
-                        </div>
+                <div class="ring-main-stats">
+                    <div class="ring-stat dl">
+                        <span class="ring-stat-value" id="dlValue">0<small>.0</small></span>
+                        <span class="ring-stat-unit">↓ Mbps</span>
                     </div>
-
-                    <div class="ring-mini-stats" id="ringMiniStats">
-                        <div class="mini-stat"><span class="mini-label">Ping</span><span class="mini-value" id="pingValue">–</span></div>
-                        <div class="mini-stat"><span class="mini-label">Jitter</span><span class="mini-value" id="jitterValue">–</span></div>
-                        <div class="mini-stat adv-only"><span class="mini-label">Buffer.</span><span class="mini-value" id="bufferbloatValue">–</span></div>
-                        <div class="mini-stat adv-only"><span class="mini-label">Perda</span><span class="mini-value" id="perdaValue">–</span></div>
+                    <div class="ring-stat-divider"></div>
+                    <div class="ring-stat ul">
+                        <span class="ring-stat-value" id="ulValue">0<small>.0</small></span>
+                        <span class="ring-stat-unit">↑ Mbps</span>
                     </div>
-
-                    <button class="start-pill" id="startBtn">Iniciar teste</button>
                 </div>
 
-                <!-- Estado: resultado -->
-                <div class="ring-result" id="ringResult">
-                    <span class="ring-result-title">Teste concluído ✓</span>
+                <div class="ring-mini-stats" id="ringMiniStats"></div>
 
-                    <div class="ring-main-stats">
-                        <div class="ring-stat dl">
-                            <span class="ring-stat-icon">↓</span>
-                            <span class="ring-stat-value" id="resultDl">0.0</span>
-                            <span class="ring-stat-unit">Mbps</span>
-                        </div>
-                        <div class="ring-stat-divider"></div>
-                        <div class="ring-stat ul">
-                            <span class="ring-stat-icon">↑</span>
-                            <span class="ring-stat-value" id="resultUl">0.0</span>
-                            <span class="ring-stat-unit">Mbps</span>
-                        </div>
+                <button class="start-pill" id="startBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Iniciar teste</span>
+                </button>
+            </div>
+
+            <!-- Estado: resultado -->
+            <div class="ring-result" id="ringResult">
+                <span class="ring-result-title">✓ Teste concluído</span>
+
+                <div class="ring-main-stats">
+                    <div class="ring-stat dl">
+                        <span class="ring-stat-value" id="resultDl">0<small>.0</small></span>
+                        <span class="ring-stat-unit">↓ Mbps</span>
                     </div>
-
-                    <div class="ring-mini-stats">
-                        <div class="mini-stat"><span class="mini-label">Ping</span><span class="mini-value" id="resultPing">–</span></div>
-                        <div class="mini-stat"><span class="mini-label">Jitter</span><span class="mini-value" id="resultJitter">–</span></div>
+                    <div class="ring-stat-divider"></div>
+                    <div class="ring-stat ul">
+                        <span class="ring-stat-value" id="resultUl">0<small>.0</small></span>
+                        <span class="ring-stat-unit">↑ Mbps</span>
                     </div>
+                </div>
 
-                    <p class="ring-result-ip">IP <b id="resultIp">–</b> · <b id="resultIsp">–</b></p>
+                <div class="ring-mini-stats">
+                    <div class="mini-stat"><span class="mini-label">Ping</span><span class="mini-value" id="resultPing">–</span></div>
+                    <div class="mini-stat"><span class="mini-label">Jitter</span><span class="mini-value" id="resultJitter">–</span></div>
+                </div>
 
-                    <div class="ring-result-actions">
-                        <button class="result-btn ghost" id="retestBtn">Testar novamente</button>
-                        <button class="result-btn primary" id="shareBtn">Compartilhar</button>
-                    </div>
+                <p class="ring-result-ip">IP <b id="resultIp">–</b> · <b id="resultIsp">–</b></p>
+
+                <div class="ring-result-actions">
+                    <button class="result-btn ghost" id="retestBtn">Testar novamente</button>
+                    <button class="result-btn primary" id="shareBtn">Compartilhar</button>
                 </div>
             </div>
         </div>
     </div>
+</main>
 
-    <!-- ============ AÇÕES INFERIORES ============ -->
-    <div class="bottom-actions">
-        <button type="button" data-modal="help">❔ Ajuda</button>
-        <button type="button" data-modal="identify">🪪 Identificação</button>
-        <button type="button" data-modal="history">🕑 Histórico</button>
-        <button type="button" data-modal="services" class="adv-only">🌐 Serviços</button>
-        <button type="button" data-modal="device" class="adv-only">📱 Dispositivo</button>
-    </div>
-</div>
+<!-- ============ DOCK INFERIOR (flutuante) ============ -->
+<nav class="floating-bar bar-dock">
+    <button type="button" data-modal="help" title="Ajuda">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.7"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg>
+        <span>Ajuda</span>
+    </button>
+    <button type="button" data-modal="identify" title="Identificação">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2"/><path d="M15 10h3M15 14h3M6 16.5c.7-1.3 1.9-2 3-2s2.3.7 3 2"/></svg>
+        <span>Identificação</span>
+    </button>
+    <button type="button" data-modal="history" title="Histórico">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 3h6"/></svg>
+        <span>Histórico</span>
+    </button>
+    <button type="button" data-modal="services" class="adv-only" title="Serviços">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-6-4-9s1.5-6.4 4-9z"/></svg>
+        <span>Serviços</span>
+    </button>
+    <button type="button" data-modal="device" class="adv-only" title="Dispositivo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+        <span>Dispositivo</span>
+    </button>
+</nav>
 
 <!-- ============ MODAL: AJUDA / COMO FUNCIONA ============ -->
 <div class="modal-overlay" id="modal-help">
@@ -142,9 +153,9 @@
                 <div><strong>Ping</strong><p>Tempo de resposta até o servidor, em milissegundos. Quanto menor, melhor para jogos e chamadas.</p></div></div>
             <div class="help-item"><span class="dot" style="background:var(--cor-jitter)"></span>
                 <div><strong>Jitter</strong><p>Variação do ping entre medições. Jitter alto causa travamentos mesmo com boa velocidade.</p></div></div>
-            <div class="help-item adv-help"><span class="dot" style="background:var(--cor-bufferbloat)"></span>
+            <div class="help-item"><span class="dot" style="background:var(--cor-bufferbloat)"></span>
                 <div><strong>Bufferbloat (avançado)</strong><p>O quanto seu ping piora quando a rede está no limite — explica travamentos durante downloads pesados.</p></div></div>
-            <div class="help-item adv-help"><span class="dot" style="background:var(--cor-perda-pacotes)"></span>
+            <div class="help-item"><span class="dot" style="background:var(--cor-perda-pacotes)"></span>
                 <div><strong>Perda de pacotes (avançado)</strong><p>Percentual de dados que não chegam de primeira. Causa áudio picotado e recarregamento de páginas.</p></div></div>
 
             <hr class="help-divider">

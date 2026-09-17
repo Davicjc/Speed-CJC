@@ -17,6 +17,7 @@
                 b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
             });
             document.body.classList.toggle('mode-avancado', currentMode === 'avancado');
+            if (typeof resetRing === 'function') resetRing(currentMode);
         });
     });
 
@@ -56,22 +57,49 @@
     const ulValue = document.getElementById('ulValue');
     const startBtn = document.getElementById('startBtn');
 
-    const mini = {
-        ping: document.getElementById('pingValue'),
-        jitter: document.getElementById('jitterValue'),
-        bufferbloat: document.getElementById('bufferbloatValue'),
-        perda: document.getElementById('perdaValue')
-    };
+    const MINI_LABELS = { ping: 'Ping', jitter: 'Jitter', bufferbloat: 'Buffer.', perda: 'Perda' };
+    const ringMiniStats = document.getElementById('ringMiniStats');
+    const stepRow = document.getElementById('stepRow');
 
     function fmt(v) { return v.toFixed(v < 10 ? 1 : 0); }
 
-    function resetRing() {
+    function fmtMainHtml(v) {
+        const [int, dec] = v.toFixed(1).split('.');
+        return `${int}<small>.${dec}</small>`;
+    }
+
+    function miniEl(key) {
+        let el = document.getElementById('mini-' + key);
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'mini-stat';
+            el.id = 'mini-' + key;
+            el.innerHTML = `<span class="mini-label">${MINI_LABELS[key] || key}</span><span class="mini-value">–</span>`;
+            ringMiniStats.appendChild(el);
+        }
+        return el.querySelector('.mini-value');
+    }
+
+    function renderStepRow(phases) {
+        stepRow.innerHTML = phases.map((p, i) => `<span class="step-dot" data-step="${i}"></span>`).join('');
+    }
+
+    function setStep(idx, state) {
+        const dot = stepRow.querySelector(`[data-step="${idx}"]`);
+        if (!dot) return;
+        dot.classList.toggle('active', state === 'active');
+        dot.classList.toggle('done', state === 'done');
+    }
+
+    function resetRing(mode) {
         dlRing.reset(); ulRing.reset();
-        dlValue.textContent = '0.0'; ulValue.textContent = '0.0';
-        Object.values(mini).forEach(el => el.textContent = '–');
+        dlValue.innerHTML = '0<small>.0</small>';
+        ulValue.innerHTML = '0<small>.0</small>';
+        ringMiniStats.innerHTML = '';
         ringPhase.textContent = 'Pronto para testar';
         ringResult.classList.remove('visible');
         ringTest.classList.remove('hidden');
+        renderStepRow(buildPhases(mode || currentMode));
     }
 
     function buildPhases(mode) {
@@ -97,19 +125,26 @@
 
     function runCoreTest(mode) {
         return new Promise((resolve) => {
-            resetRing();
+            resetRing(mode);
             const phases = buildPhases(mode);
             const results = {};
+            let lastIdx = -1;
 
             MockEngine.run(phases, {
                 onTick(key, value, idx, phase, t) {
+                    if (idx !== lastIdx) {
+                        if (lastIdx >= 0) setStep(lastIdx, 'done');
+                        setStep(idx, 'active');
+                        lastIdx = idx;
+                    }
                     ringPhase.textContent = phase.label;
                     if (phase.ring) phase.ring.set(t);
-                    if (phase.valueEl) phase.valueEl.textContent = fmt(value);
-                    if (mini[key]) mini[key].textContent = fmt(value);
+                    if (phase.valueEl) phase.valueEl.innerHTML = fmtMainHtml(value);
+                    else miniEl(key).textContent = fmt(value);
                 },
                 onPhaseEnd(key, value) {
                     results[key] = value;
+                    setStep(lastIdx, 'done');
                 },
                 onDone() {
                     ringPhase.textContent = 'Concluído';
@@ -120,8 +155,8 @@
     }
 
     async function showResult(results) {
-        document.getElementById('resultDl').textContent = fmt(results.download);
-        document.getElementById('resultUl').textContent = fmt(results.upload);
+        document.getElementById('resultDl').innerHTML = fmtMainHtml(results.download);
+        document.getElementById('resultUl').innerHTML = fmtMainHtml(results.upload);
         document.getElementById('resultPing').textContent = fmt(results.ping);
         document.getElementById('resultJitter').textContent = fmt(results.jitter);
 
@@ -133,12 +168,14 @@
         ringResult.classList.add('visible');
     }
 
+    const startBtnLabel = startBtn.querySelector('span');
+
     async function runFullTest() {
         startBtn.disabled = true;
-        startBtn.textContent = '...';
+        startBtnLabel.textContent = 'Testando…';
         const results = await runCoreTest(currentMode);
         startBtn.disabled = false;
-        startBtn.textContent = 'Iniciar teste';
+        startBtnLabel.textContent = 'Iniciar teste';
         await showResult(results);
         saveToHistory({ date: Date.now(), ...results });
         renderHistory();
