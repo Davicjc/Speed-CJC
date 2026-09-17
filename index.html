@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
 <meta name="theme-color" content="#050d1d">
 <title>Teste de Velocidade | Audicom Telecom</title>
-<meta name="description" content="Teste de velocidade Audicom: download, upload, ping, jitter e diagnóstico avançado de rede, numa tela só.">
+<meta name="description" content="Teste de velocidade Audicom: download, upload, ping, jitter e diagnóstico avançado de rede ao vivo, numa tela só.">
 <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,19 +22,11 @@
 <div class="ring-halo" aria-hidden="true"></div>
 <div class="grain" aria-hidden="true"></div>
 
-<!-- ============ BARRA SUPERIOR (flutuante) ============ -->
-<header class="floating-bar bar-top">
-    <a class="brand" href="https://audicomtelecom.com.br" aria-label="Audicom Telecom">
-        <img src="assets/logo-audicom-branco.png" alt="Audicom Telecom">
-    </a>
-    <div class="mode-toggle" role="tablist" aria-label="Modo do teste">
-        <span class="mode-toggle-indicator" id="modeIndicator" aria-hidden="true"></span>
-        <button type="button" class="active" data-mode="comum" role="tab" aria-selected="true">Comum</button>
-        <button type="button" data-mode="avancado" role="tab" aria-selected="false">Avançado</button>
-    </div>
-</header>
+<a class="corner-brand" href="https://audicomtelecom.com.br" aria-label="Audicom Telecom">
+    <img src="assets/logo-audicom-branco.png" alt="">
+</a>
 
-<!-- ============ PALCO CENTRAL (anel) ============ -->
+<!-- ============ PALCO CENTRAL (anel + toggle) ============ -->
 <main class="stage">
     <div class="ring-wrap">
         <svg class="ring-svg" viewBox="0 0 260 260">
@@ -70,6 +62,16 @@
                     <div class="ring-stat ul">
                         <span class="ring-stat-value" id="ulValue">0<small>.0</small></span>
                         <span class="ring-stat-unit">↑ Mbps</span>
+                    </div>
+                </div>
+
+                <!-- Modo persistência: sparkline + cronômetro, substitui os números grandes -->
+                <div class="persist-view" id="persistView">
+                    <canvas id="persistCanvas" width="300" height="70"></canvas>
+                    <div class="persist-readout">
+                        <span id="persistElapsed">00:00</span>
+                        <span id="persistSamples">0 amostras</span>
+                        <span id="persistPaused" class="persist-paused" hidden>⏸ pausado (aba em 2º plano)</span>
                     </div>
                 </div>
 
@@ -111,31 +113,48 @@
             </div>
         </div>
     </div>
+
+    <!-- ============ TOGGLE FLUTUANTE (Comum / Avançado / Persistência) ============ -->
+    <div class="mode-toggle" id="modeToggle" role="tablist" aria-label="Modo do teste">
+        <span class="mode-toggle-indicator" id="modeIndicator" aria-hidden="true"></span>
+        <button type="button" class="active" data-mode="comum" role="tab" aria-selected="true">Comum</button>
+        <button type="button" data-mode="avancado" role="tab" aria-selected="false">Avançado</button>
+        <button type="button" data-mode="persistencia" role="tab" aria-selected="false">Persistência</button>
+    </div>
 </main>
 
-<!-- ============ DOCK INFERIOR (flutuante) ============ -->
+<!-- ============ DOCK INFERIOR (flutuante, mínimo) ============ -->
 <nav class="floating-bar bar-dock">
     <button type="button" data-modal="help" title="Ajuda">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.7"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg>
         <span>Ajuda</span>
     </button>
-    <button type="button" data-modal="identify" title="Identificação">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2"/><path d="M15 10h3M15 14h3M6 16.5c.7-1.3 1.9-2 3-2s2.3.7 3 2"/></svg>
-        <span>Identificação</span>
-    </button>
     <button type="button" data-modal="history" title="Histórico">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 3h6"/></svg>
         <span>Histórico</span>
     </button>
-    <button type="button" data-modal="services" class="adv-only" title="Serviços">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 4 6 4 9s-1.5 6.4-4 9c-2.5-2.6-4-6-4-9s1.5-6.4 4-9z"/></svg>
-        <span>Serviços</span>
-    </button>
-    <button type="button" data-modal="device" class="adv-only" title="Dispositivo">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
-        <span>Dispositivo</span>
+    <button type="button" data-modal="account" title="Conta">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.3-3.3 4-5 7-5s5.7 1.7 7 5"/></svg>
+        <span id="accountLabel">Conta</span>
     </button>
 </nav>
+
+<!-- ============ MODAL: ONBOARDING (abre sozinho na 1ª visita) ============ -->
+<div class="modal-overlay" id="modal-onboarding">
+    <div class="modal-card modal-card-narrow">
+        <div class="modal-body onboarding-body">
+            <div class="onboarding-icon">👋</div>
+            <h3>Quer salvar seu histórico?</h3>
+            <p>Criando uma identificação simples (CPF/CNPJ), seus testes ficam salvos e ajudam a Audicom a
+            identificar problemas na sua conexão mais rápido, caso precise acionar o suporte. É opcional
+            e leva 10 segundos.</p>
+            <div class="onboarding-actions">
+                <button class="result-btn primary" id="onboardingYes">Quero me identificar</button>
+                <button class="result-btn ghost" id="onboardingNo">Agora não</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- ============ MODAL: AJUDA / COMO FUNCIONA ============ -->
 <div class="modal-overlay" id="modal-help">
@@ -157,6 +176,12 @@
                 <div><strong>Bufferbloat (avançado)</strong><p>O quanto seu ping piora quando a rede está no limite — explica travamentos durante downloads pesados.</p></div></div>
             <div class="help-item"><span class="dot" style="background:var(--cor-perda-pacotes)"></span>
                 <div><strong>Perda de pacotes (avançado)</strong><p>Percentual de dados que não chegam de primeira. Causa áudio picotado e recarregamento de páginas.</p></div></div>
+            <div class="help-item"><span class="dot" style="background:var(--cor-dns)"></span>
+                <div><strong>IPv4 / IPv6 (avançado)</strong><p>Verificamos se sua conexão alcança a internet pelos dois protocolos. Ter só IPv4 é normal e não é um problema.</p></div></div>
+            <div class="help-item"><span class="dot" style="background:var(--accent-light)"></span>
+                <div><strong>Relógio do dispositivo (avançado)</strong><p>Comparamos a hora do seu aparelho com a do nosso servidor. Um relógio errado pode afetar apps de banco e autenticação.</p></div></div>
+            <div class="help-item"><span class="dot" style="background:var(--cor-alerta)"></span>
+                <div><strong>Persistência</strong><p>Modo de monitoramento contínuo — mede sua conexão em intervalos por um período mais longo, ótimo para flagrar quedas intermitentes que um teste rápido não pega.</p></div></div>
 
             <hr class="help-divider">
 
@@ -168,7 +193,6 @@
             <div class="callout callout-info">
                 <strong>A latência para YouTube, WhatsApp etc. é "ping de verdade"?</strong>
                 Não exatamente: é o tempo real de uma requisição HTTPS (o que navegadores permitem medir), não um ping ICMP.
-                Na prática, é ainda mais representativo da experiência real de uso desses serviços.
             </div>
             <div class="callout callout-info">
                 <strong>Privacidade e LGPD</strong>
@@ -179,17 +203,18 @@
     </div>
 </div>
 
-<!-- ============ MODAL: IDENTIFICAÇÃO (CPF/CNPJ) ============ -->
-<div class="modal-overlay" id="modal-identify">
+<!-- ============ MODAL: CONTA / IDENTIFICAÇÃO ============ -->
+<div class="modal-overlay" id="modal-account">
     <div class="modal-card">
         <div class="modal-header">
-            <h3>Vincular ao meu contrato</h3>
+            <h3>Sua identificação</h3>
             <button class="modal-close" data-close>×</button>
         </div>
         <div class="modal-body">
             <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.9rem;">
-                Opcional: informe seu CPF ou CNPJ para associarmos este teste ao seu contrato Audicom,
+                Opcional: informe seu CPF ou CNPJ para associarmos seus testes ao seu contrato Audicom,
                 ajudando nosso suporte a diagnosticar problemas específicos da sua conexão.
+                <em>Por enquanto isso fica salvo só neste aparelho — a sincronização com a nuvem chega na próxima fase.</em>
             </p>
             <input type="text" class="doc-input" id="docInput" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
             <span class="doc-feedback" id="docFeedback"></span>
@@ -203,6 +228,10 @@
                 <div class="wifi-manual-row">
                     <input type="text" id="wifiManualName" placeholder="Ex: Escritorio_5G" autocomplete="off">
                 </div>
+            </div>
+
+            <div class="identify-section">
+                <button class="result-btn ghost" id="forgetAccountBtn">Esquecer meus dados neste aparelho</button>
             </div>
         </div>
     </div>
@@ -222,42 +251,15 @@
     </div>
 </div>
 
-<!-- ============ MODAL: SERVIÇOS (LATÊNCIA REAL) ============ -->
-<div class="modal-overlay" id="modal-services">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3>Latência para serviços</h3>
-            <button class="modal-close" data-close>×</button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.8rem;">Medição HTTPS real, ao vivo — não é ICMP.</p>
-            <div class="services-grid" id="servicesGrid"></div>
-        </div>
-    </div>
-</div>
-
-<!-- ============ MODAL: DISPOSITIVO (REAL) ============ -->
-<div class="modal-overlay" id="modal-device">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3>Dispositivo e rede</h3>
-            <button class="modal-close" data-close>×</button>
-        </div>
-        <div class="modal-body">
-            <p style="font-size:0.78rem; color:var(--text-muted); margin-bottom:0.8rem;">Dados reais, obtidos direto do seu navegador.</p>
-            <div class="info-grid" id="infoGrid"></div>
-        </div>
-    </div>
-</div>
-
 <script src="js/lib/ring.js"></script>
 <script src="js/lib/mock-engine.js"></script>
 <script src="js/lib/cpf-cnpj.js"></script>
 <script src="js/lib/device-info.js"></script>
 <script src="js/lib/latency-probe.js"></script>
+<script src="js/lib/live-checks.js"></script>
 <script src="js/app.js"></script>
 <script src="js/background/fiber-canvas.js"></script>
 <script src="js/lib/cookie-consent.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/davicjc/FooterDavicjc@main/footer_cjc.js"></script>
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
 </body>
 </html>

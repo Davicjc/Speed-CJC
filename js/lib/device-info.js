@@ -68,10 +68,13 @@ window.DeviceInfo = (function () {
         };
     }
 
-    /** Busca IP público + ISP via API pública (não é backend nosso). */
+    /** Busca IP público + ISP via API pública (não é backend nosso). Nunca trava: timeout de 5s. */
     async function fetchPublicIp() {
         try {
-            const res = await fetch('https://ipapi.co/json/');
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 5000);
+            const res = await fetch('https://ipapi.co/json/', { signal: controller.signal, cache: 'no-store' });
+            clearTimeout(timer);
             if (!res.ok) throw new Error('bad response');
             const data = await res.json();
             return {

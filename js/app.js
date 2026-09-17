@@ -2,22 +2,31 @@
     'use strict';
 
     const HISTORY_KEY = 'audicom_speedtest_historico';
+    const PROFILE_KEY = 'audicom_profile';
+    const ONBOARDING_KEY = 'audicom_onboarding_seen';
     let currentMode = 'comum';
     let ipInfoCache = null;
+    let testRunning = false;
+
+    function safe(fn, fallback) {
+        try { return fn(); } catch (e) { return fallback; }
+    }
 
     // ============================================
-    // MODO (Comum / Avançado)
+    // MODO (Comum / Avançado / Persistência)
     // ============================================
     const modeButtons = document.querySelectorAll('.mode-toggle button');
     modeButtons.forEach(btn => {
         btn.addEventListener('click', () => {
+            if (testRunning) return; // não troca de modo com teste em andamento
             currentMode = btn.dataset.mode;
             modeButtons.forEach(b => {
                 b.classList.toggle('active', b === btn);
                 b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
             });
-            document.body.classList.toggle('mode-avancado', currentMode === 'avancado');
-            if (typeof resetRing === 'function') resetRing(currentMode);
+            document.body.classList.remove('mode-avancado', 'mode-persistencia');
+            if (currentMode !== 'comum') document.body.classList.add('mode-' + currentMode);
+            resetRing(currentMode);
         });
     });
 
@@ -27,10 +36,11 @@
     function openModal(name) {
         const el = document.getElementById('modal-' + name);
         if (el) el.classList.add('open');
-        if (name === 'services') runLatencyProbes();
-        if (name === 'device') renderDeviceInfo();
     }
-    function closeModal(el) { el.classList.remove('open'); }
+    function closeModal(el) {
+        el.classList.remove('open');
+        if (el.id === 'modal-onboarding') safe(() => localStorage.setItem(ONBOARDING_KEY, '1'));
+    }
 
     document.querySelectorAll('[data-modal]').forEach(btn => {
         btn.addEventListener('click', () => openModal(btn.dataset.modal));
@@ -45,7 +55,27 @@
     window.openHelpModal = () => openModal('help');
 
     // ============================================
-    // ANEL (download/upload) + MINI-STATS
+    // ONBOARDING (pergunta de identificação na 1ª visita)
+    // ============================================
+    (function initOnboarding() {
+        let seen = null;
+        try { seen = localStorage.getItem(ONBOARDING_KEY); } catch (e) { seen = 'unknown'; }
+        if (seen) return; // já visto, ou localStorage indisponível (não insiste)
+        setTimeout(() => openModal('onboarding'), 900);
+    })();
+
+    document.getElementById('onboardingYes').addEventListener('click', () => {
+        safe(() => localStorage.setItem(ONBOARDING_KEY, '1'));
+        closeModal(document.getElementById('modal-onboarding'));
+        openModal('account');
+    });
+    document.getElementById('onboardingNo').addEventListener('click', () => {
+        safe(() => localStorage.setItem(ONBOARDING_KEY, '1'));
+        closeModal(document.getElementById('modal-onboarding'));
+    });
+
+    // ============================================
+    // ANEL (download/upload) + STEP-ROW + CHIPS
     // ============================================
     const dlRing = RingProgress(document.getElementById('dlRing'), 120);
     const ulRing = RingProgress(document.getElementById('ulRing'), 108);
@@ -56,10 +86,11 @@
     const dlValue = document.getElementById('dlValue');
     const ulValue = document.getElementById('ulValue');
     const startBtn = document.getElementById('startBtn');
+    const startBtnLabel = startBtn.querySelector('span');
 
-    const MINI_LABELS = { ping: 'Ping', jitter: 'Jitter', bufferbloat: 'Buffer.', perda: 'Perda' };
     const ringMiniStats = document.getElementById('ringMiniStats');
     const stepRow = document.getElementById('stepRow');
+    const MINI_LABELS = { ping: 'Ping', jitter: 'Jitter', bufferbloat: 'Buffer.', perda: 'Perda' };
 
     function fmt(v) { return v.toFixed(v < 10 ? 1 : 0); }
 
@@ -68,16 +99,32 @@
         return `${int}<small>.${dec}</small>`;
     }
 
-    function miniEl(key) {
+    function miniEl(key, label) {
         let el = document.getElementById('mini-' + key);
         if (!el) {
             el = document.createElement('div');
             el.className = 'mini-stat';
             el.id = 'mini-' + key;
-            el.innerHTML = `<span class="mini-label">${MINI_LABELS[key] || key}</span><span class="mini-value">–</span>`;
+            el.innerHTML = `<span class="mini-label">${label || MINI_LABELS[key] || key}</span><span class="mini-value">–</span>`;
             ringMiniStats.appendChild(el);
         }
         return el.querySelector('.mini-value');
+    }
+
+    /** Chip "ao vivo" com estado (ok/warn/fail) — usado pelas checagens do modo avançado. */
+    function liveChip(key, label, text, state) {
+        let el = document.getElementById('chip-' + key);
+        if (!el) {
+            el = document.createElement('div');
+            el.className = 'mini-stat live-chip';
+            el.id = 'chip-' + key;
+            el.innerHTML = `<span class="mini-label">${label}</span><span class="mini-value">–</span>`;
+            ringMiniStats.appendChild(el);
+        }
+        const valueEl = el.querySelector('.mini-value');
+        valueEl.textContent = text;
+        valueEl.className = 'mini-value' + (state ? ' ' + state : '');
+        return el;
     }
 
     function renderStepRow(phases) {
@@ -99,9 +146,15 @@
         ringPhase.textContent = 'Pronto para testar';
         ringResult.classList.remove('visible');
         ringTest.classList.remove('hidden');
-        renderStepRow(buildPhases(mode || currentMode));
+        startBtnLabel.textContent = mode === 'persistencia' ? 'Iniciar monitoramento' : 'Iniciar teste';
+        if (mode !== 'persistencia') renderStepRow(buildPhases(mode || currentMode));
+        else stepRow.innerHTML = '';
+        stopPersistence(true);
     }
 
+    // ============================================
+    // TESTE (Comum / Avançado) — motor mock, fase por fase
+    // ============================================
     function buildPhases(mode) {
         const ping = MockEngine.randomInRange(8, 35);
         const jitter = MockEngine.randomInRange(1, 8);
@@ -125,7 +178,6 @@
 
     function runCoreTest(mode) {
         return new Promise((resolve) => {
-            resetRing(mode);
             const phases = buildPhases(mode);
             const results = {};
             let lastIdx = -1;
@@ -154,6 +206,41 @@
         });
     }
 
+    // ---- Checagens "ao vivo" do modo avançado (todas isoladas, nunca travam o teste) ----
+    async function runAdvancedLiveChecks() {
+        liveChip('ipstack', 'Protocolo', 'verificando…');
+        LiveChecks.checkIPStack().then(r => {
+            if (r.error) { liveChip('ipstack', 'Protocolo', r.error, 'fail'); return; }
+            const parts = [r.v4 ? 'IPv4 ✓' : 'IPv4 ✗', r.v6 ? 'IPv6 ✓' : 'IPv6 ✗'];
+            liveChip('ipstack', 'Protocolo', parts.join(' · '), (r.v4 || r.v6) ? 'ok' : 'fail');
+        });
+
+        liveChip('clock', 'Relógio', 'verificando…');
+        LiveChecks.checkClockSkew().then(r => {
+            if (r.error || r.skewSeconds === null) { liveChip('clock', 'Relógio', 'indisponível', 'warn'); return; }
+            const abs = Math.abs(r.skewSeconds);
+            if (abs < 5) liveChip('clock', 'Relógio', 'correto', 'ok');
+            else liveChip('clock', 'Relógio', `${r.skewSeconds > 0 ? '+' : ''}${r.skewSeconds}s`, abs > 60 ? 'fail' : 'warn');
+        });
+
+        safe(() => {
+            const conn = DeviceInfo.getConnection();
+            if (!conn.supported) { liveChip('conn', 'Conexão', 'não exposta', 'warn'); return; }
+            const label = [conn.type, conn.effectiveType].filter(Boolean).join(' · ') || 'desconhecida';
+            liveChip('conn', 'Conexão', label + ' (estimado)', 'ok');
+        });
+
+        liveChip('geo', 'Localização', 'solicitando permissão…');
+        LiveChecks.getGeolocation().then(async (r) => {
+            if (!r.ok) { liveChip('geo', 'Localização', r.reason, 'warn'); return; }
+            const place = await LiveChecks.reverseGeocode(r.lat, r.lon);
+            if (place) liveChip('geo', 'Localização', place, 'ok');
+            else liveChip('geo', 'Localização', `${r.lat.toFixed(2)}, ${r.lon.toFixed(2)}`, 'ok');
+        });
+
+        runLatencyProbes();
+    }
+
     async function showResult(results) {
         document.getElementById('resultDl').innerHTML = fmtMainHtml(results.download);
         document.getElementById('resultUl').innerHTML = fmtMainHtml(results.upload);
@@ -168,23 +255,37 @@
         ringResult.classList.add('visible');
     }
 
-    const startBtnLabel = startBtn.querySelector('span');
-
     async function runFullTest() {
+        if (testRunning) return;
+        if (!navigator.onLine) {
+            ringPhase.textContent = 'Sem conexão com a internet';
+            return;
+        }
+        if (currentMode === 'persistencia') { togglePersistence(); return; }
+
+        testRunning = true;
+        resetRing(currentMode);
         startBtn.disabled = true;
         startBtnLabel.textContent = 'Testando…';
+
+        if (currentMode === 'avancado') runAdvancedLiveChecks();
+
         const results = await runCoreTest(currentMode);
         startBtn.disabled = false;
         startBtnLabel.textContent = 'Iniciar teste';
+        testRunning = false;
         await showResult(results);
-        saveToHistory({ date: Date.now(), ...results });
+        saveToHistory({ date: Date.now(), mode: currentMode, ...results });
         renderHistory();
-        if (currentMode === 'avancado') runLatencyProbes();
     }
+
+    window.addEventListener('offline', () => {
+        if (testRunning) ringPhase.textContent = 'Conexão perdida durante o teste';
+    });
 
     startBtn.addEventListener('click', runFullTest);
     document.getElementById('retestBtn').addEventListener('click', () => {
-        resetRing();
+        resetRing(currentMode);
         runFullTest();
     });
     document.getElementById('shareBtn').addEventListener('click', () => {
@@ -192,10 +293,123 @@
     });
 
     // ============================================
-    // CPF / CNPJ
+    // MODO PERSISTÊNCIA (monitoramento contínuo)
+    // ============================================
+    const persistCanvas = document.getElementById('persistCanvas');
+    const persistCtx = persistCanvas.getContext('2d');
+    const persistElapsedEl = document.getElementById('persistElapsed');
+    const persistSamplesEl = document.getElementById('persistSamples');
+    const persistPausedEl = document.getElementById('persistPaused');
+
+    let persistState = null; // { samples:[], startedAt, sampleTimer, clockTimer, paused }
+
+    function drawPersistGraph(samples) {
+        const w = persistCanvas.width, h = persistCanvas.height;
+        persistCtx.clearRect(0, 0, w, h);
+        if (samples.length < 2) return;
+        const pings = samples.map(s => s.ping);
+        const max = Math.max(...pings, 20);
+        const min = 0;
+        persistCtx.beginPath();
+        persistCtx.strokeStyle = '#F59E0B';
+        persistCtx.lineWidth = 2;
+        samples.forEach((s, i) => {
+            const x = (i / (samples.length - 1)) * w;
+            const y = h - ((s.ping - min) / (max - min)) * h;
+            i === 0 ? persistCtx.moveTo(x, y) : persistCtx.lineTo(x, y);
+        });
+        persistCtx.stroke();
+    }
+
+    function sampleOnce() {
+        const ping = MockEngine.randomInRange(8, 60);
+        const download = MockEngine.randomInRange(60, 420);
+        persistState.samples.push({ t: Date.now(), ping, download });
+        if (persistState.samples.length > 200) persistState.samples.shift();
+        drawPersistGraph(persistState.samples);
+        persistSamplesEl.textContent = persistState.samples.length + ' amostras';
+        miniEl('pping', 'Ping').textContent = fmt(ping);
+        miniEl('pdown', 'Download').textContent = fmt(download);
+        ringPhase.textContent = 'Monitorando…';
+    }
+
+    function tickElapsed() {
+        const secs = Math.floor((Date.now() - persistState.startedAt) / 1000);
+        const m = String(Math.floor(secs / 60)).padStart(2, '0');
+        const s = String(secs % 60).padStart(2, '0');
+        persistElapsedEl.textContent = `${m}:${s}`;
+    }
+
+    function togglePersistence() {
+        if (persistState) { finishPersistence(); return; }
+
+        persistState = { samples: [], startedAt: Date.now(), paused: false };
+        testRunning = true;
+        startBtnLabel.textContent = 'Parar monitoramento';
+        ringPhase.textContent = 'Monitorando…';
+        ringMiniStats.innerHTML = '';
+        persistPausedEl.hidden = true;
+
+        persistState.sampleTimer = setInterval(() => { if (!persistState.paused) sampleOnce(); }, 4000);
+        persistState.clockTimer = setInterval(() => { if (!persistState.paused) tickElapsed(); }, 1000);
+        sampleOnce();
+    }
+
+    function stopPersistence(silent) {
+        if (!persistState) return;
+        clearInterval(persistState.sampleTimer);
+        clearInterval(persistState.clockTimer);
+        persistState = null;
+        testRunning = false;
+        if (!silent) startBtnLabel.textContent = 'Iniciar monitoramento';
+    }
+
+    async function finishPersistence() {
+        const samples = persistState.samples;
+        const durationSec = Math.floor((Date.now() - persistState.startedAt) / 1000);
+        stopPersistence();
+
+        if (samples.length) {
+            const pings = samples.map(s => s.ping);
+            const downloads = samples.map(s => s.download);
+            const avg = arr => arr.reduce((a, b) => a + b, 0) / arr.length;
+            const results = {
+                ping: avg(pings), jitter: Math.max(...pings) - Math.min(...pings),
+                download: avg(downloads), upload: avg(downloads) * 0.35
+            };
+            await showResult(results);
+            document.querySelector('#ringResult .ring-result-title').textContent =
+                `✓ Monitoramento de ${Math.floor(durationSec / 60)}min concluído`;
+            saveToHistory({ date: Date.now(), mode: 'persistencia', ...results, durationSec, samples: samples.length });
+            renderHistory();
+        } else {
+            resetRing('persistencia');
+        }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (!persistState) return;
+        persistState.paused = document.hidden;
+        persistPausedEl.hidden = !document.hidden;
+    });
+
+    // ============================================
+    // CPF / CNPJ + perfil local
     // ============================================
     const docInput = document.getElementById('docInput');
     const docFeedback = document.getElementById('docFeedback');
+    const accountLabel = document.getElementById('accountLabel');
+
+    function loadProfile() { return safe(() => JSON.parse(localStorage.getItem(PROFILE_KEY)), null); }
+    function refreshAccountLabel() {
+        const profile = loadProfile();
+        accountLabel.textContent = (profile && profile.doc) ? 'Identificado' : 'Conta';
+    }
+
+    const savedProfile = loadProfile();
+    if (savedProfile && savedProfile.doc) docInput.value = savedProfile.doc;
+    refreshAccountLabel();
+
     docInput.addEventListener('input', () => {
         const type = DocUtils.detectType(docInput.value);
         docInput.placeholder = type === 'cnpj' ? '00.000.000/0000-00' : '000.000.000-00';
@@ -214,6 +428,18 @@
             ? (type === 'cnpj' ? 'CNPJ válido' : 'CPF válido')
             : (type === 'cnpj' ? 'CNPJ inválido' : 'CPF inválido');
         docFeedback.className = 'doc-feedback ' + (valid ? 'success' : 'error');
+        if (valid) {
+            safe(() => localStorage.setItem(PROFILE_KEY, JSON.stringify({ doc: docInput.value })));
+            refreshAccountLabel();
+        }
+    });
+
+    document.getElementById('forgetAccountBtn').addEventListener('click', () => {
+        safe(() => { localStorage.removeItem(PROFILE_KEY); localStorage.removeItem('audicom_wifi_manual'); });
+        docInput.value = '';
+        docFeedback.textContent = '';
+        wifiManualInput.value = '';
+        refreshAccountLabel();
     });
 
     // ============================================
@@ -221,80 +447,27 @@
     // ============================================
     const wifiManualInput = document.getElementById('wifiManualName');
     wifiManualInput.addEventListener('change', () => {
-        try { localStorage.setItem('audicom_wifi_manual', wifiManualInput.value.trim()); } catch (e) {}
+        safe(() => localStorage.setItem('audicom_wifi_manual', wifiManualInput.value.trim()));
     });
-    try {
+    safe(() => {
         const saved = localStorage.getItem('audicom_wifi_manual');
         if (saved) wifiManualInput.value = saved;
-    } catch (e) {}
+    });
 
     // ============================================
-    // SERVIÇOS (latência real)
+    // SERVIÇOS (latência real) — agora aparece ao vivo dentro do card
     // ============================================
-    const servicesGrid = document.getElementById('servicesGrid');
     let servicesRunning = false;
-
-    function renderServiceCards() {
-        servicesGrid.innerHTML = LatencyProbe.TARGETS.map(t => `
-            <div class="service-card" id="svc-${t.key}">
-                <span class="service-icon">${t.icon}</span>
-                <div>
-                    <span class="service-name">${t.label}</span>
-                    <span class="service-value"><span class="status-dot"></span> ...</span>
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function updateServiceCard(result) {
-        const el = document.getElementById('svc-' + result.key);
-        if (!el) return;
-        const status = LatencyProbe.classify(result.ms);
-        el.querySelector('.service-value').innerHTML =
-            `<span class="status-dot status-${status}"></span> ${result.ok ? result.ms + ' ms' : 'indisponível'}`;
-    }
 
     function runLatencyProbes() {
         if (servicesRunning) return;
         servicesRunning = true;
-        renderServiceCards();
-        LatencyProbe.probeAll(updateServiceCard).finally(() => { servicesRunning = false; });
-    }
-
-    // ============================================
-    // DISPOSITIVO (dados reais)
-    // ============================================
-    const infoGrid = document.getElementById('infoGrid');
-    let deviceRendered = false;
-
-    function infoCard(label, value) {
-        return `<div class="info-card"><div class="info-label">${label}</div><div class="info-value">${value}</div></div>`;
-    }
-
-    async function renderDeviceInfo() {
-        if (deviceRendered) return;
-        deviceRendered = true;
-        const d = DeviceInfo.collectSync();
-        if (!ipInfoCache) ipInfoCache = await DeviceInfo.fetchPublicIp();
-
-        const conn = d.connection.supported
-            ? [d.connection.type, d.connection.effectiveType].filter(Boolean).join(' · ') +
-              (d.connection.downlink ? ` (${d.connection.downlink} Mbps est., ${d.connection.rtt}ms rtt)` : '')
-            : 'Não exposto por este navegador';
-
-        infoGrid.innerHTML = [
-            infoCard('Navegador', d.browser),
-            infoCard('Sistema', d.os),
-            infoCard('Dispositivo', d.deviceType),
-            infoCard('Tela', d.screen),
-            infoCard('Núcleos de CPU', d.cpuCores || 'não exposto'),
-            infoCard('Memória RAM', d.ramGB ? d.ramGB + ' GB (aprox.)' : 'não exposto'),
-            infoCard('Tipo de conexão', conn),
-            infoCard('IP público', ipInfoCache.ip || 'indisponível'),
-            infoCard('Provedor (ISP)', ipInfoCache.isp || 'indisponível'),
-            infoCard('Localização aprox.', [ipInfoCache.city, ipInfoCache.region].filter(Boolean).join(', ') || 'indisponível'),
-            infoCard('IPv6', ipInfoCache.isIPv6 === null ? 'indisponível' : (ipInfoCache.isIPv6 ? 'Sim' : 'Não detectado nesta rede'))
-        ].join('');
+        LatencyProbe.TARGETS.forEach(t => liveChip('svc-' + t.key, t.label, '…'));
+        LatencyProbe.probeAll(result => {
+            const status = LatencyProbe.classify(result.ms);
+            const state = status === 'otimo' ? 'ok' : status === 'bom' ? 'warn' : 'fail';
+            liveChip('svc-' + result.key, result.label, result.ok ? result.ms + 'ms' : 'indisponível', state);
+        }).finally(() => { servicesRunning = false; });
     }
 
     // ============================================
@@ -302,15 +475,12 @@
     // ============================================
     const historyList = document.getElementById('historyList');
 
-    function loadHistory() {
-        try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
-        catch (e) { return []; }
-    }
+    function loadHistory() { return safe(() => JSON.parse(localStorage.getItem(HISTORY_KEY)), []) || []; }
 
     function saveToHistory(entry) {
         const list = loadHistory();
         list.unshift(entry);
-        try { localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 10))); } catch (e) {}
+        safe(() => localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 15))));
     }
 
     function renderHistory() {
@@ -321,7 +491,7 @@
         }
         historyList.innerHTML = list.map(item => `
             <div class="history-item">
-                <span class="h-date">${new Date(item.date).toLocaleString('pt-BR')}</span>
+                <span class="h-date">${new Date(item.date).toLocaleString('pt-BR')}${item.mode === 'avancado' ? ' · avançado' : item.mode === 'persistencia' ? ' · persistência' : ''}</span>
                 <span class="h-vals">
                     <span style="color:var(--cor-download)">↓${fmt(item.download)}</span>
                     <span style="color:var(--cor-upload)">↑${fmt(item.upload)}</span>
@@ -332,14 +502,14 @@
     }
 
     document.getElementById('clearHistoryBtn').addEventListener('click', () => {
-        try { localStorage.removeItem(HISTORY_KEY); } catch (e) {}
+        safe(() => localStorage.removeItem(HISTORY_KEY));
         renderHistory();
     });
 
     // ============================================
     // INIT
     // ============================================
-    resetRing();
+    resetRing('comum');
     renderHistory();
-    DeviceInfo.fetchPublicIp().then(info => { ipInfoCache = info; });
+    DeviceInfo.fetchPublicIp().then(info => { ipInfoCache = info; }).catch(() => {});
 })();
