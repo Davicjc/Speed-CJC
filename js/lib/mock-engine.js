@@ -7,7 +7,8 @@ window.MockEngine = {
     /**
      * Executa uma sequência de fases.
      * phases: [{ key, label, duration, from, to, jitterPct }]
-     * onTick(key, value, phaseIndex) / onPhaseEnd(key, finalValue) / onDone(results)
+     * onTick(key, value, phaseIndex, phase, t) — t = progresso linear (0..1) da fase
+     * onPhaseEnd(key, finalValue) / onDone(results)
      */
     run(phases, { onTick, onPhaseEnd, onDone, stepMs = 60 } = {}) {
         let phaseIndex = 0;
@@ -32,14 +33,14 @@ window.MockEngine = {
                 let value = phase.from + (phase.to - phase.from) * eased;
                 const jitter = (phase.jitterPct || 0) * phase.to * (Math.random() - 0.5);
                 value = Math.max(0, value + jitter);
-                onTick && onTick(phase.key, value, phaseIndex, phase);
+                onTick && onTick(phase.key, value, phaseIndex, phase, t);
 
                 if (step < steps) {
                     setTimeout(tick, stepMs);
                 } else {
                     const finalValue = phase.to;
                     results[phase.key] = finalValue;
-                    onTick && onTick(phase.key, finalValue, phaseIndex, phase);
+                    onTick && onTick(phase.key, finalValue, phaseIndex, phase, 1);
                     onPhaseEnd && onPhaseEnd(phase.key, finalValue);
                     phaseIndex++;
                     setTimeout(runPhase, 220);

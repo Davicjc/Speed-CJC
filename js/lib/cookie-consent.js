@@ -32,14 +32,17 @@
 
     const banner = document.createElement('div');
     banner.id = 'consentBanner';
-    const base = document.currentScript && document.currentScript.src.includes('/js/lib/')
-        ? document.currentScript.src.split('/js/lib/')[0] : '.';
     banner.innerHTML = `
         <p>Usamos os dados deste teste apenas para diagnóstico da sua conexão, conforme a LGPD.
-        <a href="${base}/como-funciona/index.html#privacidade">Saiba mais</a>.</p>
+        <a href="#" id="consentLearnMore">Saiba mais</a>.</p>
         <button id="consentAccept">Entendi</button>
     `;
     document.body.appendChild(banner);
+
+    document.getElementById('consentLearnMore').addEventListener('click', (e) => {
+        e.preventDefault();
+        if (typeof window.openHelpModal === 'function') window.openHelpModal();
+    });
 
     document.getElementById('consentAccept').addEventListener('click', () => {
         try { localStorage.setItem(KEY, 'accepted'); } catch (e) {}
