@@ -95,5 +95,39 @@ window.LiveChecks = (function () {
         }
     }
 
-    return { checkIPStack, checkClockSkew, getGeolocation, reverseGeocode, withTimeout };
+    /**
+     * Roda uma fila de tarefas assíncronas com no máximo `concurrency` em paralelo,
+     * em vez de disparar tudo de uma vez — mais gentil com a rede do cliente e
+     * (pensando à frente) com o servidor, quando várias pessoas testarem ao mesmo tempo.
+     * tasks: array de funções () => Promise. onItemDone(result, index) é chamado a cada conclusão.
+     */
+    function runQueue(tasks, concurrency, onItemDone) {
+        return new Promise((resolve) => {
+            const results = new Array(tasks.length);
+            let nextIndex = 0;
+            let activeCount = 0;
+            let doneCount = 0;
+
+            function pump() {
+                if (doneCount === tasks.length) { resolve(results); return; }
+                while (activeCount < concurrency && nextIndex < tasks.length) {
+                    const idx = nextIndex++;
+                    activeCount++;
+                    Promise.resolve()
+                        .then(() => tasks[idx]())
+                        .catch(() => null)
+                        .then((r) => {
+                            results[idx] = r;
+                            activeCount--;
+                            doneCount++;
+                            onItemDone && onItemDone(r, idx);
+                            pump();
+                        });
+                }
+            }
+            pump();
+        });
+    }
+
+    return { checkIPStack, checkClockSkew, getGeolocation, reverseGeocode, withTimeout, runQueue };
 })();

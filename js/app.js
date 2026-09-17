@@ -206,23 +206,53 @@
         });
     }
 
-    // ---- Checagens "ao vivo" do modo avançado (todas isoladas, nunca travam o teste) ----
-    async function runAdvancedLiveChecks() {
-        liveChip('ipstack', 'Protocolo', 'verificando…');
-        LiveChecks.checkIPStack().then(r => {
-            if (r.error) { liveChip('ipstack', 'Protocolo', r.error, 'fail'); return; }
+    // ---- Checagens "ao vivo" do modo avançado ----
+    // Em vez de disparar tudo de uma vez (IPv4/IPv6 + relógio + localização + 8 serviços,
+    // ~11 requisições simultâneas), roda uma fila com no máximo 3 em paralelo por vez.
+    // Mais calmo na tela e mais leve pra rede — importante com vários aparelhos testando junto.
+    function buildLiveCheckTasks() {
+        const tasks = [];
+
+        tasks.push(async () => {
+            liveChip('ipstack', 'Protocolo', 'verificando…');
+            const r = await LiveChecks.checkIPStack();
+            if (r.error) return liveChip('ipstack', 'Protocolo', r.error, 'fail');
             const parts = [r.v4 ? 'IPv4 ✓' : 'IPv4 ✗', r.v6 ? 'IPv6 ✓' : 'IPv6 ✗'];
             liveChip('ipstack', 'Protocolo', parts.join(' · '), (r.v4 || r.v6) ? 'ok' : 'fail');
         });
 
-        liveChip('clock', 'Relógio', 'verificando…');
-        LiveChecks.checkClockSkew().then(r => {
-            if (r.error || r.skewSeconds === null) { liveChip('clock', 'Relógio', 'indisponível', 'warn'); return; }
+        tasks.push(async () => {
+            liveChip('clock', 'Relógio', 'verificando…');
+            const r = await LiveChecks.checkClockSkew();
+            if (r.error || r.skewSeconds === null) return liveChip('clock', 'Relógio', 'indisponível', 'warn');
             const abs = Math.abs(r.skewSeconds);
             if (abs < 5) liveChip('clock', 'Relógio', 'correto', 'ok');
             else liveChip('clock', 'Relógio', `${r.skewSeconds > 0 ? '+' : ''}${r.skewSeconds}s`, abs > 60 ? 'fail' : 'warn');
         });
 
+        tasks.push(async () => {
+            liveChip('geo', 'Localização', 'solicitando permissão…');
+            const r = await LiveChecks.getGeolocation();
+            if (!r.ok) return liveChip('geo', 'Localização', r.reason, 'warn');
+            const place = await LiveChecks.reverseGeocode(r.lat, r.lon);
+            liveChip('geo', 'Localização', place || `${r.lat.toFixed(2)}, ${r.lon.toFixed(2)}`, 'ok');
+        });
+
+        LatencyProbe.TARGETS.forEach(t => {
+            tasks.push(async () => {
+                liveChip('svc-' + t.key, t.label, 'na fila…');
+                const result = await LatencyProbe.probeOne(t);
+                const status = LatencyProbe.classify(result.ms);
+                const state = status === 'otimo' ? 'ok' : status === 'bom' ? 'warn' : 'fail';
+                liveChip('svc-' + t.key, t.label, result.ok ? result.ms + 'ms' : 'indisponível', state);
+            });
+        });
+
+        return tasks;
+    }
+
+    function runAdvancedLiveChecks() {
+        // Conexão é síncrona (não bate rede), então aparece na hora.
         safe(() => {
             const conn = DeviceInfo.getConnection();
             if (!conn.supported) { liveChip('conn', 'Conexão', 'não exposta', 'warn'); return; }
@@ -230,15 +260,7 @@
             liveChip('conn', 'Conexão', label + ' (estimado)', 'ok');
         });
 
-        liveChip('geo', 'Localização', 'solicitando permissão…');
-        LiveChecks.getGeolocation().then(async (r) => {
-            if (!r.ok) { liveChip('geo', 'Localização', r.reason, 'warn'); return; }
-            const place = await LiveChecks.reverseGeocode(r.lat, r.lon);
-            if (place) liveChip('geo', 'Localização', place, 'ok');
-            else liveChip('geo', 'Localização', `${r.lat.toFixed(2)}, ${r.lon.toFixed(2)}`, 'ok');
-        });
-
-        runLatencyProbes();
+        return LiveChecks.runQueue(buildLiveCheckTasks(), 3);
     }
 
     async function showResult(results) {
@@ -453,22 +475,6 @@
         const saved = localStorage.getItem('audicom_wifi_manual');
         if (saved) wifiManualInput.value = saved;
     });
-
-    // ============================================
-    // SERVIÇOS (latência real) — agora aparece ao vivo dentro do card
-    // ============================================
-    let servicesRunning = false;
-
-    function runLatencyProbes() {
-        if (servicesRunning) return;
-        servicesRunning = true;
-        LatencyProbe.TARGETS.forEach(t => liveChip('svc-' + t.key, t.label, '…'));
-        LatencyProbe.probeAll(result => {
-            const status = LatencyProbe.classify(result.ms);
-            const state = status === 'otimo' ? 'ok' : status === 'bom' ? 'warn' : 'fail';
-            liveChip('svc-' + result.key, result.label, result.ok ? result.ms + 'ms' : 'indisponível', state);
-        }).finally(() => { servicesRunning = false; });
-    }
 
     // ============================================
     // HISTÓRICO LOCAL

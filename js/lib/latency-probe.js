@@ -36,12 +36,15 @@ window.LatencyProbe = (function () {
         });
     }
 
-    /** onEach(result) é chamado assim que cada serviço termina (em paralelo). */
-    async function probeAll(onEach) {
-        const results = await Promise.all(TARGETS.map(t =>
-            probeOne(t).then(r => { onEach && onEach(r); return r; })
-        ));
-        return results;
+    /**
+     * onEach(result) é chamado a cada serviço concluído. Roda no máximo `concurrency`
+     * por vez (padrão 3) em vez de disparar as 8 requisições de uma só vez.
+     */
+    function probeAll(onEach, concurrency = 3) {
+        const tasks = TARGETS.map(t => () => probeOne(t));
+        return window.LiveChecks
+            ? window.LiveChecks.runQueue(tasks, concurrency, onEach)
+            : Promise.all(tasks.map(fn => fn().then(r => { onEach && onEach(r); return r; })));
     }
 
     function classify(ms) {
