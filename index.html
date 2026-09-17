@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#081535">
+<title>Teste de Velocidade | Audicom Telecom</title>
+<meta name="description" content="Teste sua internet com a Audicom: teste comum de velocidade ou o teste avançado completo, com diagnóstico de rede, latência para os principais serviços e transparência total sobre os dados coletados.">
+<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/tokens.css">
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/topbar.css">
+<link rel="stylesheet" href="css/hub.css">
+</head>
+<body>
+
+<canvas id="fiber-canvas" aria-hidden="true"></canvas>
+
+<header class="topbar">
+    <div class="container topbar-inner">
+        <a href="index.html" class="topbar-logo">
+            <img src="assets/logo-audicom-branco.png" alt="Audicom Telecom">
+        </a>
+        <nav class="topbar-nav" aria-label="Navegação principal">
+            <a href="teste-comum/index.html">Teste Comum</a>
+            <a href="teste-avancado/index.html">Teste Avançado</a>
+            <a href="como-funciona/index.html">Como funciona</a>
+            <a href="https://audicomtelecom.com.br" class="topbar-nav-external">Site institucional ↗</a>
+        </nav>
+        <button class="topbar-burger" id="burgerBtn" aria-label="Abrir menu" aria-expanded="false">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+    <nav class="topbar-mobile" id="mobileNav" aria-label="Navegação mobile">
+        <a href="teste-comum/index.html">Teste Comum</a>
+        <a href="teste-avancado/index.html">Teste Avançado</a>
+        <a href="como-funciona/index.html">Como funciona</a>
+        <a href="https://audicomtelecom.com.br">Site institucional ↗</a>
+    </nav>
+</header>
+
+<main>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+        <div class="container hero-inner fade-in">
+            <span class="badge badge-info">Novo · Versão 2</span>
+            <h1 class="hero-title">Teste sua internet<br>do jeito que ela <span class="hl">realmente</span> é.</h1>
+            <p class="hero-subtitle">
+                Além de velocidade, medimos estabilidade, latência para os apps que você mais usa
+                e diagnóstico completo da sua conexão — com total transparência sobre o que é coletado
+                e por quê.
+            </p>
+            <div class="hero-actions">
+                <a href="teste-comum/index.html" class="btn btn-primary">Fazer teste comum</a>
+                <a href="teste-avancado/index.html" class="btn btn-secondary">Fazer teste avançado</a>
+            </div>
+            <p class="hero-note">🔒 Seus dados são usados apenas para diagnóstico de rede. <a href="como-funciona/index.html#privacidade">Veja como funciona</a>.</p>
+        </div>
+    </section>
+
+    <!-- ============ ESCOLHA DO TESTE ============ -->
+    <section class="choice-section">
+        <div class="container">
+            <h2 class="section-title text-center">Qual teste você precisa?</h2>
+            <p class="section-subtitle text-center text-secondary">Escolha entre uma checagem rápida ou um raio-x completo da sua conexão.</p>
+
+            <div class="choice-grid">
+                <article class="choice-card">
+                    <div class="choice-icon icon-comum" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M12 3v6m0 12a9 9 0 100-18 9 9 0 000 18zm0-6l4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="badge badge-success">Rápido · ~20s</span>
+                    <h3>Teste Comum</h3>
+                    <p class="text-secondary">O essencial, direto ao ponto — igual você já conhece, só que mais preciso.</p>
+                    <ul class="choice-features">
+                        <li>Download e upload</li>
+                        <li>Ping e jitter</li>
+                        <li>IP público e provedor</li>
+                        <li>Resultado num medidor visual</li>
+                    </ul>
+                    <a href="teste-comum/index.html" class="btn btn-primary btn-block">Iniciar teste comum</a>
+                </article>
+
+                <article class="choice-card choice-card-featured">
+                    <div class="choice-icon icon-avancado" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h10M4 18h7M17 15l3 3 5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <span class="badge badge-warning">Completo · ~1min</span>
+                    <h3>Teste Avançado</h3>
+                    <p class="text-secondary">Diagnóstico completo: rede, dispositivo e a experiência real com os serviços que você usa.</p>
+                    <ul class="choice-features">
+                        <li>Multi-conexão + bufferbloat + perda de pacotes</li>
+                        <li>Latência para YouTube, Instagram, WhatsApp, Caixa e mais</li>
+                        <li>Tipo de conexão, DNS, TLS, IPv6</li>
+                        <li>Dispositivo, navegador e ambiente de rede</li>
+                        <li>Identificação opcional por CPF/CNPJ</li>
+                    </ul>
+                    <a href="teste-avancado/index.html" class="btn btn-primary btn-block">Iniciar teste avançado</a>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <!-- ============ TRANSPARÊNCIA ============ -->
+    <section class="transparency-section">
+        <div class="container transparency-inner">
+            <div class="transparency-text">
+                <span class="badge badge-info">Transparência</span>
+                <h2>Você sabe exatamente o que a gente mede.</h2>
+                <p class="text-secondary">
+                    Nada de caixa-preta. Toda métrica coletada é explicada em linguagem simples,
+                    incluindo o que navegadores <strong>não permitem</strong> medir (como o nome exato
+                    da sua rede Wi-Fi) — e o porquê disso ser uma proteção da sua privacidade, não uma
+                    limitação nossa.
+                </p>
+                <a href="como-funciona/index.html" class="btn btn-secondary">Ver como funciona em detalhes</a>
+            </div>
+            <div class="transparency-cards">
+                <div class="mini-card">
+                    <strong>🔎 O que coletamos</strong>
+                    <p>Velocidade, latência, dados técnicos do dispositivo e, se você informar, CPF/CNPJ para associar o teste ao seu contrato.</p>
+                </div>
+                <div class="mini-card">
+                    <strong>🚫 O que não coletamos</strong>
+                    <p>Senha de Wi-Fi, conteúdo de navegação, arquivos ou qualquer dado fora do escopo do diagnóstico de rede.</p>
+                </div>
+                <div class="mini-card">
+                    <strong>📄 LGPD</strong>
+                    <p>Uso restrito a diagnóstico e suporte técnico, conforme a Lei Geral de Proteção de Dados.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script>
+(function(){
+    const btn = document.getElementById('burgerBtn');
+    const nav = document.getElementById('mobileNav');
+    btn.addEventListener('click', function(){
+        const open = nav.classList.toggle('open');
+        btn.classList.toggle('open', open);
+        btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+})();
+</script>
+<script src="js/background/fiber-canvas.js"></script>
+<script src="js/lib/cookie-consent.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/davicjc/FooterDavicjc@main/footer_cjc.js"></script>
+</body>
+</html>

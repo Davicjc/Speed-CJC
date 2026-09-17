@@ -1,0 +1,70 @@
+/* ============================================
+   TOPBAR — compartilhado entre index, como-funciona, teste-avancado
+   ============================================ */
+
+main { position: relative; z-index: 1; }
+
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(5, 13, 29, 0.75);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem var(--space-md);
+}
+
+.topbar-logo img { height: 30px; }
+
+.topbar-nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.topbar-nav a { color: var(--text-secondary); transition: color var(--transition-fast); }
+.topbar-nav a:hover,
+.topbar-nav a.active { color: var(--text-primary); }
+.topbar-nav-external { color: var(--accent-light) !important; }
+
+.topbar-burger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    padding: 8px;
+}
+
+.topbar-burger span {
+    width: 22px; height: 2px;
+    background: var(--text-primary);
+    border-radius: 2px;
+    transition: all var(--transition-fast);
+}
+
+.topbar-mobile {
+    display: none;
+    flex-direction: column;
+    padding: 0 var(--space-md) var(--space-sm);
+    gap: var(--space-sm);
+}
+
+.topbar-mobile a {
+    padding: 0.6rem 0;
+    color: var(--text-secondary);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 768px) {
+    .topbar-nav { display: none; }
+    .topbar-burger { display: flex; }
+    .topbar-mobile.open { display: flex; }
+}
