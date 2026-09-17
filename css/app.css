@@ -465,15 +465,15 @@ input[type="text"].doc-input {
 
 input[type="text"].doc-input:focus { outline: none; border-color: var(--azul-conexao); }
 .doc-input.invalid { border-color: var(--cor-erro); }
-.doc-feedback { font-size: 0.72rem; display: block; margin-top: 0.3rem; min-height: 1em; }
+.doc-feedback { font-size: 0.8rem; display: block; margin-top: 0.4rem; min-height: 1em; font-weight: 600; }
 .doc-feedback.error { color: var(--cor-erro); }
 .doc-feedback.success { color: var(--cor-sucesso); }
 
 .consent-row {
-    display: flex; align-items: flex-start; gap: 0.5rem;
-    font-size: 0.73rem; color: var(--text-muted); margin-top: 0.6rem;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+    font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.9rem; line-height: 1.5;
 }
-.consent-row input { margin-top: 3px; accent-color: var(--azul-conexao); }
+.consent-row input { margin-top: 2px; accent-color: var(--azul-conexao); width: 19px; height: 19px; flex-shrink: 0; }
 .consent-row a { color: var(--accent-light); text-decoration: underline; }
 
 .wifi-manual-row { margin-top: 0.9rem; }
@@ -515,14 +515,65 @@ input[type="text"].doc-input:focus { outline: none; border-color: var(--azul-con
 .mini-stat.live-chip .mini-value.warn { color: var(--cor-alerta); }
 .mini-stat.live-chip .mini-value.fail { color: var(--cor-erro); }
 
-/* ---- Onboarding (modal de 1ª visita) ---- */
-.modal-card-narrow { max-width: 400px; }
-.onboarding-body { text-align: center; padding: 1.8rem 1.5rem; }
-.onboarding-icon { font-size: 2.4rem; margin-bottom: 0.6rem; }
-.onboarding-body h3 { font-size: 1.15rem; margin-bottom: 0.6rem; }
-.onboarding-body p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.3rem; }
-.onboarding-actions { display: flex; flex-direction: column; gap: 0.6rem; }
-.onboarding-actions .result-btn { width: 100%; padding: 0.7rem; font-size: 0.85rem; }
+/* ---- Onboarding (modal de 1ª visita) — pensado pra ser confortável de ler,
+   inclusive pra quem não é tão íntimo de telas (letras grandes, texto direto) ---- */
+.modal-card-narrow { max-width: 440px; }
+.onboarding-card { max-height: 92dvh; }
+.onboarding-body { text-align: center; padding: 2rem 1.6rem 1.8rem; }
+.onboarding-icon { font-size: 3rem; margin-bottom: 0.7rem; }
+.onboarding-body h3 { font-size: 1.4rem; margin-bottom: 0.7rem; }
+.onboarding-lead {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.4;
+    margin-bottom: 1rem;
+}
+.onboarding-lead strong { color: var(--cor-download); }
+.onboarding-body p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    line-height: 1.65;
+    margin-bottom: 1.1rem;
+}
+.onboarding-reassure {
+    font-size: 0.92rem !important;
+    color: var(--text-muted) !important;
+}
+.onboarding-actions { display: flex; flex-direction: column; gap: 0.7rem; margin-top: 0.4rem; }
+
+.onboarding-btn {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    padding: 1rem 1.2rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-height: 58px;
+    justify-content: center;
+    transition: transform var(--transition-fast);
+}
+.onboarding-btn:active { transform: scale(0.98); }
+.onboarding-btn.primary { background: var(--gradient-blue); color: #fff; box-shadow: 0 8px 26px rgba(0,36,156,0.45); }
+.onboarding-btn.ghost { background: rgba(255,255,255,0.06); color: var(--text-secondary); border: 1px solid rgba(255,255,255,0.12); font-size: 0.95rem; font-weight: 600; min-height: 50px; }
+.ob-btn-sub { font-size: 0.75rem; font-weight: 500; opacity: 0.85; }
+
+/* ---- Modal Conta (CPF/CNPJ) — mesma lógica de clareza ---- */
+.account-help { font-size: 0.98rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 1.1rem; }
+.account-help strong { color: var(--text-primary); }
+.account-label { display: block; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+.doc-input-lg { font-size: 1.25rem; padding: 1rem 1.1rem; letter-spacing: 0.5px; }
+.account-note { font-size: 0.85rem; color: var(--text-muted); margin: 0.7rem 0 0.2rem; }
+.account-subtitle { font-size: 0.92rem; font-weight: 600; color: var(--text-primary); margin-bottom: 0.4rem; }
+.opt-tag { font-weight: 400; color: var(--text-muted); }
+
+@media (max-width: 420px) {
+    .onboarding-body { padding: 1.6rem 1.2rem 1.4rem; }
+    .onboarding-lead { font-size: 1.05rem; }
+}
 
 @media (max-width: 480px) {
     .bar-dock button span { display: none; }

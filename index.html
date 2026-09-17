@@ -23,7 +23,7 @@
 <div class="grain" aria-hidden="true"></div>
 
 <a class="corner-brand" href="https://audicomtelecom.com.br" aria-label="Audicom Telecom">
-    <img src="assets/logo-audicom-branco.png" alt="">
+    <img src="assets/biglogo.webp" alt="">
 </a>
 
 <!-- ============ PALCO CENTRAL (anel + toggle) ============ -->
@@ -141,16 +141,21 @@
 
 <!-- ============ MODAL: ONBOARDING (abre sozinho na 1ª visita) ============ -->
 <div class="modal-overlay" id="modal-onboarding">
-    <div class="modal-card modal-card-narrow">
+    <div class="modal-card modal-card-narrow onboarding-card">
         <div class="modal-body onboarding-body">
             <div class="onboarding-icon">👋</div>
-            <h3>Quer salvar seu histórico?</h3>
-            <p>Criando uma identificação simples (CPF/CNPJ), seus testes ficam salvos e ajudam a Audicom a
-            identificar problemas na sua conexão mais rápido, caso precise acionar o suporte. É opcional
-            e leva 10 segundos.</p>
+            <h3>Olá! Antes de começar…</h3>
+            <p class="onboarding-lead">Quer que a gente <strong>guarde o resultado do seu teste</strong>?</p>
+            <p>É bem simples: você digita seu CPF (o mesmo do seu contrato) e pronto. Assim, se a sua
+            internet der algum problema, o suporte da Audicom já vai saber exatamente como anda a sua
+            conexão — sem você precisar explicar tudo de novo por telefone.</p>
+            <p class="onboarding-reassure">Não é obrigatório. Se preferir, é só testar sem se identificar.</p>
             <div class="onboarding-actions">
-                <button class="result-btn primary" id="onboardingYes">Quero me identificar</button>
-                <button class="result-btn ghost" id="onboardingNo">Agora não</button>
+                <button class="onboarding-btn primary" id="onboardingYes">
+                    <span class="ob-btn-title">Sim, quero guardar</span>
+                    <span class="ob-btn-sub">leva menos de 1 minuto</span>
+                </button>
+                <button class="onboarding-btn ghost" id="onboardingNo">Não, obrigado — só testar</button>
             </div>
         </div>
     </div>
@@ -207,31 +212,32 @@
 <div class="modal-overlay" id="modal-account">
     <div class="modal-card">
         <div class="modal-header">
-            <h3>Sua identificação</h3>
+            <h3>Guardar meu teste</h3>
             <button class="modal-close" data-close>×</button>
         </div>
         <div class="modal-body">
-            <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.9rem;">
-                Opcional: informe seu CPF ou CNPJ para associarmos seus testes ao seu contrato Audicom,
-                ajudando nosso suporte a diagnosticar problemas específicos da sua conexão.
-                <em>Por enquanto isso fica salvo só neste aparelho — a sincronização com a nuvem chega na próxima fase.</em>
+            <p class="account-help">
+                Digite o <strong>CPF ou CNPJ</strong> do seu contrato com a Audicom. É só isso —
+                assim conseguimos te ajudar mais rápido se sua internet apresentar problema.
             </p>
-            <input type="text" class="doc-input" id="docInput" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
+            <label class="account-label" for="docInput">Seu CPF ou CNPJ</label>
+            <input type="text" class="doc-input doc-input-lg" id="docInput" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
             <span class="doc-feedback" id="docFeedback"></span>
             <label class="consent-row">
                 <input type="checkbox" id="consentCheck">
-                <span>Autorizo o uso deste CPF/CNPJ e dos dados técnicos do teste para diagnóstico e suporte, conforme a Política de Privacidade.</span>
+                <span>Autorizo o uso destes dados só para diagnóstico da minha internet e suporte técnico.</span>
             </label>
+            <p class="account-note">🔒 Por enquanto isso fica guardado só neste celular/computador.</p>
 
             <div class="identify-section">
-                <p><strong style="color:var(--text-primary)">Nome da rede Wi-Fi (opcional)</strong><br>Como não conseguimos ler automaticamente, você pode informar:</p>
+                <p class="account-subtitle">Nome da sua rede Wi-Fi <span class="opt-tag">(se quiser)</span></p>
                 <div class="wifi-manual-row">
-                    <input type="text" id="wifiManualName" placeholder="Ex: Escritorio_5G" autocomplete="off">
+                    <input type="text" id="wifiManualName" placeholder="Ex: Casa da Maria" autocomplete="off">
                 </div>
             </div>
 
             <div class="identify-section">
-                <button class="result-btn ghost" id="forgetAccountBtn">Esquecer meus dados neste aparelho</button>
+                <button class="result-btn ghost" id="forgetAccountBtn">Apagar meus dados deste aparelho</button>
             </div>
         </div>
     </div>
