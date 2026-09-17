@@ -217,9 +217,11 @@ body.mode-persistencia .mode-toggle-indicator { transform: translateX(200%); bac
 .step-row {
     display: flex;
     align-items: center;
-    gap: 5px;
+    justify-content: center;
+    gap: 7px;
     height: 8px;
     min-height: 8px;
+    margin-bottom: clamp(0.4rem, 2vh, 0.85rem);
 }
 
 .step-row .step-dot {
@@ -333,6 +335,7 @@ body.mode-persistencia #ringTest .persist-view { display: flex; }
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
+    margin-top: clamp(0.5rem, 2.2vh, 1rem);
     padding: clamp(0.65rem, 1.8vh, 0.85rem) clamp(1.6rem, 4.5vw, 2.4rem);
     border-radius: var(--radius-full);
     background: var(--gradient-blue);
