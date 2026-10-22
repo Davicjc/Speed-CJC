@@ -1,0 +1,26 @@
+{
+  "name": "audicom-speedtest-server",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Teste de velocidade Audicom: medição, contas, histórico e administração (tudo no próprio servidor)",
+  "type": "module",
+  "main": "src/server.js",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "admin": "node --disable-warning=ExperimentalWarning tools/admin.mjs",
+    "build:vendor": "node tools/build-vendor.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/protocolo.test.mjs test/seguranca.test.mjs"
+  },
+  "dependencies": {
+    "node-datachannel": "^0.32.3",
+    "nodemailer": "^7.0.13",
+    "ws": "^8.21.3"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "leaflet": "^1.9.4"
+  }
+}

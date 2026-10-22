@@ -1,0 +1,18 @@
+# dumps de conversa e ferramentas locais — nunca vão pro repositório
+2026-*.txt
+.claude/
+.agents/
+skills-lock.json
+node_modules/
+*.log
+
+# dados e segredos do servidor (banco, cópias de segurança, chave do captcha)
+data/
+server/.env
+
+# interface antiga e cópias de segurança, guardadas só nesta máquina
+.antigo/
+.backup/
+
+# notas com IPs e dados desta instalação (só nesta máquina)
+NOTAS-DESTA-MAQUINA.md

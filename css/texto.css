@@ -1,0 +1,38 @@
+/* ---------- páginas de leitura (como medimos, privacidade, termos) ---------- */
+.texto-pagina { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: clamp(24px, 5vw, 72px); padding: clamp(32px, 7vh, 72px) 0 0; align-items: start; }
+.texto-indice { position: sticky; top: calc(var(--topo-altura) + 24px); font-size: var(--t-sm); }
+.texto-indice strong { display: block; color: var(--texto-3); font-weight: 500; font-size: var(--t-xs); margin-bottom: 10px; }
+.texto-indice ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; border-left: 1px solid var(--linha-forte); }
+.texto-indice a { display: block; padding: 5px 0 5px 14px; color: var(--texto-3); text-decoration: none; margin-left: -1px; border-left: 1px solid transparent; }
+.texto-indice a:hover { color: var(--texto); border-left-color: var(--texto-3); }
+.texto-corpo { max-width: 70ch; }
+.texto-corpo > h1 { font-size: clamp(2.1rem, 4.4vw, 3.1rem); letter-spacing: -0.03em; line-height: 1.05; }
+.texto-corpo > .lead { margin-top: 16px; }
+.texto-corpo .atualizado { color: var(--texto-4); font-size: var(--t-sm); margin-top: 14px; }
+.texto-corpo section { padding-top: 40px; scroll-margin-top: calc(var(--topo-altura) + 16px); }
+.texto-corpo h2 { font-size: var(--t-xl); letter-spacing: -0.02em; margin-bottom: 12px; }
+.texto-corpo h3 { font-size: var(--t-lg); margin: 22px 0 8px; }
+.texto-corpo p, .texto-corpo li { color: var(--texto-2); line-height: 1.72; }
+.texto-corpo p + p { margin-top: 12px; }
+.texto-corpo ul, .texto-corpo ol.lista { margin: 12px 0 0; padding-left: 20px; display: grid; gap: 8px; }
+.texto-corpo strong { color: var(--texto); font-weight: 600; }
+.texto-corpo code { font-size: 0.9em; background: rgba(244, 246, 249, 0.08); padding: 1px 6px; border-radius: 4px; }
+.medidas { margin: 8px 0 0; display: grid; gap: 0; }
+.medida { display: grid; grid-template-columns: 44px 1fr; gap: 4px 16px; padding: 18px 0; border-top: 1px solid var(--linha); }
+.medida:first-child { border-top: 0; }
+.medida .icone { grid-row: span 2; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(61, 107, 255, 0.14); color: var(--azul-claro); }
+.medida .icone svg { width: 22px; height: 22px; }
+.medida dt { font-family: var(--fonte-display); font-weight: 600; font-size: var(--t-lg); color: var(--texto); }
+.medida dd { margin: 0; color: var(--texto-2); line-height: 1.7; }
+.tabela-texto { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: var(--t-sm); }
+.tabela-texto th, .tabela-texto td { text-align: left; padding: 10px 12px 10px 0; border-bottom: 1px solid var(--linha); vertical-align: top; color: var(--texto-2); }
+.tabela-texto th { color: var(--texto-3); font-weight: 500; font-size: var(--t-xs); }
+.texto-cta { margin-top: 48px; display: flex; gap: 10px; flex-wrap: wrap; }
+.erro-404 { padding: clamp(48px, 12vh, 120px) 0; display: grid; gap: 16px; justify-items: start; max-width: 46ch; }
+.erro-404 .codigo { font-family: var(--fonte-display); font-size: clamp(5rem, 16vw, 9rem); font-weight: 600; line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 1.5px rgba(143, 168, 255, 0.6); }
+.erro-404 h1 { font-size: var(--t-2xl); }
+.erro-404 p { color: var(--texto-2); }
+@media (max-width: 900px) {
+    .texto-pagina { grid-template-columns: 1fr; }
+    .texto-indice { display: none; }
+}

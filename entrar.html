@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Entrar | Teste de velocidade Audicom</title>
+<meta name="description" content="Entre ou crie sua conta para guardar o histórico dos seus testes de velocidade na Audicom Telecom.">
+<meta name="theme-color" content="#081535">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/conta.css">
+</head>
+<body class="pagina-conta">
+<a class="pular" href="#conteudo">Pular para o formulário</a>
+<header class="topo" id="topo"></header>
+
+<main id="conteudo" class="acesso miolo">
+    <aside class="acesso-marca">
+        <img class="acesso-simbolo" src="/assets/simbolo.webp" alt="" width="128" height="120">
+        <h2>Cada teste guardado, com data, hora e lugar.</h2>
+        <ul>
+            <li><span class="ponto"></span>Histórico de todos os seus testes, em qualquer aparelho</li>
+            <li><span class="ponto"></span>Mapa de onde você testou e o melhor horário da sua internet</li>
+            <li><span class="ponto"></span>Comparação com a velocidade do plano contratado</li>
+        </ul>
+        <p>Seus dados ficam com a Audicom e servem só para o histórico e o suporte. <a href="/privacidade">Política de privacidade</a></p>
+    </aside>
+
+    <section class="acesso-cartao" aria-live="polite">
+        <noscript><div class="aviso atencao"><div>Para entrar ou criar a conta, ative o JavaScript do navegador.</div></div></noscript>
+        <div id="ja-logado" hidden>
+            <h1>Você já está conectado</h1>
+            <p class="acesso-sub" id="ja-logado-texto"></p>
+            <div class="acesso-acoes">
+                <a class="botao botao-primario" id="ja-logado-ir" href="/painel">Ir para o meu painel</a>
+                <button type="button" class="botao botao-secundario" id="ja-logado-sair">Sair e usar outra conta</button>
+            </div>
+        </div>
+
+        <div id="formularios" hidden>
+            <div class="abas" role="tablist" aria-label="Acesso">
+                <button type="button" role="tab" id="aba-entrar" aria-controls="form-entrar" aria-selected="true">Entrar</button>
+                <button type="button" role="tab" id="aba-criar" aria-controls="form-criar" aria-selected="false" tabindex="-1">Criar conta</button>
+            </div>
+
+            <form id="form-entrar" class="acesso-form" role="tabpanel" aria-labelledby="aba-entrar" method="post" novalidate>
+                <h1>Entrar na sua conta</h1>
+                <p class="acesso-sub">Use o e-mail e a senha que você cadastrou.</p>
+                <div class="campo">
+                    <label for="e-email">E-mail</label>
+                    <input class="entrada" id="e-email" name="email" type="email" autocomplete="username" inputmode="email" required>
+                </div>
+                <div class="campo">
+                    <div class="linha-flex" style="justify-content:space-between"><label for="e-senha">Senha</label>
+                        <button type="button" class="link-botao" id="ir-esqueci">Esqueci minha senha</button></div>
+                    <div class="senha-wrap">
+                        <input class="entrada" id="e-senha" name="senha" type="password" autocomplete="current-password" required>
+                        <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false"></button>
+                    </div>
+                </div>
+                <label class="marcar">
+                    <input type="checkbox" id="e-lembrar" checked>
+                    <span>Manter conectado neste aparelho <span class="opcional">(desmarque em computador de uso público)</span></span>
+                </label>
+                <p class="erro-form" role="alert" hidden></p>
+                <button type="submit" class="botao botao-primario botao-largo">Entrar</button>
+                <p class="acesso-rodape">Ainda não tem conta? <button type="button" class="link-botao" data-ir="criar">Criar conta grátis</button></p>
+            </form>
+
+            <form id="form-criar" class="acesso-form" role="tabpanel" aria-labelledby="aba-criar" method="post" novalidate hidden>
+                <h1>Criar sua conta</h1>
+                <p class="acesso-sub">Grátis. Seus testes passam a ficar guardados no seu painel.</p>
+                <div class="campo">
+                    <label for="c-nome">Nome completo</label>
+                    <input class="entrada" id="c-nome" name="nome" type="text" autocomplete="name" maxlength="80" required>
+                </div>
+                <div class="campo">
+                    <label for="c-email">E-mail</label>
+                    <input class="entrada" id="c-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required>
+                </div>
+                <div class="campo">
+                    <label for="c-tel">WhatsApp ou telefone <span class="opcional">(opcional)</span></label>
+                    <input class="entrada" id="c-tel" name="telefone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="(34) 99999-9999" maxlength="16">
+                    <span class="ajuda">Ajuda o suporte da Audicom a falar com você sobre um teste.</span>
+                </div>
+                <div class="campo">
+                    <label for="c-senha">Senha</label>
+                    <div class="senha-wrap">
+                        <input class="entrada" id="c-senha" name="senha" type="password" autocomplete="new-password" minlength="8" maxlength="128" required aria-describedby="c-senha-ajuda">
+                        <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false"></button>
+                    </div>
+                    <div class="forca" id="forca" data-nivel="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+                    <span class="ajuda" id="c-senha-ajuda">Pelo menos 8 caracteres, com letras e números.</span>
+                </div>
+                <div class="campo">
+                    <label for="c-senha2">Confirme a senha</label>
+                    <input class="entrada" id="c-senha2" name="senha2" type="password" autocomplete="new-password" maxlength="128" required>
+                </div>
+                <div class="armadilha" aria-hidden="true">
+                    <label for="c-site">Deixe em branco</label>
+                    <input id="c-site" name="website" type="text" tabindex="-1" autocomplete="off">
+                </div>
+                <div class="campo">
+                    <span class="rotulo" id="captcha-rotulo">Verificação</span>
+                    <div id="captcha" class="captcha" aria-labelledby="captcha-rotulo"></div>
+                </div>
+                <label class="marcar">
+                    <input type="checkbox" id="c-termos" required>
+                    <span>Li e aceito os <a href="/termos" target="_blank" rel="noopener">termos de uso</a> e a <a href="/privacidade" target="_blank" rel="noopener">política de privacidade</a>.</span>
+                </label>
+                <p class="erro-form" role="alert" hidden></p>
+                <button type="submit" class="botao botao-primario botao-largo">Criar conta</button>
+                <p class="acesso-rodape">Já tem conta? <button type="button" class="link-botao" data-ir="entrar">Entrar</button></p>
+            </form>
+        </div>
+
+        <form id="form-esqueci" class="acesso-form" method="post" novalidate hidden>
+            <h1>Criar uma nova senha</h1>
+            <p class="acesso-sub">Informe o e-mail da sua conta. Enviaremos um link para você escolher uma senha nova.</p>
+            <div class="campo">
+                <label for="r-email">E-mail</label>
+                <input class="entrada" id="r-email" type="email" autocomplete="username" inputmode="email" required>
+            </div>
+            <p class="erro-form" role="alert" hidden></p>
+            <button type="submit" class="botao botao-primario botao-largo">Enviar link</button>
+            <p class="acesso-rodape"><button type="button" class="link-botao" data-ir="entrar">Voltar para entrar</button></p>
+        </form>
+
+        <form id="form-nova-senha" class="acesso-form" method="post" novalidate hidden>
+            <h1>Escolha a nova senha</h1>
+            <p class="acesso-sub" id="nova-senha-email"></p>
+            <input type="email" autocomplete="username" hidden>
+            <div class="campo">
+                <label for="n-senha">Nova senha</label>
+                <div class="senha-wrap">
+                    <input class="entrada" id="n-senha" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                    <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false"></button>
+                </div>
+                <span class="ajuda">Pelo menos 8 caracteres, com letras e números.</span>
+            </div>
+            <div class="campo">
+                <label for="n-senha2">Confirme a nova senha</label>
+                <input class="entrada" id="n-senha2" type="password" autocomplete="new-password" maxlength="128" required>
+            </div>
+            <p class="erro-form" role="alert" hidden></p>
+            <button type="submit" class="botao botao-primario botao-largo">Salvar nova senha</button>
+        </form>
+
+        <div id="mensagem" class="acesso-mensagem" hidden>
+            <div class="mensagem-icone" id="mensagem-icone"></div>
+            <h1 id="mensagem-titulo"></h1>
+            <p class="acesso-sub" id="mensagem-texto"></p>
+            <div class="acesso-acoes" id="mensagem-acoes"></div>
+        </div>
+
+        <div id="indisponivel" class="aviso atencao" hidden>
+            <div><strong>As contas estão temporariamente indisponíveis.</strong> O teste de velocidade continua funcionando normalmente. <a href="/">Fazer um teste</a></div>
+        </div>
+    </section>
+</main>
+
+<footer class="rodape" id="rodape"></footer>
+<script type="module" src="/js/pages/entrar.js"></script>
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

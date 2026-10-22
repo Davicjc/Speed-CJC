@@ -1,0 +1,23 @@
+# Modelo da unidade do systemd. Não copie à mão: tools/servico.sh preenche
+# @PASTA@ (a pasta server/) e @NODE@ (o node instalado) e instala em
+# /etc/systemd/system/audicom-speedtest.service.
+[Unit]
+Description=Teste de velocidade Audicom (site, medição, contas)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=@PASTA@
+# a configuração fica em server/.env (veja .env.example); o "-" deixa subir sem ela
+EnvironmentFile=-@PASTA@/.env
+ExecStart=@NODE@ --disable-warning=ExperimentalWarning src/server.js
+Restart=always
+RestartSec=2
+LimitNOFILE=65536
+# endurecimento básico
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

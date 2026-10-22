@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Como medimos | Teste de velocidade Audicom</title>
+<meta name="description" content="Como o teste de velocidade da Audicom mede download, upload, ping, jitter, perda de pacotes e bufferbloat, e por que os números são confiáveis.">
+<meta name="theme-color" content="#081535">
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/texto.css">
+</head>
+<body data-pagina="como">
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<header class="topo" id="topo"></header>
+
+<main id="conteudo" class="miolo texto-pagina">
+    <nav class="texto-indice" aria-label="Nesta página">
+        <strong>Nesta página</strong>
+        <ol>
+            <li><a href="#medidas">O que medimos</a></li>
+            <li><a href="#honesto">Números honestos</a></li>
+            <li><a href="#completo">Diagnóstico completo</a></li>
+            <li><a href="#plano">Abaixo do plano?</a></li>
+            <li><a href="#dicas">Para um teste confiável</a></li>
+        </ol>
+    </nav>
+    <article class="texto-corpo">
+        <h1>Como medimos a sua internet</h1>
+        <p class="lead">O teste mede a conexão entre o seu aparelho e o servidor da Audicom em Uberlândia, que fica dentro da nossa rede. Assim o número mostra o que a sua conexão entrega, sem depender de servidores de outras empresas.</p>
+
+        <section id="medidas" aria-labelledby="h-medidas">
+            <h2 id="h-medidas">O que medimos</h2>
+            <dl class="medidas">
+                <div class="medida"><span class="icone" data-i="down"></span><dt>Download</dt>
+                    <dd>Quanto chega até você por segundo, em megabits (Mbps). Abrimos 6 conexões ao mesmo tempo por 10 segundos e descartamos os 2 primeiros, quando a conexão ainda está acelerando.</dd></div>
+                <div class="medida"><span class="icone" data-i="up"></span><dt>Upload</dt>
+                    <dd>Quanto sai do seu aparelho por segundo. Quem conta os bytes é o servidor, quando eles chegam: o navegador costuma contar o que saiu dele e exagerar o número no começo.</dd></div>
+                <div class="medida"><span class="icone" data-i="pulse"></span><dt>Ping</dt>
+                    <dd>O tempo de ida e volta até o servidor, em milissegundos (ms). Medimos 30 vezes e mostramos a mediana, que não é distorcida por uma medida fora da curva.</dd></div>
+                <div class="medida"><span class="icone" data-i="wave"></span><dt>Jitter</dt>
+                    <dd>O quanto o ping varia de uma medida para a outra. Jitter alto é o que deixa a chamada de vídeo picotando, mesmo com velocidade boa.</dd></div>
+                <div class="medida"><span class="icone" data-i="packet"></span><dt>Perda de pacotes</dt>
+                    <dd>Enviamos 200 pacotes numerados por UDP, sem reenvio, e contamos quantos voltam. Em downloads comuns a perda fica escondida porque os pacotes são reenviados; aqui ela aparece.</dd></div>
+                <div class="medida"><span class="icone" data-i="load"></span><dt>Ping com a linha cheia</dt>
+                    <dd>Medimos o ping também durante o download e o upload. A diferença para o ping em repouso (bufferbloat) explica o "trava quando alguém baixa alguma coisa".</dd></div>
+            </dl>
+        </section>
+
+        <section id="honesto" aria-labelledby="h-honesto">
+            <h2 id="h-honesto">Por que os números são honestos</h2>
+            <ul>
+                <li><strong>Medição numa thread separada.</strong> O relógio da medição roda longe das animações da tela, então a página bonita não atrasa o ping.</li>
+                <li><strong>Dados que não dá para comprimir.</strong> O servidor envia bytes aleatórios. Nenhum modem ou proxy consegue "acelerar" o teste comprimindo.</li>
+                <li><strong>Uma fila para quem testa junto.</strong> Se muita gente testa ao mesmo tempo, as medições de velocidade esperam a vez, com a posição na tela. Ninguém recebe um número menor por dividir o servidor com outro teste.</li>
+                <li><strong>Conferência no servidor.</strong> Ao guardar o resultado, o servidor compara com o que ele mesmo mediu naquela conexão. Um resultado que não bate fica marcado como não conferido.</li>
+                <li><strong>Hora oficial.</strong> A data de cada teste vem da hora do NTP.br, não do relógio do seu aparelho.</li>
+            </ul>
+        </section>
+
+        <section id="completo" aria-labelledby="h-completo">
+            <h2 id="h-completo">O que o diagnóstico completo acrescenta</h2>
+            <p>Leva cerca de um minuto e responde às perguntas mais comuns do suporte:</p>
+            <ul>
+                <li><strong>IPv4 e IPv6:</strong> download medido separadamente em cada versão do protocolo, por endereços que só existem em uma delas.</li>
+                <li><strong>Roteador e NAT:</strong> se há duplo NAT (dois roteadores em cascata), IP compartilhado (CGNAT) ou NAT simétrico, que atrapalha jogos, chamadas e câmeras.</li>
+                <li><strong>Rota até você:</strong> o caminho dos pacotes do nosso servidor até a sua conexão, salto a salto.</li>
+                <li><strong>Tempo até aplicativos, bancos e PIX:</strong> ida e volta até os servidores mais próximos de Google, YouTube, WhatsApp, Instagram, Netflix, gov.br e dos principais bancos.</li>
+                <li><strong>Relógio do aparelho:</strong> relógio errado faz aplicativo de banco e sites seguros recusarem a conexão.</li>
+            </ul>
+        </section>
+
+        <section id="plano" aria-labelledby="h-plano">
+            <h2 id="h-plano">Por que o resultado pode ficar abaixo do plano</h2>
+            <ul>
+                <li><strong>Wi-Fi:</strong> paredes, distância e vizinhos no mesmo canal reduzem bastante a velocidade. É a causa mais comum.</li>
+                <li><strong>O próprio aparelho:</strong> celulares e computadores mais antigos não conseguem receber velocidades muito altas, principalmente pelo Wi-Fi.</li>
+                <li><strong>Outros aparelhos usando a internet</strong> durante o teste dividem a mesma conexão.</li>
+                <li><strong>Horário:</strong> no fim da noite a internet de todo mundo é mais usada. Com uma conta, o painel mostra o seu melhor e o seu pior horário.</li>
+            </ul>
+        </section>
+
+        <section id="dicas" aria-labelledby="h-dicas">
+            <h2 id="h-dicas">Para um teste confiável</h2>
+            <ol class="lista">
+                <li>Se puder, ligue o computador no roteador com um cabo de rede.</li>
+                <li>Feche downloads, atualizações e vídeos em outros aparelhos.</li>
+                <li>Pelo Wi-Fi, fique perto do roteador e prefira a rede de 5 GHz.</li>
+                <li>Faça mais de um teste, em horários diferentes, antes de tirar conclusões.</li>
+            </ol>
+            <p style="margin-top:16px">O teste é uma ferramenta de diagnóstico da Audicom e não substitui a medição oficial de qualidade da Anatel.</p>
+        </section>
+
+        <div class="texto-cta"><a class="botao botao-primario" href="/">Fazer um teste</a><a class="botao botao-secundario" href="/cadastro">Criar conta para guardar o histórico</a></div>
+    </article>
+</main>
+
+<footer class="rodape" id="rodape"></footer>
+<script type="module" src="/js/pages/texto.js"></script>
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

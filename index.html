@@ -1,271 +1,157 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
-<meta name="theme-color" content="#050d1d">
-<title>Teste de Velocidade | Audicom Telecom</title>
-<meta name="description" content="Teste de velocidade Audicom: download, upload, ping, jitter e diagnóstico avançado de rede ao vivo, numa tela só.">
-<link rel="icon" type="image/x-icon" href="assets/favicon.ico">
-
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-<link rel="stylesheet" href="css/tokens.css">
-<link rel="stylesheet" href="css/base.css">
-<link rel="stylesheet" href="css/app.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Teste de velocidade | Audicom Telecom</title>
+<meta name="description" content="Meça download, upload, ping, jitter e perda de pacotes da sua internet até o servidor da Audicom Telecom em Uberlândia. Crie uma conta para guardar o histórico.">
+<meta name="theme-color" content="#081535">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Audicom Telecom">
+<meta property="og:title" content="Teste de velocidade da Audicom Telecom">
+<meta property="og:description" content="Download, upload, ping, jitter e perda de pacotes, medidos até o servidor da Audicom em Uberlândia.">
+<meta property="og:image" content="/assets/og.png">
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/teste.css">
 </head>
-<body>
+<body class="pagina-teste">
+<a class="pular" href="#conteudo">Pular para o teste</a>
+<header class="topo" id="topo"></header>
 
-<canvas id="fiber-canvas" aria-hidden="true"></canvas>
-<div class="ring-halo" aria-hidden="true"></div>
-<div class="grain" aria-hidden="true"></div>
+<main id="conteudo">
+    <section class="palco miolo" aria-label="Teste de velocidade">
+        <div class="palco-texto">
+            <div class="intro" id="intro">
+                <h1>Quanto a sua internet entrega agora</h1>
+                <p class="lead">Medimos download, upload, ping, jitter e perda de pacotes até o servidor da Audicom em Uberlândia. Leva cerca de 30 segundos.</p>
 
-<a class="corner-brand" href="https://audicomtelecom.com.br" aria-label="Audicom Telecom">
-    <img src="assets/biglogo.webp" alt="">
-</a>
-
-<!-- ============ PALCO CENTRAL (anel + toggle) ============ -->
-<main class="stage">
-    <div class="ring-wrap">
-        <svg class="ring-svg" viewBox="0 0 260 260">
-            <defs>
-                <linearGradient id="dlGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#10B981"/>
-                    <stop offset="100%" stop-color="#5EEAD4"/>
-                </linearGradient>
-                <linearGradient id="ulGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#3B82F6"/>
-                    <stop offset="100%" stop-color="#93C5FD"/>
-                </linearGradient>
-            </defs>
-            <circle class="ring-ticks" cx="130" cy="130" r="128"/>
-            <circle class="ring-bg" cx="130" cy="130" r="120"/>
-            <circle class="ring-bg" cx="130" cy="130" r="106"/>
-            <circle id="dlRing" class="ring-dl" cx="130" cy="130" r="120"/>
-            <circle id="ulRing" class="ring-ul" cx="130" cy="130" r="106"/>
-        </svg>
-
-        <div class="ring-content">
-            <!-- Estado: pronto / testando -->
-            <div class="ring-test" id="ringTest">
-                <div class="step-row" id="stepRow" aria-hidden="true"></div>
-                <span class="ring-phase" id="ringPhase">Pronto para testar</span>
-
-                <div class="ring-main-stats">
-                    <div class="ring-stat dl">
-                        <span class="ring-stat-value" id="dlValue">0<small>.0</small></span>
-                        <span class="ring-stat-unit">↓ Mbps</span>
+                <div class="opcoes">
+                    <div class="segmento" role="radiogroup" aria-label="Tipo de teste" id="modos">
+                        <button type="button" role="radio" aria-checked="true" data-modo="rapido">Teste rápido</button>
+                        <button type="button" role="radio" aria-checked="false" data-modo="completo">Diagnóstico completo</button>
                     </div>
-                    <div class="ring-stat-divider"></div>
-                    <div class="ring-stat ul">
-                        <span class="ring-stat-value" id="ulValue">0<small>.0</small></span>
-                        <span class="ring-stat-unit">↑ Mbps</span>
-                    </div>
+                    <p class="opcao-ajuda" id="modo-ajuda">Velocidade, latência e estabilidade, em cerca de 30 segundos.</p>
+                    <label class="chave" id="local-chave">
+                        <input type="checkbox" id="usar-local">
+                        <span class="trilho" aria-hidden="true"></span>
+                        Registrar a localização do aparelho
+                    </label>
+                    <p class="opcao-ajuda" id="local-ajuda">Mostra no seu histórico e no mapa onde cada teste foi feito. O navegador pede permissão.</p>
                 </div>
-
-                <!-- Modo persistência: sparkline + cronômetro, substitui os números grandes -->
-                <div class="persist-view" id="persistView">
-                    <canvas id="persistCanvas" width="300" height="70"></canvas>
-                    <div class="persist-readout">
-                        <span id="persistElapsed">00:00</span>
-                        <span id="persistSamples">0 amostras</span>
-                        <span id="persistPaused" class="persist-paused" hidden>⏸ pausado (aba em 2º plano)</span>
-                    </div>
-                </div>
-
-                <div class="ring-mini-stats" id="ringMiniStats"></div>
-
-                <button class="start-pill" id="startBtn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                    <span>Iniciar teste</span>
-                </button>
             </div>
 
-            <!-- Estado: resultado -->
-            <div class="ring-result" id="ringResult">
-                <span class="ring-result-title">✓ Teste concluído</span>
-
-                <div class="ring-main-stats">
-                    <div class="ring-stat dl">
-                        <span class="ring-stat-value" id="resultDl">0<small>.0</small></span>
-                        <span class="ring-stat-unit">↓ Mbps</span>
-                    </div>
-                    <div class="ring-stat-divider"></div>
-                    <div class="ring-stat ul">
-                        <span class="ring-stat-value" id="resultUl">0<small>.0</small></span>
-                        <span class="ring-stat-unit">↑ Mbps</span>
-                    </div>
+            <div class="resultado" id="resultado" hidden tabindex="-1">
+                <p class="resultado-quando" id="r-quando"></p>
+                <h2 id="r-titulo"></h2>
+                <p class="lead" id="r-texto"></p>
+                <p class="plano" id="r-plano" hidden></p>
+                <ul class="usos" id="r-usos" aria-label="O que a conexão aguenta"></ul>
+                <ul class="dicas" id="r-dicas" hidden></ul>
+                <div class="resultado-acoes">
+                    <button type="button" class="botao botao-primario" id="de-novo">Testar de novo</button>
+                    <button type="button" class="botao botao-secundario" id="copiar" hidden></button>
+                    <a class="botao botao-secundario" id="whatsapp" target="_blank" rel="noopener" hidden></a>
                 </div>
-
-                <div class="ring-mini-stats">
-                    <div class="mini-stat"><span class="mini-label">Ping</span><span class="mini-value" id="resultPing">–</span></div>
-                    <div class="mini-stat"><span class="mini-label">Jitter</span><span class="mini-value" id="resultJitter">–</span></div>
-                </div>
-
-                <p class="ring-result-ip">IP <b id="resultIp">–</b> · <b id="resultIsp">–</b></p>
-
-                <div class="ring-result-actions">
-                    <button class="result-btn ghost" id="retestBtn">Testar novamente</button>
-                    <button class="result-btn primary" id="shareBtn">Compartilhar</button>
-                </div>
+                <div class="salvo" id="r-salvo" aria-live="polite"></div>
             </div>
         </div>
-    </div>
 
-    <!-- ============ TOGGLE FLUTUANTE (Comum / Avançado / Persistência) ============ -->
-    <div class="mode-toggle" id="modeToggle" role="tablist" aria-label="Modo do teste">
-        <span class="mode-toggle-indicator" id="modeIndicator" aria-hidden="true"></span>
-        <button type="button" class="active" data-mode="comum" role="tab" aria-selected="true">Comum</button>
-        <button type="button" data-mode="avancado" role="tab" aria-selected="false">Avançado</button>
-        <button type="button" data-mode="persistencia" role="tab" aria-selected="false">Persistência</button>
-    </div>
+        <div class="palco-velo">
+            <div class="velo" id="velo" data-modo="ocioso">
+                <div class="velo-centro">
+                    <span class="velo-rotulo" id="velo-rotulo">Download</span>
+                    <span class="velo-numero num" id="velo-numero">0</span>
+                    <span class="velo-unidade" id="velo-unidade">Mbps</span>
+                </div>
+                <button type="button" class="velo-iniciar" id="iniciar" aria-describedby="modo-ajuda">
+                    <span>Iniciar</span>
+                </button>
+            </div>
+            <ol class="etapas" id="etapas" aria-label="Etapas do teste">
+                <li data-etapa="ping">Latência</li>
+                <li data-etapa="download">Download</li>
+                <li data-etapa="upload">Upload</li>
+                <li data-etapa="estabilidade">Estabilidade</li>
+                <li data-etapa="diagnostico" hidden>Diagnóstico</li>
+            </ol>
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+            <button type="button" class="botao botao-fantasma botao-pequeno parar" id="parar" hidden>Parar o teste</button>
+        </div>
+    </section>
+
+    <section class="miolo leituras-faixa" aria-label="Medidas">
+        <dl class="leituras" id="leituras">
+            <div class="leitura" data-tipo="download">
+                <dt><i class="chave-serie" style="--c: var(--serie-download)"></i>Download</dt>
+                <dd><b class="num" id="v-download">–</b><small>Mbps</small><span class="leitura-selo" id="q-download"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="upload">
+                <dt><i class="chave-serie" style="--c: var(--serie-upload)"></i>Upload</dt>
+                <dd><b class="num" id="v-upload">–</b><small>Mbps</small><span class="leitura-selo" id="q-upload"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="ping">
+                <dt>Ping</dt>
+                <dd><b class="num" id="v-ping">–</b><small>ms</small><span class="leitura-selo" id="q-ping"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="jitter">
+                <dt>Jitter</dt>
+                <dd><b class="num" id="v-jitter">–</b><small>ms</small><span class="leitura-selo" id="q-jitter"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="perda">
+                <dt>Perda de pacotes</dt>
+                <dd><b class="num" id="v-perda">–</b><small>%</small><span class="leitura-selo" id="q-perda"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="bufferbloat">
+                <dt>Ping com a linha cheia</dt>
+                <dd><b class="num" id="v-bufferbloat">–</b><small>ms a mais</small><span class="leitura-selo" id="q-bufferbloat"></span></dd>
+            </div>
+        </dl>
+        <dl class="conexao" id="conexao">
+            <div><dt>Seu IP</dt><dd id="c-ip"><span class="esqueleto" style="width:120px"></span></dd></div>
+            <div><dt>Operadora</dt><dd id="c-isp"><span class="esqueleto" style="width:140px"></span></dd></div>
+            <div><dt>Local</dt><dd id="c-local"><span class="esqueleto" style="width:110px"></span></dd></div>
+            <div><dt>Servidor</dt><dd id="c-servidor">Audicom Telecom, Uberlândia, MG</dd></div>
+        </dl>
+    </section>
+
+    <section class="miolo detalhes" id="detalhes" hidden aria-labelledby="detalhes-titulo">
+        <h2 id="detalhes-titulo">Detalhes do teste</h2>
+        <div class="detalhes-grade">
+            <article class="painel largo" id="d-curva">
+                <div class="painel-cabeca">
+                    <div><h3>Velocidade durante o teste</h3><p>Cada ponto é a velocidade medida em um intervalo curto. Linha estável é sinal de conexão saudável.</p></div>
+                    <div class="legenda"><span><i style="background:var(--serie-download)"></i>Download</span><span><i class="tracejado" style="color:var(--serie-upload)"></i>Upload</span></div>
+                </div>
+                <div id="curva"></div>
+            </article>
+            <article class="painel" id="d-protocolos" hidden></article>
+            <article class="painel" id="d-nat" hidden></article>
+            <article class="painel" id="d-servicos" hidden></article>
+            <article class="painel" id="d-bancos" hidden></article>
+            <article class="painel" id="d-relogio" hidden></article>
+            <article class="painel" id="d-aparelho"></article>
+            <article class="painel total" id="d-rota" hidden></article>
+        </div>
+    </section>
+
+    <section class="miolo chamada" id="chamada" hidden aria-labelledby="chamada-titulo">
+        <div>
+            <h2 id="chamada-titulo">Guarde cada teste e veja a sua internet ao longo do tempo</h2>
+            <p>Com uma conta gratuita, todo teste vai para o seu painel: histórico, gráfico por horário, mapa de onde você testou e comparação com o plano contratado.</p>
+        </div>
+        <div class="chamada-acoes">
+            <a class="botao botao-claro" href="/cadastro">Criar conta</a>
+            <a class="botao botao-secundario" href="/entrar">Já tenho conta</a>
+        </div>
+    </section>
 </main>
 
-<!-- ============ DOCK INFERIOR (flutuante, mínimo) ============ -->
-<nav class="floating-bar bar-dock">
-    <button type="button" data-modal="help" title="Ajuda">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 0 1 4.9.8c0 1.7-2.4 2-2.4 3.7"/><circle cx="12" cy="17" r=".6" fill="currentColor" stroke="none"/></svg>
-        <span>Ajuda</span>
-    </button>
-    <button type="button" data-modal="history" title="Histórico">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2"/><path d="M9 3h6"/></svg>
-        <span>Histórico</span>
-    </button>
-    <button type="button" data-modal="account" title="Conta">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5 20c1.3-3.3 4-5 7-5s5.7 1.7 7 5"/></svg>
-        <span id="accountLabel">Conta</span>
-    </button>
-</nav>
-
-<!-- ============ MODAL: ONBOARDING (abre sozinho na 1ª visita) ============ -->
-<div class="modal-overlay" id="modal-onboarding">
-    <div class="modal-card modal-card-narrow onboarding-card">
-        <div class="modal-body onboarding-body">
-            <div class="onboarding-icon">👋</div>
-            <h3>Olá! Antes de começar…</h3>
-            <p class="onboarding-lead">Quer que a gente <strong>guarde o resultado do seu teste</strong>?</p>
-            <p>É bem simples: você digita seu CPF (o mesmo do seu contrato) e pronto. Assim, se a sua
-            internet der algum problema, o suporte da Audicom já vai saber exatamente como anda a sua
-            conexão — sem você precisar explicar tudo de novo por telefone.</p>
-            <p class="onboarding-reassure">Não é obrigatório. Se preferir, é só testar sem se identificar.</p>
-            <div class="onboarding-actions">
-                <button class="onboarding-btn primary" id="onboardingYes">
-                    <span class="ob-btn-title">Sim, quero guardar</span>
-                    <span class="ob-btn-sub">leva menos de 1 minuto</span>
-                </button>
-                <button class="onboarding-btn ghost" id="onboardingNo">Não, obrigado — só testar</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============ MODAL: AJUDA / COMO FUNCIONA ============ -->
-<div class="modal-overlay" id="modal-help">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3>Como funciona o teste</h3>
-            <button class="modal-close" data-close>×</button>
-        </div>
-        <div class="modal-body">
-            <div class="help-item"><span class="dot" style="background:var(--cor-download)"></span>
-                <div><strong>Download</strong><p>Velocidade de recebimento de dados (Mbps). Usada para navegar, assistir vídeos e baixar arquivos.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-upload)"></span>
-                <div><strong>Upload</strong><p>Velocidade de envio de dados. Importante para chamadas de vídeo, lives e backup em nuvem.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-ping)"></span>
-                <div><strong>Ping</strong><p>Tempo de resposta até o servidor, em milissegundos. Quanto menor, melhor para jogos e chamadas.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-jitter)"></span>
-                <div><strong>Jitter</strong><p>Variação do ping entre medições. Jitter alto causa travamentos mesmo com boa velocidade.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-bufferbloat)"></span>
-                <div><strong>Bufferbloat (avançado)</strong><p>O quanto seu ping piora quando a rede está no limite — explica travamentos durante downloads pesados.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-perda-pacotes)"></span>
-                <div><strong>Perda de pacotes (avançado)</strong><p>Percentual de dados que não chegam de primeira. Causa áudio picotado e recarregamento de páginas.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-dns)"></span>
-                <div><strong>IPv4 / IPv6 (avançado)</strong><p>Verificamos se sua conexão alcança a internet pelos dois protocolos. Ter só IPv4 é normal e não é um problema.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--accent-light)"></span>
-                <div><strong>Relógio do dispositivo (avançado)</strong><p>Comparamos a hora do seu aparelho com a do nosso servidor. Um relógio errado pode afetar apps de banco e autenticação.</p></div></div>
-            <div class="help-item"><span class="dot" style="background:var(--cor-alerta)"></span>
-                <div><strong>Persistência</strong><p>Modo de monitoramento contínuo — mede sua conexão em intervalos por um período mais longo, ótimo para flagrar quedas intermitentes que um teste rápido não pega.</p></div></div>
-
-            <hr class="help-divider">
-
-            <div class="callout callout-warning">
-                <strong>Por que não mostramos o nome da sua rede Wi-Fi?</strong>
-                Navegadores (Chrome, Safari, Firefox) bloqueiam esse acesso de propósito, como proteção de privacidade —
-                não é uma limitação nossa. No modo avançado você pode informar o nome manualmente, se quiser.
-            </div>
-            <div class="callout callout-info">
-                <strong>A latência para YouTube, WhatsApp etc. é "ping de verdade"?</strong>
-                Não exatamente: é o tempo real de uma requisição HTTPS (o que navegadores permitem medir), não um ping ICMP.
-            </div>
-            <div class="callout callout-info">
-                <strong>Privacidade e LGPD</strong>
-                Os dados deste teste são usados só para diagnóstico da sua conexão e suporte técnico, nunca vendidos a terceiros,
-                conforme a Lei Geral de Proteção de Dados.
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============ MODAL: CONTA / IDENTIFICAÇÃO ============ -->
-<div class="modal-overlay" id="modal-account">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3>Guardar meu teste</h3>
-            <button class="modal-close" data-close>×</button>
-        </div>
-        <div class="modal-body">
-            <p class="account-help">
-                Digite o <strong>CPF ou CNPJ</strong> do seu contrato com a Audicom. É só isso —
-                assim conseguimos te ajudar mais rápido se sua internet apresentar problema.
-            </p>
-            <label class="account-label" for="docInput">Seu CPF ou CNPJ</label>
-            <input type="text" class="doc-input doc-input-lg" id="docInput" placeholder="000.000.000-00" inputmode="numeric" autocomplete="off">
-            <span class="doc-feedback" id="docFeedback"></span>
-            <label class="consent-row">
-                <input type="checkbox" id="consentCheck">
-                <span>Autorizo o uso destes dados só para diagnóstico da minha internet e suporte técnico.</span>
-            </label>
-            <p class="account-note">🔒 Por enquanto isso fica guardado só neste celular/computador.</p>
-
-            <div class="identify-section">
-                <p class="account-subtitle">Nome da sua rede Wi-Fi <span class="opt-tag">(se quiser)</span></p>
-                <div class="wifi-manual-row">
-                    <input type="text" id="wifiManualName" placeholder="Ex: Casa da Maria" autocomplete="off">
-                </div>
-            </div>
-
-            <div class="identify-section">
-                <button class="result-btn ghost" id="forgetAccountBtn">Apagar meus dados deste aparelho</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- ============ MODAL: HISTÓRICO ============ -->
-<div class="modal-overlay" id="modal-history">
-    <div class="modal-card">
-        <div class="modal-header">
-            <h3>Histórico neste dispositivo</h3>
-            <button class="modal-close" data-close>×</button>
-        </div>
-        <div class="modal-body">
-            <div id="historyList"></div>
-            <button class="result-btn ghost history-clear-btn" id="clearHistoryBtn">Limpar histórico</button>
-        </div>
-    </div>
-</div>
-
-<script src="js/lib/ring.js"></script>
-<script src="js/lib/mock-engine.js"></script>
-<script src="js/lib/cpf-cnpj.js"></script>
-<script src="js/lib/device-info.js"></script>
-<script src="js/lib/latency-probe.js"></script>
-<script src="js/lib/live-checks.js"></script>
-<script src="js/app.js"></script>
-<script src="js/background/fiber-canvas.js"></script>
-<script src="js/lib/cookie-consent.js"></script>
+<footer class="rodape" id="rodape"></footer>
+<script type="module" src="/js/pages/teste.js"></script>
 <script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
 </body>
 </html>

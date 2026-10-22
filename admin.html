@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Administração | Teste de velocidade Audicom</title>
+<meta name="theme-color" content="#081535">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.ico">
+<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/vendor/leaflet.css">
+<link rel="stylesheet" href="/css/painel.css">
+</head>
+<body class="pagina-admin">
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<header class="topo" id="topo"></header>
+
+<main id="conteudo" class="miolo">
+    <div class="carregando-pagina" id="carregando"><span class="giro-grande" aria-label="Carregando"></span></div>
+
+    <div id="negado" hidden style="padding:64px 0">
+        <div class="painel vazio" style="padding:56px 24px">
+            <span id="negado-icone"></span>
+            <strong id="negado-titulo">Acesso restrito</strong>
+            <span id="negado-texto"></span>
+            <a class="botao botao-secundario" href="/painel">Voltar ao meu painel</a>
+        </div>
+    </div>
+
+    <div class="admin-casca" id="casca" hidden>
+        <nav class="admin-nav" aria-label="Administração" id="admin-nav">
+            <button type="button" data-v="geral" aria-current="page"><span data-i="chart"></span>Visão geral</button>
+            <button type="button" data-v="vivo"><span data-i="radio"></span>Ao vivo<span class="contador vivo" id="n-online">0</span></button>
+            <button type="button" data-v="testes"><span data-i="list"></span>Testes</button>
+            <button type="button" data-v="usuarios"><span data-i="users"></span>Usuários</button>
+            <button type="button" data-v="admins"><span data-i="shield"></span>Administradores</button>
+            <hr>
+            <button type="button" data-v="auditoria"><span data-i="history"></span>Auditoria</button>
+            <button type="button" data-v="sistema"><span data-i="server"></span>Sistema</button>
+        </nav>
+
+        <div class="admin-conteudo">
+            <!-- visão geral -->
+            <section id="v-geral" aria-labelledby="h-geral">
+                <div class="admin-titulo">
+                    <div><h1 id="h-geral">Visão geral</h1><p id="geral-atualizado">Carregando…</p></div>
+                    <button type="button" class="botao botao-secundario botao-pequeno" id="geral-atualizar"></button>
+                </div>
+                <div id="geral-avisos"></div>
+                <dl class="indicadores" id="geral-indicadores" style="--colunas:6"></dl>
+                <div class="grade-painel">
+                    <article class="painel largo">
+                        <div class="painel-cabeca"><div><h2>Testes por dia</h2><p>Últimos 30 dias, com e sem conta.</p></div></div>
+                        <div id="g-dia"></div>
+                    </article>
+                    <article class="painel">
+                        <div class="painel-cabeca"><div><h2>Agora no servidor</h2><p>Atualiza sozinho.</p></div></div>
+                        <dl class="dados" id="geral-agora"></dl>
+                    </article>
+                    <article class="painel largo">
+                        <div class="painel-cabeca"><div><h2>Download médio por dia</h2><p>Média dos testes de cada dia, em Mbps.</p></div></div>
+                        <div id="g-media"></div>
+                    </article>
+                    <article class="painel">
+                        <div class="painel-cabeca"><div><h2>Operadoras</h2><p>De onde vieram os testes (30 dias).</p></div></div>
+                        <div id="geral-isps"></div>
+                    </article>
+                    <article class="painel largo">
+                        <div class="painel-cabeca"><div><h2>Testes recentes no mapa</h2><p id="mapa-texto">Só testes com a localização do aparelho autorizada.</p></div></div>
+                        <div class="mapa" id="mapa" style="height:380px"></div>
+                    </article>
+                    <article class="painel">
+                        <div class="painel-cabeca"><div><h2>Cidades</h2><p>Testes por cidade (30 dias).</p></div></div>
+                        <div id="geral-cidades"></div>
+                    </article>
+                    <article class="painel total">
+                        <div class="painel-cabeca"><div><h2>Horário dos testes</h2><p>Quanto mais forte a cor, mais testes naquela hora (30 dias, horário de Brasília).</p></div></div>
+                        <div class="horas" id="geral-horas"></div>
+                        <div class="horas-rotulos" id="geral-horas-rotulos"></div>
+                    </article>
+                    <article class="painel total">
+                        <div class="painel-cabeca"><div><h2>Últimos testes</h2><p>Os novos aparecem aqui na hora.</p></div>
+                            <button type="button" class="botao botao-fantasma botao-pequeno" data-ir="testes">Ver todos</button></div>
+                        <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Quando</th><th>Quem</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th>Local</th><th>Operadora</th></tr></thead><tbody id="geral-recentes"></tbody></table></div>
+                    </article>
+                </div>
+            </section>
+
+            <!-- ao vivo -->
+            <section id="v-vivo" aria-labelledby="h-vivo" hidden>
+                <div class="admin-titulo"><div><h1 id="h-vivo">Ao vivo</h1><p>Quem está com o site aberto agora (conectado na conta) e o que está acontecendo.</p></div>
+                    <span class="selo ok ponto vivo" id="vivo-estado">Conectado</span></div>
+                <dl class="indicadores" id="vivo-indicadores" style="--colunas:4"></dl>
+                <article class="painel">
+                    <div class="painel-cabeca"><div><h2>Online agora</h2><p>Aparece quem enviou sinal nos últimos 75 segundos.</p></div></div>
+                    <div class="online-lista" id="vivo-online"></div>
+                </article>
+                <article class="painel">
+                    <div class="painel-cabeca"><div><h2>Acontecendo agora</h2><p>Testes e cadastros desde que você abriu esta página.</p></div></div>
+                    <ul class="feed" id="vivo-feed"></ul>
+                </article>
+            </section>
+
+            <!-- testes -->
+            <section id="v-testes" aria-labelledby="h-testes" hidden>
+                <div class="admin-titulo"><div><h1 id="h-testes">Testes</h1><p>Todos os testes de todos os usuários, do mais novo para o mais antigo.</p></div>
+                    <button type="button" class="botao botao-secundario botao-pequeno" id="testes-csv"></button></div>
+                <form class="painel filtros" id="testes-filtros">
+                    <div class="campo busca"><label for="f-q">Buscar</label>
+                        <div class="busca-wrap"><span data-i="search"></span><input class="entrada" id="f-q" placeholder="Protocolo (AUD-…), e-mail ou nome" autocomplete="off"></div></div>
+                    <div class="campo"><label for="f-modo">Tipo</label>
+                        <select class="entrada" id="f-modo"><option value="">Todos</option><option value="rapido">Teste rápido</option><option value="completo">Diagnóstico completo</option></select></div>
+                    <div class="campo"><label for="f-de">De</label><input class="entrada" type="date" id="f-de"></div>
+                    <div class="campo"><label for="f-ate">Até</label><input class="entrada" type="date" id="f-ate"></div>
+                    <div class="campo"><label for="f-quem">Quem</label>
+                        <select class="entrada" id="f-quem"><option value="">Todos</option><option value="anon">Só sem conta</option></select></div>
+                    <button type="submit" class="botao botao-primario botao-pequeno" style="min-height:40px">Filtrar</button>
+                </form>
+                <div id="testes-usuarios"></div>
+                <div class="painel">
+                    <div class="tabela-wrap"><table class="tabela"><thead><tr>
+                        <th>Data e hora</th><th>Quem</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th class="n">Perda</th><th>Local</th><th>Operadora</th><th>Conferido</th>
+                    </tr></thead><tbody id="testes-linhas"></tbody></table></div>
+                    <div class="mais" id="testes-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
+                </div>
+            </section>
+
+            <!-- usuários -->
+            <section id="v-usuarios" aria-labelledby="h-usuarios" hidden>
+                <div class="admin-titulo"><div><h1 id="h-usuarios">Usuários</h1><p>Contas criadas no site. Clique em uma pessoa para ver os dados, os testes e as ações.</p></div>
+                    <button type="button" class="botao botao-primario botao-pequeno" id="usuarios-adicionar"></button></div>
+                <form class="painel filtros" id="usuarios-filtros">
+                    <div class="campo busca"><label for="u-q">Buscar</label>
+                        <div class="busca-wrap"><span data-i="search"></span><input class="entrada" id="u-q" placeholder="Começo do nome ou do e-mail" autocomplete="off"></div></div>
+                    <div class="campo"><label for="u-papel">Papel</label>
+                        <select class="entrada" id="u-papel"><option value="">Todos</option><option value="admin">Administradores</option><option value="user">Usuários</option></select></div>
+                    <button type="submit" class="botao botao-primario botao-pequeno" style="min-height:40px">Buscar</button>
+                </form>
+                <div class="painel">
+                    <div class="tabela-wrap"><table class="tabela"><thead><tr>
+                        <th>Pessoa</th><th>Papel</th><th class="n">Testes</th><th>Criada em</th><th>Último acesso</th><th>Situação</th>
+                    </tr></thead><tbody id="usuarios-linhas"></tbody></table></div>
+                    <div class="mais" id="usuarios-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
+                </div>
+            </section>
+
+            <!-- administradores -->
+            <section id="v-admins" aria-labelledby="h-admins" hidden>
+                <div class="admin-titulo"><div><h1 id="h-admins">Administradores</h1><p>Quem pode ver todos os testes, todos os usuários e dar acesso a outras pessoas.</p></div></div>
+                <div class="grade-conta">
+                    <div class="painel">
+                        <div class="painel-cabeca"><div><h2>Com acesso agora</h2></div></div>
+                        <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Pessoa</th><th>Tipo</th><th>Último acesso</th><th></th></tr></thead><tbody id="admins-linhas"></tbody></table></div>
+                    </div>
+                    <div class="pilha">
+                        <form class="painel" id="admins-form" method="post" novalidate>
+                            <div class="painel-cabeca"><div><h2>Dar acesso de administrador</h2><p>Se a pessoa ainda não tem conta, criamos uma e ela recebe um e-mail para escolher a senha.</p></div></div>
+                            <div class="pilha">
+                                <div class="campo"><label for="a-email">E-mail da pessoa</label><input class="entrada" id="a-email" type="email" required autocomplete="off"></div>
+                                <div class="campo"><label for="a-nome">Nome <span class="suave">(se for conta nova)</span></label><input class="entrada" id="a-nome" maxlength="80" autocomplete="off"></div>
+                                <p class="erro-campo" role="alert" hidden></p>
+                                <button type="submit" class="botao botao-primario">Dar acesso</button>
+                            </div>
+                        </form>
+                        <div class="painel">
+                            <div class="painel-cabeca"><div><h2>Como a segurança funciona</h2></div></div>
+                            <ul class="dicas" style="margin:0">
+                                <li>Só entra na administração quem tem o papel de administrador. Com o e-mail ligado no servidor, também precisa ter o e-mail confirmado.</li>
+                                <li>Dar ou tirar acesso, gerar link de senha, desativar e excluir contas pedem a sua senha de novo se ela não foi digitada nos últimos 15 minutos.</li>
+                                <li>Donos são criados só pelo terminal do servidor (<code>npm run admin</code>) e não podem ser rebaixados nem excluídos pelo painel.</li>
+                                <li>Desativar uma conta desconecta a pessoa de todos os aparelhos na hora.</li>
+                                <li>Toda ação fica registrada na auditoria, com quem fez, quando e de qual IP.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- auditoria -->
+            <section id="v-auditoria" aria-labelledby="h-auditoria" hidden>
+                <div class="admin-titulo"><div><h1 id="h-auditoria">Auditoria</h1><p>Registro de tudo o que os administradores fizeram.</p></div></div>
+                <div class="painel">
+                    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Quando</th><th>Quem fez</th><th>O quê</th><th>Com quem</th><th>IP</th></tr></thead><tbody id="auditoria-linhas"></tbody></table></div>
+                    <div class="mais" id="auditoria-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
+                </div>
+            </section>
+
+            <!-- sistema -->
+            <section id="v-sistema" aria-labelledby="h-sistema" hidden>
+                <div class="admin-titulo"><div><h1 id="h-sistema">Sistema</h1><p>Estado do servidor de testes, do banco de dados e do envio de e-mail.</p></div>
+                    <button type="button" class="botao botao-secundario botao-pequeno" id="sistema-atualizar"></button></div>
+                <div class="estado-sistema" id="sistema-estado"></div>
+                <div class="grade-conta">
+                    <div class="painel"><div class="painel-cabeca"><div><h2>Configuração</h2></div></div><dl class="dados" id="sistema-config"></dl></div>
+                    <div class="painel"><div class="painel-cabeca"><div><h2>Serviços medidos no diagnóstico</h2><p>Endereços conferidos pelo servidor a cada 6 horas.</p></div></div><dl class="dados" id="sistema-plataformas"></dl></div>
+                </div>
+            </section>
+        </div>
+    </div>
+</main>
+
+<footer class="rodape" id="rodape"></footer>
+<script type="module" src="/js/pages/admin.js"></script>
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

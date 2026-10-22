@@ -1,0 +1,30 @@
+/* ---------- página pública de um resultado (/r/…) ---------- */
+.publico { padding: clamp(36px, 8vh, 88px) 0 80px; max-width: 860px; }
+.publico-quando { color: var(--texto-2); font-size: var(--t-md); }
+.publico-grandes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; margin-top: 24px; }
+.publico-grandes > div { display: grid; gap: 6px; }
+.rotulo-serie { display: inline-flex; align-items: center; gap: 8px; color: var(--texto-3); font-size: var(--t-sm); }
+.publico-grandes b { font-size: clamp(3.4rem, 11vw, 6.2rem); font-weight: 600; line-height: 0.95; letter-spacing: -0.05em; }
+.publico-grandes small { color: var(--texto-3); font-family: var(--fonte-display); font-size: var(--t-lg); }
+.publico-leituras { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 40px 0 0; border-top: 1px solid var(--linha-forte); border-bottom: 1px solid var(--linha); }
+.publico-leituras div { padding: 16px 16px 14px; border-left: 1px solid var(--linha); }
+.publico-leituras div:first-child { border-left: 0; padding-left: 0; }
+.publico-leituras dt { font-size: 0.8125rem; color: var(--texto-3); }
+.publico-leituras dd { margin: 4px 0 0; }
+.publico-leituras b { font-size: 1.7rem; font-weight: 600; }
+.publico-leituras small { color: var(--texto-3); font-size: var(--t-xs); margin-left: 4px; }
+.publico-info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 32px; margin: 28px 0 0; font-size: var(--t-sm); }
+.publico-info dt { color: var(--texto-4); font-size: var(--t-xs); }
+.publico-info dd { margin: 2px 0 0; color: var(--texto-2); }
+.publico-acoes { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 40px; }
+.publico-vazio { display: grid; gap: 14px; justify-items: start; max-width: 40ch; }
+.publico-vazio h1 { font-size: var(--t-3xl); letter-spacing: -0.03em; }
+.publico-vazio p { color: var(--texto-2); }
+@media (max-width: 640px) {
+    .publico-grandes { gap: 16px; }
+    .publico-leituras { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .publico-leituras div:nth-child(3) { border-left: 0; padding-left: 0; }
+    .publico-leituras div:nth-child(n + 3) { border-top: 1px solid var(--linha); }
+    .publico-info { grid-template-columns: 1fr; }
+}
+@media (max-width: 760px) { .publico .nav { display: none; } }

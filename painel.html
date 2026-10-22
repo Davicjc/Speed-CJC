@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meu painel | Teste de velocidade Audicom</title>
+<meta name="theme-color" content="#081535">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.ico">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/vendor/leaflet.css">
+<link rel="stylesheet" href="/css/painel.css">
+</head>
+<body class="pagina-painel">
+<a class="pular" href="#conteudo">Pular para o conteúdo</a>
+<header class="topo" id="topo"></header>
+
+<main id="conteudo" class="miolo painel-pagina">
+    <div class="carregando-pagina" id="carregando"><span class="giro-grande" aria-label="Carregando"></span></div>
+
+    <div id="pagina" hidden>
+        <div id="faixa-confirmacao"></div>
+        <header class="painel-topo">
+            <div>
+                <p class="data" id="hoje"></p>
+                <h1 id="saudacao">Seu painel</h1>
+                <p class="resumo" id="resumo"></p>
+            </div>
+            <a class="botao botao-primario" href="/">Fazer um teste</a>
+        </header>
+
+        <div class="barra-abas" style="margin-top:24px">
+            <div class="abas" role="tablist" aria-label="Seções do painel">
+                <button type="button" role="tab" id="t-visao" aria-controls="s-visao" aria-selected="true">Visão geral</button>
+                <button type="button" role="tab" id="t-historico" aria-controls="s-historico" aria-selected="false" tabindex="-1">Histórico</button>
+                <button type="button" role="tab" id="t-conta" aria-controls="s-conta" aria-selected="false" tabindex="-1">Meus dados</button>
+            </div>
+            <div class="periodos" id="periodos" role="group" aria-label="Período">
+                <button type="button" data-dias="7" aria-pressed="false">7 dias</button>
+                <button type="button" data-dias="30" aria-pressed="true">30 dias</button>
+                <button type="button" data-dias="90" aria-pressed="false">90 dias</button>
+                <button type="button" data-dias="0" aria-pressed="false">Tudo</button>
+            </div>
+        </div>
+
+        <section id="s-visao" role="tabpanel" aria-labelledby="t-visao" class="pilha" style="margin-top:20px">
+            <div id="vazio" hidden></div>
+            <div id="com-dados" class="pilha">
+                <dl class="indicadores" id="indicadores"></dl>
+                <div class="grade-painel">
+                    <article class="painel largo">
+                        <div class="painel-cabeca">
+                            <div><h2>Velocidade ao longo do tempo</h2><p>Cada ponto é um teste. Passe o mouse para ver os números.</p></div>
+                            <div class="legenda"><span><i style="background:var(--serie-download)"></i>Download</span><span><i class="tracejado" style="color:var(--serie-upload)"></i>Upload</span></div>
+                        </div>
+                        <div id="g-tempo"></div>
+                    </article>
+                    <article class="painel">
+                        <div class="painel-cabeca"><div><h2>Últimos testes</h2></div></div>
+                        <ul class="lista-testes" id="ultimos"></ul>
+                    </article>
+                    <article class="painel largo">
+                        <div class="painel-cabeca"><div><h2>Onde você testou</h2><p id="mapa-texto">Testes com a localização do aparelho autorizada.</p></div></div>
+                        <div class="mapa" id="mapa"></div>
+                    </article>
+                    <article class="painel">
+                        <div class="painel-cabeca"><div><h2>Seu melhor horário</h2><p id="hora-texto"></p></div></div>
+                        <div id="g-hora"></div>
+                    </article>
+                    <article class="painel total">
+                        <div class="painel-cabeca"><div><h2>Latência ao longo do tempo</h2><p>Ping de cada teste, em milissegundos. Quanto mais baixo, mais rápida a resposta.</p></div></div>
+                        <div id="g-ping"></div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="s-historico" role="tabpanel" aria-labelledby="t-historico" class="pilha" style="margin-top:20px" hidden>
+            <div class="painel">
+                <div class="painel-cabeca">
+                    <div><h2>Todos os testes</h2><p class="contagem" id="h-contagem"></p></div>
+                    <div class="linha-flex">
+                        <select class="entrada" id="h-modo" aria-label="Tipo de teste" style="min-height:38px;width:auto">
+                            <option value="">Todos os tipos</option>
+                            <option value="rapido">Teste rápido</option>
+                            <option value="completo">Diagnóstico completo</option>
+                        </select>
+                        <button type="button" class="botao botao-secundario botao-pequeno" id="h-csv"></button>
+                    </div>
+                </div>
+                <div class="tabela-wrap">
+                    <table class="tabela">
+                        <thead><tr>
+                            <th>Data e hora</th><th>Tipo</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th class="n">Jitter</th><th class="n">Perda</th><th>Local</th><th>Aparelho</th>
+                        </tr></thead>
+                        <tbody id="h-linhas"></tbody>
+                    </table>
+                </div>
+                <div class="mais" id="h-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar testes mais antigos</button></div>
+            </div>
+        </section>
+
+        <section id="s-conta" role="tabpanel" aria-labelledby="t-conta" style="margin-top:20px" hidden>
+            <div class="grade-conta">
+                <div class="pilha">
+                    <form class="painel" id="form-dados" method="post" novalidate>
+                        <div class="painel-cabeca"><div><h2>Seus dados</h2><p>Usados no seu histórico e pelo suporte da Audicom quando você pedir ajuda.</p></div></div>
+                        <div class="form-dados">
+                            <div class="campo total"><label for="d-nome">Nome completo</label><input class="entrada" id="d-nome" autocomplete="name" maxlength="80" required></div>
+                            <div class="campo total"><label for="d-email">E-mail</label><input class="entrada" id="d-email" type="email" readonly aria-describedby="d-email-ajuda"><span class="ajuda" id="d-email-ajuda"></span></div>
+                            <div class="campo"><label for="d-tel">WhatsApp ou telefone</label><input class="entrada" id="d-tel" type="tel" inputmode="tel" autocomplete="tel-national" placeholder="(34) 99999-9999" maxlength="16"></div>
+                            <div class="campo"><label for="d-cidade">Cidade</label><input class="entrada" id="d-cidade" autocomplete="address-level2" maxlength="80"></div>
+                            <div class="campo total"><label for="d-plano">Velocidade do plano contratado (Mbps)</label><input class="entrada" id="d-plano" type="number" inputmode="numeric" min="1" max="100000" step="1" placeholder="Ex.: 500"><span class="ajuda">Com isso, cada teste mostra quanto do plano chegou até você.</span></div>
+                            <p class="erro-campo total" role="alert" hidden></p>
+                            <div class="acoes"><button type="submit" class="botao botao-primario">Salvar dados</button></div>
+                        </div>
+                    </form>
+                    <form class="painel" id="form-senha" method="post" novalidate>
+                        <div class="painel-cabeca"><div><h2>Trocar a senha</h2></div></div>
+                        <div class="form-dados">
+                            <input id="s-usuario" type="email" autocomplete="username" hidden>
+                            <div class="campo total"><label for="s-atual">Senha atual</label><input class="entrada" id="s-atual" type="password" autocomplete="current-password" required></div>
+                            <div class="campo"><label for="s-nova">Nova senha</label><input class="entrada" id="s-nova" type="password" autocomplete="new-password" minlength="8" required></div>
+                            <div class="campo"><label for="s-nova2">Confirme a nova senha</label><input class="entrada" id="s-nova2" type="password" autocomplete="new-password" required></div>
+                            <p class="erro-campo total" role="alert" hidden></p>
+                            <div class="acoes"><button type="submit" class="botao botao-secundario">Trocar a senha</button></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="pilha">
+                    <div class="painel">
+                        <div class="painel-cabeca"><div><h2>Onde você está conectado</h2><p>Aparelhos com a sua conta aberta. Não reconhece algum? Encerre e troque a senha.</p></div></div>
+                        <ul class="lista-sessoes" id="sessoes"></ul>
+                        <div class="linha-acao"><div><strong>Sair de todos os aparelhos</strong><p>Encerra a sessão em todos os celulares e computadores, inclusive este.</p></div>
+                            <button type="button" class="botao botao-secundario botao-pequeno" id="sair-todos">Encerrar todas</button></div>
+                    </div>
+                    <div class="painel">
+                        <div class="painel-cabeca"><div><h2>Seus dados e a LGPD</h2><p>Você pode levar seus dados ou apagar tudo quando quiser.</p></div></div>
+                        <div class="linha-acao"><div><strong>Baixar meus dados</strong><p>Um arquivo com seu cadastro e todos os seus testes.</p></div>
+                            <button type="button" class="botao botao-secundario botao-pequeno" id="baixar-dados"></button></div>
+                    </div>
+                    <div class="painel zona-perigo">
+                        <div class="painel-cabeca"><div><h2>Excluir conta</h2></div></div>
+                        <div class="linha-acao"><div><p>Apaga sua conta e todos os seus testes, de forma definitiva. Os links compartilhados deixam de funcionar.</p></div>
+                            <button type="button" class="botao botao-perigo botao-pequeno" id="excluir-conta">Excluir minha conta</button></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div id="indisponivel" class="aviso atencao" hidden style="margin-top:40px">
+        <div><strong>O painel está temporariamente indisponível.</strong> O teste de velocidade continua funcionando normalmente. <a href="/">Fazer um teste</a></div>
+    </div>
+</main>
+
+<footer class="rodape" id="rodape"></footer>
+<script type="module" src="/js/pages/painel.js"></script>
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

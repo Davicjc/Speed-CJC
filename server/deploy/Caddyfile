@@ -1,0 +1,64 @@
+# Proxy reverso com HTTPS automático (Let's Encrypt) para o teste de velocidade.
+# Instalar:  apt install caddy   →   cp deploy/Caddyfile /etc/caddy/Caddyfile   →   systemctl reload caddy
+#
+# ANTES precisa existir:
+#  1. DNS: velocidadeteste.audicomtelecom.com.br  →  registro A (e AAAA, se houver IPv6)
+#          v4.velocidadeteste.audicomtelecom.com.br → SÓ registro A
+#          v6.velocidadeteste.audicomtelecom.com.br → SÓ registro AAAA
+#  2. Portas TCP 80 e 443 abertas e encaminhadas até esta máquina.
+#  3. Porta UDP 8080 (UDP_PORT) encaminhada DIRETO para esta máquina — proxy
+#     reverso não carrega UDP; é por ela que roda o teste de perda de pacotes.
+{
+	# certificado só pelo Let's Encrypt (o ZeroSSL de reserva do Caddy 2.6 do Debian não funciona mais)
+	cert_issuer acme
+	# certificado sob demanda: pedido na primeira visita pelo domínio, ou seja,
+	# logo depois que o DNS passar a apontar para cá (sem esperar novas tentativas
+	# nem recarregar nada). O site só autoriza os próprios nomes.
+	on_demand_tls {
+		ask http://127.0.0.1:8080/api/tls-ask
+		# o Caddy 2.6 (Debian 12) exige estas duas; do 2.8 em diante o publicar.sh as remove
+		interval 2m
+		burst 5
+	}
+	servers {
+		# HTTP/1.1: cada fluxo paralelo do teste vira uma conexão TCP própria
+		# (com HTTP/2 ou HTTP/3 os 6 fluxos dividiriam uma conexão só e conexões
+		# rápidas seriam subestimadas)
+		protocols h1
+	}
+}
+
+velocidadeteste.audicomtelecom.com.br {
+	tls {
+		on_demand
+	}
+
+	# o teste precisa dos bytes passando direto, sem compressão nem espera
+	reverse_proxy 127.0.0.1:8080 {
+		flush_interval -1
+		transport http {
+			versions 1.1
+			response_header_timeout 5m
+			read_buffer 64KB
+		}
+	}
+
+	request_body {
+		max_size 0
+	}
+
+	log {
+		output file /var/log/caddy/speedtest.log
+		format console
+	}
+}
+
+# Nomes só-IPv4 e só-IPv6, usados no diagnóstico IPv4/IPv6.
+v4.velocidadeteste.audicomtelecom.com.br, v6.velocidadeteste.audicomtelecom.com.br {
+	tls {
+		on_demand
+	}
+	reverse_proxy 127.0.0.1:8080 {
+		flush_interval -1
+	}
+}
