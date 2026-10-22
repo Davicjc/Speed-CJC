@@ -104,6 +104,12 @@ Toda chamada que muda algo (POST, PATCH, DELETE) precisa vir do próprio site:
 cabeçalho `X-Audicom: 1`, ou `Sec-Fetch-Site: same-origin`, ou `Origin` igual ao
 host. As exceções são `/api/upload` e `/api/rtc/offer` (medição).
 
+Páginas: todo HTML passa pelo servidor, que troca `{{ORIGEM}}` pelo endereço do
+site e acrescenta o Google Analytics quando `GA_MEASUREMENT_ID` está no `.env`
+(menos na administração). `GET /robots.txt` e `/sitemap.xml` são gerados.
+`GET /api/tls-ask?domain=` responde 200 só para os nomes do site (o Caddy
+pergunta antes de pedir um certificado sob demanda).
+
 Públicas: `GET /api/config`, `/api/whoami`, `/api/time`, `/api/platforms`,
 `/api/health`, `/api/trace`, `/api/nat`, `/api/captcha/challenge`,
 `/api/results/<id>`; `POST /api/rtc/offer`, `/api/results`.

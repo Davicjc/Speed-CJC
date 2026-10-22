@@ -31,6 +31,7 @@ segurança, segurança, LGPD e solução de problemas.
 17. [Solução de problemas](#17-solução-de-problemas)
 18. [Conferência final](#18-conferência-final)
 19. [Personalizar para o seu provedor](#19-personalizar-para-o-seu-provedor)
+20. [SEO, Google e estatísticas](#20-seo-google-e-estatísticas)
 
 ---
 
@@ -194,6 +195,7 @@ mudar: `systemctl restart audicom-speedtest`.
 | `ANON_RETENTION_DAYS` | 365 | testes feitos sem conta são apagados depois disso |
 | `SIGNUP_LIMIT_PER_HOUR` | 6 | cadastros por IP por hora |
 | `GEOCODER` | nominatim | endereço a partir do GPS (`off` desliga) |
+| `GA_MEASUREMENT_ID` | desligado | Google Analytics 4 (ex.: `G-ABC123XYZ`); só registra depois do aceite dos cookies (seção 20) |
 
 ---
 
@@ -390,6 +392,8 @@ Também guarde uma cópia de `server/data/captcha.key` e do `server/.env`
   dados*), **corrige** o cadastro e **exclui** a conta com todos os testes.
 - Localização precisa só com o consentimento (a pessoa liga a opção no teste e o
   navegador pede permissão).
+- Google Analytics (se ligado) só grava cookies depois que a pessoa aceita na
+  faixa de cookies; a escolha pode ser revista em `/privacidade#cookies`.
 - Testes feitos sem conta são apagados depois de 12 meses.
 - Contas e testes ficam só na sua VM. Dois serviços externos recebem dados
   durante o uso: o **Nominatim** (OpenStreetMap) recebe a coordenada para
@@ -490,3 +494,65 @@ O projeto vem com a identidade da Audicom Telecom. Para usar em outro provedor:
 
 Os textos de privacidade e termos citam a Audicom: troque pelos do seu provedor
 e passe pelo seu jurídico.
+
+---
+
+## 20. SEO, Google e estatísticas
+
+### O que já vem pronto
+
+- **Página inicial otimizada** para buscas como "teste de velocidade", "teste de
+  velocidade da internet", "medir internet", "teste de ping": título, descrição,
+  "Teste de velocidade da internet" no H1 e uma seção de conteúdo visível (como
+  funciona, o que cada número significa, velocidade por uso, dicas e 11
+  perguntas frequentes).
+- **Dados estruturados** (schema.org, JSON-LD): organização, site, aplicativo
+  gratuito, página e perguntas frequentes; nas páginas de texto, artigo e
+  trilha de navegação.
+- **Endereço canônico, Open Graph e Twitter** em todas as páginas públicas. O
+  endereço vem do `PUBLIC_URL` (o servidor troca `{{ORIGEM}}` no HTML).
+- **`/sitemap.xml` e `/robots.txt`** gerados pelo servidor, com o endereço certo.
+- **`noindex`** nas páginas que não devem aparecer no Google: entrar, painel,
+  administração, 404 e os links de resultado (`/r/...`).
+- **Velocidade**: HTML comprimido, fontes locais com pré-carregamento, nenhum
+  framework no navegador.
+
+### Google Search Console (faça uma vez, depois do site no ar)
+
+1. Abra <https://search.google.com/search-console> com a conta Google da empresa.
+2. **Adicionar propriedade → Domínio** → o seu domínio, por exemplo
+   `seuprovedor.com.br` (vale para todos os subdomínios).
+3. O Google mostra um registro **TXT**: crie no DNS do domínio e clique em
+   **Verificar**.
+4. Menu **Sitemaps** → envie `https://velocidade.seuprovedor.com.br/sitemap.xml`.
+5. Menu **Inspeção de URL** → cole o endereço do site → **Solicitar indexação**.
+
+Repita o passo 4 no **Bing Webmaster Tools** (<https://www.bing.com/webmasters>),
+que pode importar direto do Search Console.
+
+### Google Analytics 4
+
+1. No `server/.env`: `GA_MEASUREMENT_ID=G-XXXXXXXXXX` (no GA: *Administrador →
+   Fluxos de dados → o fluxo do site → ID da métrica*).
+2. `systemctl restart audicom-speedtest`.
+
+Como funciona:
+
+- Na primeira visita aparece uma **faixa de cookies** (Aceitar / Recusar). Até a
+  pessoa aceitar, o GA fica em *consentimento negado* (Modo de Consentimento
+  v2): não grava cookie nem identificador. Sinais de publicidade ficam sempre
+  desligados.
+- Os endereços vão ao GA **sem a parte depois do `?`**, porque os links de nova
+  senha e de confirmação de e-mail levam códigos secretos ali.
+- A **administração** fica fora das estatísticas.
+- Eventos enviados (em *Relatórios → Engajamento → Eventos*):
+
+| Evento | Quando | Parâmetros |
+|---|---|---|
+| `teste_iniciado` | clique em Iniciar | `modo` |
+| `teste_concluido` | fim do teste | `modo`, `download_mbps`, `upload_mbps`, `ping_ms` |
+| `share` | enviar no WhatsApp ou copiar o resultado | `method` (`whatsapp` ou `copiar`) |
+
+Para ver `download_mbps` e os outros números em relatórios, cadastre-os em
+*Administrador → Definições personalizadas → Métricas personalizadas*.
+

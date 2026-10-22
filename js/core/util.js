@@ -189,3 +189,8 @@ export function baixarArquivo(nome, conteudo, tipo = 'application/json') {
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
+
+/** Evento para o Google Analytics, quando ele está ligado. Nunca leva dados pessoais (nome, e-mail, IP). */
+export function evento(nome, params = {}) {
+    try { if (typeof window.gtag === 'function') window.gtag('event', nome, params); } catch { /* sem estatística, sem problema */ }
+}

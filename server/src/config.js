@@ -134,6 +134,10 @@ export const config = {
     // apagar ou excluir a conta.
     anonRetentionDays: int('ANON_RETENTION_DAYS', 365),
 
+    // Google Analytics 4 (ex.: G-ABC123XYZ). Vazio = desligado. Só registra
+    // depois que a pessoa aceita os cookies de estatística (LGPD).
+    gaId: /^G-[A-Z0-9]{4,20}$/.test(str('GA_MEASUREMENT_ID', '')) ? str('GA_MEASUREMENT_ID', '') : null,
+
     support: {
         whatsapp: str('SUPPORT_WHATSAPP', '553491339002'),
         phone: str('SUPPORT_PHONE', '(34) 3222-6800'),

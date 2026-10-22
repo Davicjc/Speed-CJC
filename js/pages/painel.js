@@ -79,6 +79,7 @@ function abrir(id) {
     abrirDetalhe({
         carregar: () => api('/api/me/tests/' + id),
         cfg,
+        plano: perfil && perfil.planMbps,
         aoExcluir: async (t) => {
             await api('/api/me/tests/' + t.id, { method: 'DELETE' });
             testes = testes.filter((x) => x.id !== t.id);

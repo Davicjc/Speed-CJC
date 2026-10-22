@@ -2,12 +2,13 @@ import { coletarAparelho, conexaoDoNavegador, NOMES_CONEXAO } from '../core/devi
 import { ICON } from '../core/icons.js';
 import { guardarPendente } from '../core/pendentes.js';
 import { iniciarPagina } from '../core/shell.js';
-import { $, $$, copiar, esc, fmtHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, setHtml, storage, store, toast } from '../core/util.js';
+import { $, $$, copiar, esc, evento, fmtHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, setHtml, storage, store, toast } from '../core/util.js';
 import * as M from '../engine/motor.js';
 import { executarTeste } from '../engine/teste.js';
 import { iniciarConstelacao } from '../ui/constelacao.js';
 import { barrasHorizontais, graficoLinhas } from '../ui/graficos.js';
-import { classificar, dicas, usos, veredito } from '../ui/qualidade.js';
+import { classificar, dicas, veredito } from '../ui/qualidade.js';
+import { desenharDiag, textoCompleto, usosHtml } from '../ui/relatorio.js';
 import { criarVelocimetro } from '../ui/velocimetro.js';
 
 const sessao = await iniciarPagina({ pagina: 'teste' });
@@ -19,6 +20,7 @@ let modo = 'rapido';
 let rodando = false;
 let controle = null;
 let ultimoResultado = null;
+let quem = {}; // IP, operadora e cidade, como o servidor vê
 
 // ---------- opções ----------
 const AJUDA_MODO = {
@@ -60,6 +62,7 @@ if (cfg.serverName) $('#c-servidor').textContent = `${cfg.serverName}, ${cfg.ser
 
 // ---------- quem é você (IP e operadora, como o servidor vê) ----------
 M.quemSouEu().then((w) => {
+    quem = w || {};
     $('#c-ip').textContent = w.ip || '–';
     $('#c-isp').textContent = w.isp || 'Não identificada';
     $('#c-local').textContent = w.private ? 'Rede interna' : [w.city, w.region].filter(Boolean).join(' - ') || 'Não identificado';
@@ -161,6 +164,7 @@ async function iniciar() {
     document.body.classList.add('testando');
 
     const geo = querLocal ? pedirLocal() : Promise.resolve(null);
+    evento('teste_iniciado', { modo });
     const amostras = { download: [], upload: [] };
     let inicioEtapa = performance.now();
     let etapaAtual = null;
@@ -219,6 +223,7 @@ async function iniciar() {
     leituraAtiva(null);
     ultimoResultado = r;
     mostrarResultado(r, amostras);
+    evento('teste_concluido', { modo, download_mbps: Math.round(r.download || 0), upload_mbps: Math.round(r.upload || 0), ping_ms: Math.round(r.ping || 0) });
     salvar(r, await geo);
 }
 
@@ -234,8 +239,12 @@ function encerrar() {
 }
 
 // ---------- resultado ----------
-const ICONE_ESTADO = { ok: ICON.checkCircle, atencao: ICON.alert, ruim: ICON.xCircle };
-const TEXTO_ESTADO = { ok: 'atende', atencao: 'no limite', ruim: 'não atende' };
+/** Média das amostras de cada meio segundo: a curva de velocidade do teste. */
+function balde(lista) {
+    const m = new Map();
+    for (const p of lista) { const a = m.get(p.x) || []; a.push(p.y); m.set(p.x, a); }
+    return [...m.entries()].map(([x, ys]) => ({ x, y: Math.round((ys.reduce((s, y) => s + y, 0) / ys.length) * 10) / 10 })).sort((a, b) => a.x - b.x);
+}
 
 function mostrarResultado(r, amostras) {
     velo.modo('fim');
@@ -257,7 +266,7 @@ function mostrarResultado(r, amostras) {
         $('#r-plano').hidden = false;
     } else $('#r-plano').hidden = true;
 
-    $('#r-usos').innerHTML = usos(r).map((u) => `<li class="${u.estado}">${ICONE_ESTADO[u.estado]}<strong>${esc(u.titulo)}<span class="sr-only">: ${TEXTO_ESTADO[u.estado]}</span></strong><span>${esc(u.detalhe)}</span></li>`).join('');
+    $('#r-usos').innerHTML = usosHtml(r);
     const ds = dicas(r, { tipoConexao: conexaoDoNavegador().type, planoMbps: plano });
     $('#r-dicas').innerHTML = ds.map((d) => `<li>${esc(d)}</li>`).join('');
     $('#r-dicas').hidden = !ds.length;
@@ -273,15 +282,11 @@ function mostrarResultado(r, amostras) {
 
     // detalhes: curva de velocidade + aparelho
     $('#detalhes').hidden = false;
-    const balde = (lista) => {
-        const m = new Map();
-        for (const p of lista) { const a = m.get(p.x) || []; a.push(p.y); m.set(p.x, a); }
-        return [...m.entries()].map(([x, ys]) => ({ x, y: ys.reduce((s, y) => s + y, 0) / ys.length })).sort((a, b) => a.x - b.x);
-    };
+    r.curva = { download: balde(amostras.download), upload: balde(amostras.upload) };
     graficoLinhas($('#curva'), {
         series: [
-            { nome: 'Download', cor: 'var(--serie-download)', pontos: balde(amostras.download), area: true },
-            { nome: 'Upload', cor: 'var(--serie-upload)', pontos: balde(amostras.upload), tracejado: true },
+            { nome: 'Download', cor: 'var(--serie-download)', pontos: r.curva.download, area: true },
+            { nome: 'Upload', cor: 'var(--serie-upload)', pontos: r.curva.upload, tracejado: true },
         ],
         altura: 220,
         formatoY: (y) => fmtMbps(y),
@@ -315,6 +320,7 @@ async function salvar(r, geo) {
         device: { type: aparelho.type, os: aparelho.os, osVersion: aparelho.osVersion, browser: aparelho.browser, browserVersion: aparelho.browserVersion, model: aparelho.model, cores: aparelho.cores, ram: aparelho.ram, screen: aparelho.screen },
         connection: conexaoDoNavegador(),
         advanced: r.advanced,
+        curve: r.curva ? { download: r.curva.download.map((p) => [p.x, p.y]), upload: r.curva.upload.map((p) => [p.x, p.y]) } : null,
     };
     let res = null;
     const salvo = $('#r-salvo');
@@ -323,7 +329,7 @@ async function salvar(r, geo) {
     } catch (e) {
         salvo.className = 'salvo atencao';
         setHtml(salvo, html`${{ __raw: ICON.alert }}<span>Não foi possível guardar o resultado (${e.message}). O resultado acima continua valendo.</span>`);
-        habilitarCompartilhar(null, r);
+        habilitarCompartilhar(null, r, null, aparelho);
         return;
     }
 
@@ -332,7 +338,7 @@ async function salvar(r, geo) {
         leitura('upload', r.upload, { selo: true });
     }
     setHtml($('#r-quando'), html`Hoje às ${fmtHora(Date.now())}. Protocolo <span class="mono-copy">${res.protocol}</span>`);
-    habilitarCompartilhar(location.origin + res.path, r);
+    habilitarCompartilhar(location.origin + res.path, r, res, aparelho);
 
     if (res.saved === 'account') {
         salvo.className = 'salvo ok';
@@ -351,90 +357,45 @@ async function salvar(r, geo) {
     }
 }
 
-function resumoTexto(r, link) {
-    const linhas = [
-        'Meu teste de velocidade na Audicom Telecom',
-        `Download: ${fmtMbps(r.download)} Mbps`,
-        `Upload: ${fmtMbps(r.upload)} Mbps`,
-        `Ping: ${fmtMs(r.ping)} ms, jitter: ${fmtMs(r.jitter)} ms`,
-    ];
-    if (r.loss != null) linhas.push(`Perda de pacotes: ${fmtPct(r.loss)}%`);
-    if (link) linhas.push(link);
-    return linhas.join('\n');
+/** O teste no formato do relatório (o mesmo que o painel recebe do servidor). */
+function comoRelatorio(r, res, aparelho) {
+    return {
+        ...r,
+        protocol: res && res.protocol,
+        createdAt: Date.now(),
+        verified: res ? res.verified : undefined,
+        isp: quem.isp || null,
+        ip: quem.ip || null,
+        ipFamily: quem.family || null,
+        place: (res && res.place) || (quem.city ? { label: [quem.city, quem.region].filter(Boolean).join(' - '), source: 'ip' } : null),
+        device: aparelho || null,
+        connection: conexaoDoNavegador(),
+        server: cfg.serverName ? { name: cfg.serverName, location: cfg.serverLocation } : null,
+    };
 }
 
-function habilitarCompartilhar(link, r) {
+function habilitarCompartilhar(link, r, res, aparelho) {
+    const plano = sessao.me && sessao.me.profile && sessao.me.profile.planMbps;
+    const texto = textoCompleto(comoRelatorio(r, res, aparelho), { link, plano, empresa: cfg.serverName || 'Audicom Telecom' });
     const bc = $('#copiar');
-    bc.innerHTML = ICON.copy + (link ? 'Copiar link' : 'Copiar resultado');
+    bc.innerHTML = ICON.copy + 'Copiar resultado';
     bc.hidden = false;
     bc.onclick = async () => {
-        const ok = await copiar(link || resumoTexto(r));
-        toast(ok ? (link ? 'Link copiado.' : 'Resultado copiado.') : 'Não foi possível copiar.', ok ? 'ok' : 'ruim');
+        const ok = await copiar(texto);
+        toast(ok ? 'Resultado completo copiado.' : 'Não foi possível copiar.', ok ? 'ok' : 'ruim');
+        if (ok) evento('share', { method: 'copiar', content_type: 'resultado' });
     };
     const wa = $('#whatsapp');
     wa.innerHTML = ICON.whatsapp + 'Enviar no WhatsApp';
-    wa.href = 'https://wa.me/?text=' + encodeURIComponent(resumoTexto(r, link));
+    wa.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+    wa.onclick = () => evento('share', { method: 'whatsapp', content_type: 'resultado' });
     wa.hidden = false;
 }
 
 // ---------- diagnóstico (modo completo) ----------
-function painel(id, titulo, descricao, corpo) {
-    const p = $(`#d-${id}`);
-    setHtml(p, html`<div class="painel-cabeca"><div><h3>${titulo}</h3>${descricao ? html`<p>${descricao}</p>` : ''}</div></div>${{ __raw: String(corpo) }}`);
-    p.hidden = false;
-    $('#detalhes').hidden = false;
-}
-const selo = (nivel, texto) => `<span class="selo ${nivel}">${esc(texto)}</span>`;
-const nivelMs = (ms) => (ms == null ? null : ms < 50 ? { nivel: 'ok', rotulo: 'Rápido' } : ms < 120 ? { nivel: 'ok', rotulo: 'Bom' } : { nivel: 'atencao', rotulo: 'Lento' });
-
 function mostrarDiag(chave, d) {
-    if (chave === 'protocolos') {
-        const linha = (nome, x) => {
-            const estado = x.alcance === null ? selo('', 'Não verificável') : x.alcance ? selo('ok', 'Funciona') : selo('ruim', 'Sem acesso');
-            return `<div class="diag-linha"><strong>${nome} ${estado}</strong><span class="valor">${x.mbps != null ? fmtMbps(x.mbps) + ' <small class="suave">Mbps</small>' : '–'}</span>
-                ${x.ip ? `<p>Endereço: ${esc(x.ip)}</p>` : ''}</div>`;
-        };
-        painel('protocolos', 'IPv4 e IPv6', 'Download medido separadamente em cada versão do protocolo da internet.',
-            `<div class="diag-linhas">${linha('IPv4', d.ipv4)}${linha('IPv6', d.ipv6)}</div>
-             <p class="diag-explica">${d.ipv6 && d.ipv6.alcance ? 'Sua conexão já usa IPv6, o protocolo novo da internet.'
-                : d.ipv6 && d.ipv6.alcance === false ? 'Sem IPv6, alguns serviços ficam dependentes de NAT. Não costuma ser um problema no dia a dia.'
-                : 'Não deu para verificar o IPv6 por este endereço do site.'}</p>`);
-    }
-    if (chave === 'nat') {
-        const tipo = d.tipo === 'normal' ? selo('ok', 'Normal') : d.tipo === 'simétrico' ? selo('atencao', 'Simétrico') : d.tipo ? selo('ok', d.tipo) : selo('', 'Não medido');
-        const duplo = /sim|provável/.test(d.duploNat || '') ? selo('atencao', d.duploNat) : d.duploNat === 'não' ? selo('ok', 'Não') : selo('', d.duploNat || 'Não medido');
-        painel('nat', 'Roteador e NAT', 'NAT é como o roteador divide um endereço da internet entre os aparelhos da casa.',
-            `<div class="diag-linhas">
-                <div class="diag-linha"><strong>Tipo de NAT</strong><span>${tipo}</span><p>${d.tipo === 'simétrico' ? 'O NAT simétrico atrapalha jogos online, chamadas e acesso remoto a câmeras.' : d.tipo ? 'Jogos, chamadas e acesso remoto funcionam normalmente.' : esc(d.motivoTipo || '')}</p></div>
-                <div class="diag-linha"><strong>Duplo NAT</strong><span>${duplo}</span>${d.motivo ? `<p>${esc(d.motivo)}</p>` : ''}</div>
-                <div class="diag-linha"><strong>IP compartilhado (CGNAT)</strong><span>${d.cgnat ? selo('atencao', 'Sim') : selo('ok', 'Não')}</span></div>
-            </div>`);
-    }
-    if (chave === 'servicos' || chave === 'bancos') {
-        const id = chave;
-        painel(id, chave === 'servicos' ? 'Tempo até os aplicativos' : 'Tempo até bancos e PIX',
-            chave === 'servicos' ? 'Ida e volta até o servidor mais próximo de cada serviço.' : 'Ida e volta até os servidores de cada banco. É o que pesa quando o app do banco demora a abrir.',
-            '<div class="lista-barras"></div>');
-        barrasHorizontais($(`#d-${id} .lista-barras`), d.map((s) => ({ nome: s.label, valor: s.ms, vazio: s.indisponivel ? 'n/d' : s.ms === null ? '…' : 'falhou' })), {
-            formato: (v) => `${v} ms`, maximo: 250, cor: 'var(--serie-download)', nivel: nivelMs,
-        });
-    }
-    if (chave === 'relogio') {
-        if (!d) { painel('relogio', 'Relógio do aparelho', null, '<p class="suave">Não foi possível comparar com a hora oficial agora.</p>'); return; }
-        const s = d.offsetS;
-        const abs = Math.abs(s);
-        const est = abs < 2 ? selo('ok', 'Certo') : abs < 60 ? selo('atencao', s > 0 ? 'Adiantado' : 'Atrasado') : selo('ruim', s > 0 ? 'Muito adiantado' : 'Muito atrasado');
-        painel('relogio', 'Relógio do aparelho', 'Comparado com a hora oficial do Brasil (NTP.br).',
-            `<div class="diag-linhas"><div class="diag-linha"><strong>Diferença ${est}</strong><span class="valor">${s > 0 ? '+' : s < 0 ? '−' : ''}${fmtNum(abs, abs < 10 ? 2 : 0)} <small class="suave">s</small></span>
-             <p>${abs < 2 ? 'Tudo certo.' : 'Relógio errado faz aplicativos de banco e sites seguros recusarem a conexão. Ative a data e hora automáticas no aparelho.'}</p></div></div>`);
-    }
-    if (chave === 'rota') {
-        if (!d || !d.length) { painel('rota', 'Rota até você', null, '<p class="suave">O rastreamento da rota não respondeu desta vez.</p>'); return; }
-        painel('rota', 'Rota até você', 'O caminho dos pacotes do servidor da Audicom até a sua conexão, salto a salto.',
-            `<div class="tabela-wrap"><table class="tabela rota"><thead><tr><th>Salto</th><th>Endereço</th><th class="n">Perda</th><th class="n">Tempo médio</th></tr></thead><tbody>
-            ${d.map((h) => `<tr><td>${h.hop}</td><td>${esc(h.host || 'não responde')}</td><td class="n">${h.perda != null ? fmtPct(h.perda) + '%' : '–'}</td><td class="n">${h.media != null ? fmtMs(h.media) + ' ms' : '–'}</td></tr>`).join('')}
-            </tbody></table></div><p class="diag-explica">Saltos que "não respondem" são normais: muitos roteadores não respondem a esse tipo de consulta e seguem passando o tráfego.</p>`);
-    }
+    desenharDiag($(`#d-${chave}`), chave, d);
+    $('#detalhes').hidden = false;
 }
 
 // atalho: espaço/enter no velocímetro parado inicia

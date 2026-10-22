@@ -39,7 +39,10 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
 - *Diagnóstico completo*: IPv4 × IPv6, NAT, duplo NAT e CGNAT, rota até o
   cliente, tempo até aplicativos, bancos e PIX, relógio do aparelho.
 - Resultado em linguagem simples ("dá para 4K, jogos, home office?"),
-  comparação com o plano contratado, protocolo `AUD-…` e link para o WhatsApp.
+  comparação com o plano contratado e protocolo `AUD-…`.
+- **Enviar no WhatsApp / Copiar resultado** leva o relatório inteiro: velocidade,
+  latência, operadora, IP, local, aparelho e, no diagnóstico completo, IPv4/IPv6,
+  NAT, aplicativos, bancos, relógio e a rota salto a salto.
 
 **Contas** (`/entrar`, `/cadastro`)
 - Cadastro com captcha (próprio, sem serviço externo, ou Cloudflare Turnstile).
@@ -50,6 +53,8 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
 **Meu painel** (`/painel`)
 - Histórico, gráfico ao longo do tempo, mapa de onde a pessoa testou, melhor
   horário, comparação com o plano.
+- Cada teste abre com **tudo o que foi medido**: curva de velocidade, latência
+  detalhada, conexão, aparelho e o diagnóstico completo com a rota e os IPs.
 - Aparelhos conectados (encerrar à distância), troca de senha.
 - Baixar e excluir os próprios dados (LGPD).
 
@@ -61,6 +66,10 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
 - Usuários: dar e tirar administrador, link de nova senha (com botão de
   WhatsApp), encerrar sessões, desativar, excluir.
 - Auditoria de toda ação de administrador e estado do sistema.
+
+**SEO e estatísticas**: título, descrição, dados estruturados (schema.org),
+perguntas frequentes, sitemap e robots gerados pelo servidor; Google Analytics 4
+opcional, com faixa de cookies e consentimento (LGPD).
 
 **Resultado público** (`/r/<id>`): o link que vai no WhatsApp, com prévia, sem
 nome, IP nem localização.

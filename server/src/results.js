@@ -52,6 +52,19 @@ export function validateResult(body) {
         downlink: num(c.downlink, 100_000) ?? null, rtt: num(c.rtt, 60_000) ?? null,
     };
 
+    // curva de velocidade durante o teste: pares [segundos, Mbps], em médias de meio segundo
+    out.curve = null;
+    const cv = body.curve;
+    if (cv && typeof cv === 'object') {
+        const serie = (a) => (Array.isArray(a) ? a : []).slice(0, 120)
+            .filter((p) => Array.isArray(p) && p.length === 2)
+            .map(([x, y]) => [Number(x), Number(y)])
+            .filter(([x, y]) => Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 120 && y >= 0 && y <= 100_000)
+            .map(([x, y]) => [Math.round(x * 2) / 2, Math.round(y * 10) / 10]);
+        const c = { download: serie(cv.download), upload: serie(cv.upload) };
+        if (c.download.length || c.upload.length) out.curve = c;
+    }
+
     if (body.advanced != null) {
         if (typeof body.advanced !== 'object') throw err(400, 'diagnóstico inválido');
         if (JSON.stringify(body.advanced).length > 24 * 1024) throw err(413, 'diagnóstico grande demais');

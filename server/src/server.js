@@ -2,6 +2,7 @@ import dns from 'node:dns/promises';
 import fsp from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
+import zlib from 'node:zlib';
 
 import { createAuthn } from './authn.js';
 import { createCaptcha } from './captcha.js';
@@ -90,7 +91,9 @@ function isHttps(req) {
 }
 function siteOrigin(req) {
     if (config.publicUrl) return config.publicUrl.replace(/\/$/, '');
-    const host = String(req.headers['x-forwarded-host'] && config.trustProxy && fromLocalProxy(req) ? req.headers['x-forwarded-host'] : req.headers.host || 'localhost').split(',')[0].trim();
+    let host = String(req.headers['x-forwarded-host'] && config.trustProxy && fromLocalProxy(req) ? req.headers['x-forwarded-host'] : req.headers.host || 'localhost').split(',')[0].trim();
+    // vai parar no HTML (endereço canônico, prévia): só nome, IPv4 ou [IPv6], com porta opcional
+    if (!/^([A-Za-z0-9.-]+|\[[0-9A-Fa-f:.]+\])(:\d{1,5})?$/.test(host)) host = 'localhost';
     return `${isHttps(req) ? 'https' : 'http'}://${host}`;
 }
 
@@ -114,6 +117,70 @@ function baseUrl(family, req) {
 
 const originOf = (u) => { try { return new URL(u).origin; } catch { return null; } };
 
+// ---------- páginas: endereço do site, prévia e estatísticas ----------
+// A administração fica fora das estatísticas.
+const comEstatistica = (page) => Boolean(config.gaId) && page !== 'admin';
+
+function tagsEstatistica(page) {
+    if (!comEstatistica(page)) return '';
+    return `<link rel="preconnect" href="https://www.googletagmanager.com">
+<script async src="https://www.googletagmanager.com/gtag/js?id=${config.gaId}"></script>
+<script src="/js/analytics.js" data-ga="${config.gaId}"></script>
+`;
+}
+
+/**
+ * Página HTML pronta: troca {{ORIGEM}} pelo endereço do site (canônico, prévia,
+ * dados estruturados) e acrescenta o Google Analytics, se configurado.
+ * Guardada em memória já comprimida.
+ */
+const paginasProntas = new Map();
+async function paginaPronta(arquivo, page, req) {
+    const abs = path.join(config.staticDir, arquivo);
+    const st = await fsp.stat(abs);
+    const origem = siteOrigin(req);
+    const chave = `${arquivo}:${st.mtimeMs}:${origem}`;
+    let p = paginasProntas.get(chave);
+    if (!p) {
+        const html = (await fsp.readFile(abs, 'utf8'))
+            .replaceAll('{{ORIGEM}}', origem)
+            .replace('content="/assets/og.png"', `content="${origem}/assets/og.png"`)
+            .replace('</head>', `${tagsEstatistica(page)}</head>`);
+        p = { html: Buffer.from(html), gz: zlib.gzipSync(html, { level: 9 }) };
+        paginasProntas.set(chave, p);
+        if (paginasProntas.size > 60) paginasProntas.delete(paginasProntas.keys().next().value);
+    }
+    return p;
+}
+
+function enviarPagina(req, res, p, headers, status = 200) {
+    const gz = /\bgzip\b/.test(req.headers['accept-encoding'] || '');
+    const corpo = gz ? p.gz : p.html;
+    res.writeHead(status, { ...headers, 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache', Vary: 'Accept-Encoding', 'Content-Length': corpo.length, ...(gz ? { 'Content-Encoding': 'gzip' } : {}) });
+    res.end(req.method === 'HEAD' ? undefined : corpo);
+}
+
+/** Páginas que o Google deve encontrar (as de conta e administração ficam de fora). */
+const NO_MAPA = [['/', 'index.html', '1.0', 'weekly'], ['/como-medimos', 'como-medimos.html', '0.8', 'monthly'], ['/privacidade', 'privacidade.html', '0.3', 'yearly'], ['/termos', 'termos.html', '0.3', 'yearly']];
+
+async function mapaDoSite(req) {
+    const origem = siteOrigin(req);
+    const urls = await Promise.all(NO_MAPA.map(async ([caminho, arquivo, prioridade, freq]) => {
+        const st = await fsp.stat(path.join(config.staticDir, arquivo)).catch(() => null);
+        return `  <url><loc>${origem}${caminho}</loc>${st ? `<lastmod>${st.mtime.toISOString().slice(0, 10)}</lastmod>` : ''}<changefreq>${freq}</changefreq><priority>${prioridade}</priority></url>`;
+    }));
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.join('\n')}\n</urlset>\n`;
+}
+
+const robots = (req) => `User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /painel
+
+Sitemap: ${siteOrigin(req)}/sitemap.xml
+`;
+
 /** Política de segurança de conteúdo: libera só o que cada página usa. */
 function securityHeaders(req, page) {
     const host = req.headers.host || 'localhost';
@@ -131,6 +198,12 @@ function securityHeaders(req, page) {
         scripts.add('https://challenges.cloudflare.com');
         frames.add('https://challenges.cloudflare.com');
         connect.add('https://challenges.cloudflare.com');
+    }
+    if (comEstatistica(page)) {
+        // Google Analytics 4 (lista oficial de domínios do GA4 para CSP)
+        scripts.add('https://*.googletagmanager.com');
+        for (const o of ['https://*.google-analytics.com', 'https://*.googletagmanager.com']) imgs.add(o);
+        for (const o of ['https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com']) connect.add(o);
     }
     if (page === 'painel' || page === 'admin') {
         const tiles = config.map.tiles.replace('{s}', 'a');
@@ -244,7 +317,7 @@ async function handleApi(req, res, url, ip) {
             ip, ipFamily: ipFamily(ip), isp: isp.isp, asn: isp.asn,
             ipLocation: { city: isp.city, region: isp.region, country: isp.country },
             location, place,
-            device: r.device, connection: r.connection, advanced: r.advanced,
+            device: r.device, connection: r.connection, advanced: r.advanced, curve: r.curve,
             userAgent: String(req.headers['user-agent'] || '').slice(0, 300),
             server: { name: config.serverName, location: config.serverLocation },
         };
@@ -338,32 +411,34 @@ async function handle(req, res) {
         const rp = /^\/r\/([0-9A-Za-z]{15})$/.exec(url.pathname);
         if (rp) {
             const t = store.get(rp[1]);
-            const html = renderResultPage(t ? publicResult(t) : null, siteOrigin(req));
+            const html = renderResultPage(t ? publicResult(t) : null, siteOrigin(req)).replace('</head>', `${tagsEstatistica('resultado')}</head>`);
             res.writeHead(t ? 200 : 404, { ...securityHeaders(req, 'resultado'), 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
             return res.end(req.method === 'HEAD' ? undefined : html);
+        }
+
+        if (url.pathname === '/robots.txt') {
+            res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+            return res.end(req.method === 'HEAD' ? undefined : robots(req));
+        }
+        if (url.pathname === '/sitemap.xml') {
+            const xml = await mapaDoSite(req);
+            res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8', 'Cache-Control': 'public, max-age=3600', 'X-Content-Type-Options': 'nosniff' });
+            return res.end(req.method === 'HEAD' ? undefined : xml);
         }
 
         const page = PAGES[url.pathname];
         if (page) {
             const name = page.replace('.html', '').replace('index', 'teste');
-            if (page === 'index.html') {
-                // a prévia do link (WhatsApp, redes) exige endereço completo da imagem
-                const html = (await fsp.readFile(path.join(config.staticDir, page), 'utf8'))
-                    .replace('content="/assets/og.png"', `content="${siteOrigin(req)}/assets/og.png"`);
-                res.writeHead(200, { ...securityHeaders(req, name), 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
-                return res.end(req.method === 'HEAD' ? undefined : html);
-            }
-            await serveFile(req, res, path.join(config.staticDir, page), { cacheControl: 'no-cache', headers: securityHeaders(req, name) });
-            return;
+            return enviarPagina(req, res, await paginaPronta(page, name, req), securityHeaders(req, name));
         }
 
         const abs = resolvePublic(config.staticDir, url.pathname);
         if (abs && await serveFile(req, res, abs, { headers: { 'X-Content-Type-Options': 'nosniff' } })) return;
 
-        if (!(await serveFile(req, res, path.join(config.staticDir, '404.html'), { status: 404, cacheControl: 'no-cache', headers: securityHeaders(req, '404') }))) {
-            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-            res.end('Não encontrado');
-        }
+        const p404 = await paginaPronta('404.html', '404', req).catch(() => null);
+        if (p404) return enviarPagina(req, res, p404, securityHeaders(req, '404'), 404);
+        res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Não encontrado');
     } catch (e) {
         const status = e.status || 500;
         if (status >= 500 && !e.code) log.error('[erro]', req.method, url.pathname, e);
