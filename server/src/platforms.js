@@ -32,7 +32,8 @@ const FIXED = {
     // responderem só da origem (~130 ms), o que mediria coisa errada.
     caixa: 'https://internetbanking.caixa.gov.br/favicon.ico',
     bb: 'https://www.bb.com.br/favicon.ico',
-    itau: 'https://cartoes.itau.com.br/favicon.ico',
+    // cartoes.itau.com.br/favicon.ico passou a redirecionar para um 403 do firewall (falhava em alguns navegadores): CSS pequeno, 200 e cache público na borda
+    itau: 'https://www.itau.com.br/fonts/itautext.css',
     bradesco: 'https://banco.bradesco/favicon.ico',
     santander: 'https://www.santander.com.br/favicon.ico',
     nubank: 'https://prod-s0-webapp-proxy.nubank.com.br/api/discovery',
