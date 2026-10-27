@@ -192,6 +192,39 @@ test('dono criado pelo terminal; admin dado pelo painel; dono protegido', async 
     assert.equal((await est.navA.get('/api/admin/overview')).status, 403, 'perdeu o acesso na hora');
 });
 
+test('acesso técnico: só técnico e admin usam o /tecnico; teste "técnico" de cliente comum vale como de cliente', async () => {
+    assert.equal((await est.navC.get('/api/tecnico/tests')).status, 403, 'cliente comum não vê a lista técnica');
+    const fingido = await est.navC.post('/api/results', { mode: 'rapido', download: 50, upload: 20, ping: 10, jitter: 1, origem: 'tecnico', atendimento: { cliente: 'Fulano', plano: 100 } });
+    assert.equal(fingido.status, 201);
+
+    assert.equal((await est.navB.post(`/api/admin/users/${est.uidB}/tecnico`, { tecnico: true })).status, 403, 'ninguém se dá acesso técnico');
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidB}/tecnico`, { tecnico: true })).status, 200);
+    const me = await est.navB.get('/api/auth/session');
+    assert.equal(me.body.isTecnico, true);
+    assert.equal(me.body.isAdmin, false, 'técnico não vira administrador');
+    assert.equal((await est.navB.get('/api/admin/users')).status, 403, 'técnico não mexe em usuários');
+
+    const tec = await est.navB.post('/api/results', { mode: 'completo', download: 480, upload: 240, ping: 6, jitter: 1, origem: 'tecnico', atendimento: { cliente: 'Cliente 123', plano: 500, obs: 'teste no cabo' } });
+    assert.equal(tec.status, 201);
+    const lista = await est.navB.get('/api/tecnico/tests?limit=50');
+    assert.equal(lista.status, 200);
+    const porId = Object.fromEntries(lista.body.items.map((t) => [t.id, t]));
+    assert.equal(porId[fingido.body.id].origem, 'cliente', 'origem técnica de cliente comum é ignorada');
+    assert.equal(porId[fingido.body.id].atendimento, null);
+    assert.equal(porId[tec.body.id].origem, 'tecnico');
+    assert.equal(porId[tec.body.id].atendimento.cliente, 'Cliente 123');
+    assert.ok(porId[est.testeA], 'o técnico vê os testes de outros clientes');
+    const so = await est.navB.get('/api/tecnico/tests?origem=tecnico');
+    assert.ok(so.body.items.every((t) => t.origem === 'tecnico'));
+    const det = await est.navB.get('/api/tecnico/tests/' + tec.body.id);
+    assert.equal(det.body.atendimento.obs, 'teste no cabo');
+    assert.equal((await est.navB.post('/api/tecnico/tests', {})).status, 405, 'lista técnica é só leitura');
+
+    assert.match(srv.admin('sem-tecnico', B.email), /não tem mais acesso técnico/);
+    assert.equal((await est.navB.get('/api/tecnico/tests')).status, 403, 'perde o acesso na hora');
+    assert.equal((await est.dono.get('/api/tecnico/tests')).status, 200, 'administrador também usa o /tecnico');
+});
+
 test('ação sensível pede a senha de novo depois de 15 minutos', async () => {
     const db = banco();
     db.prepare('UPDATE sessions SET reauth_at = 0').run();

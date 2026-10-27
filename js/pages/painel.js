@@ -7,6 +7,7 @@ import {
 } from '../core/util.js';
 import { abrirDetalhe } from '../ui/detalhe.js';
 import { graficoColunas, graficoLinhas } from '../ui/graficos.js';
+import { planoParaCliente } from '../ui/qualidade.js';
 
 const sessao = await iniciarPagina({ pagina: 'painel', exigirLogin: true });
 const cfg = sessao.cfg || {};
@@ -122,9 +123,11 @@ function desenhar() {
         <div class="indicador"><dt><i class="chave-serie" style="--c:var(--serie-upload)"></i>Upload típico</dt><dd><b>${fmtMbps(ul)}</b><small>Mbps</small></dd></div>
         <div class="indicador"><dt>Ping típico</dt><dd><b>${fmtMs(pg)}</b><small>ms</small><span class="nota">jitter de ${fmtMs(jt)} ms</span></dd></div>
         <div class="indicador"><dt>Testes</dt><dd><b>${fmtInt(lista.length)}</b><span class="nota">${nomePeriodo}</span></dd></div>
-        <div class="indicador"><dt>Do seu plano</dt><dd>${plano && dl != null
-            ? html`<b>${fmtInt(Math.round((dl / plano) * 100))}%</b><span class="nota">de ${fmtInt(plano)} Mbps, no típico</span>`
-            : html`<b>–</b><span class="nota"><a href="#conta">Informe seu plano</a> para comparar</span>`}</dd></div>`);
+        <div class="indicador"><dt>Do seu plano</dt><dd>${!plano
+            ? html`<b>–</b><span class="nota"><a href="#conta">Informe seu plano</a> para comparar</span>`
+            : planoParaCliente(dl, plano) != null
+                ? html`<b>${fmtInt(planoParaCliente(dl, plano))}%</b><span class="nota">de ${fmtInt(plano)} Mbps, no típico</span>`
+                : html`<b>${fmtInt(plano)}</b><small>Mbps</small><span class="nota">Para comparar com o plano, teste no cabo de rede</span>`}</dd></div>`);
     $('#indicadores').style.setProperty('--colunas', '5');
 
     // velocidade no tempo (mais antigo -> mais novo)

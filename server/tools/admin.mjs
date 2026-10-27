@@ -6,6 +6,8 @@
 //   npm run admin -- listar                                       donos e administradores
 //   npm run admin -- rebaixar email@dominio                       dono -> administrador comum
 //   npm run admin -- reativar email@dominio                       reativa conta desativada
+//   npm run admin -- tecnico email@dominio                        dá acesso ao Speed Teste Técnico (/tecnico)
+//   npm run admin -- sem-tecnico email@dominio                    tira o acesso técnico
 //
 // Dono = administrador principal: não pode ser rebaixado, desativado nem
 // excluído pelo painel. O primeiro dono só pode ser criado por aqui.
@@ -66,10 +68,11 @@ switch (cmd) {
         break;
     }
     case 'listar': {
-        const rows = db.all("SELECT email, name, role, disabled, last_login_at FROM users WHERE role IN ('owner', 'admin') ORDER BY role DESC, email");
+        const rows = db.all("SELECT email, name, role, tecnico, disabled, last_login_at FROM users WHERE role IN ('owner', 'admin') OR tecnico = 1 ORDER BY role DESC, email");
         if (!rows.length) console.log('Nenhum administrador. Crie o primeiro dono: npm run admin -- dono email@dominio "Nome"');
         for (const r of rows) {
-            console.log(`${r.role === 'owner' ? 'dono ' : 'admin'}  ${r.email.padEnd(36)} ${r.name}${r.disabled ? '  [desativada]' : ''}  último login: ${r.last_login_at ? new Date(r.last_login_at).toLocaleString('pt-BR') : 'nunca'}`);
+            const papel = r.role === 'owner' ? 'dono   ' : r.role === 'admin' ? 'admin  ' : 'técnico';
+            console.log(`${papel}  ${r.email.padEnd(36)} ${r.name}${r.tecnico && r.role !== 'user' ? '  [+técnico]' : ''}${r.disabled ? '  [desativada]' : ''}  último login: ${r.last_login_at ? new Date(r.last_login_at).toLocaleString('pt-BR') : 'nunca'}`);
         }
         console.log(`\n${db.get('SELECT COUNT(*) n FROM users').n} conta(s), ${db.get('SELECT COUNT(*) n FROM tests').n} teste(s) no banco.`);
         break;
@@ -88,12 +91,23 @@ switch (cmd) {
         users.audit({ actor: null, action: 'reativou conta (pelo terminal)', target: users.view(u) });
         break;
     }
+    case 'tecnico':
+    case 'sem-tecnico': {
+        const u = alvo(args[0]);
+        const dar = cmd === 'tecnico';
+        users.update(u.id, { tecnico: dar });
+        console.log(verde(dar ? `✓ ${u.email} agora usa o Speed Teste Técnico (/tecnico).` : `✓ ${u.email} não tem mais acesso técnico.`));
+        users.audit({ actor: null, action: dar ? 'deu acesso técnico (pelo terminal)' : 'tirou acesso técnico (pelo terminal)', target: users.view(u) });
+        break;
+    }
     default:
         console.log(`Comandos:
   npm run admin -- dono email@dominio "Nome"   cria ou promove um dono (administrador principal)
   npm run admin -- link email@dominio          gera um link para a pessoa criar nova senha
   npm run admin -- listar                      mostra donos e administradores
   npm run admin -- rebaixar email@dominio      tira o "dono" (vira administrador comum)
-  npm run admin -- reativar email@dominio      reativa uma conta desativada`);
+  npm run admin -- reativar email@dominio      reativa uma conta desativada
+  npm run admin -- tecnico email@dominio       dá acesso ao Speed Teste Técnico (/tecnico)
+  npm run admin -- sem-tecnico email@dominio   tira o acesso técnico`);
 }
 db.close();

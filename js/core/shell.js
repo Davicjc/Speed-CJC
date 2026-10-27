@@ -10,10 +10,17 @@ const NAV = [
     { id: 'teste', href: '/', rotulo: 'Teste', icone: ICON.gauge },
     { id: 'painel', href: '/painel', rotulo: 'Meu painel', icone: ICON.history, login: true },
     { id: 'como', href: '/como-medimos', rotulo: 'Como medimos', icone: ICON.info },
+    { id: 'tecnico', href: '/tecnico', rotulo: 'Técnico', icone: ICON.sliders, tecnico: true },
     { id: 'admin', href: '/admin', rotulo: 'Administração', icone: ICON.shield, admin: true },
 ];
 
-function marcaHtml() {
+function marcaHtml(pagina) {
+    if (pagina === 'tecnico') {
+        return `<a class="marca" href="/tecnico" aria-label="Audicom Telecom, speed teste técnico — início">
+        <img class="simbolo" src="/assets/simbolo.webp" alt="" width="27" height="25">
+        <img class="palavra" src="/assets/logotipo.webp" alt="Audicom Telecom" width="86" height="25">
+        <span class="produto">Speed teste<br><span class="selo-tecnico">Técnico</span></span></a>`;
+    }
     return `<a class="marca" href="/" aria-label="Audicom Telecom, teste de velocidade — início">
         <img class="simbolo" src="/assets/simbolo.webp" alt="" width="27" height="25">
         <img class="palavra" src="/assets/logotipo.webp" alt="Audicom Telecom" width="86" height="25">
@@ -25,8 +32,9 @@ function renderTopo(pagina, sessao) {
     if (!topo) return;
     const logado = sessao && sessao.user;
     const admin = logado && sessao.me && sessao.me.isAdmin;
+    const tecnico = logado && sessao.me && sessao.me.isTecnico;
     const semContas = sessao && sessao.contasLigadas === false;
-    const itens = NAV.filter((n) => (!n.admin || admin) && !(semContas && n.login));
+    const itens = NAV.filter((n) => (!n.admin || admin) && (!n.tecnico || tecnico) && !(semContas && n.login));
     const nav = itens.map((n) => {
         const href = n.login && !logado ? '/entrar?next=' + encodeURIComponent(n.href) : n.href;
         return `<a href="${href}"${n.id === pagina ? ' aria-current="page"' : ''}>${esc(n.id === 'painel' && !logado ? 'Meu histórico' : n.rotulo)}</a>`;
@@ -48,6 +56,7 @@ function renderTopo(pagina, sessao) {
                 <div class="quem"><strong>${esc(nome)}</strong><span>${esc(sessao.user.email)}</span></div>
                 <a role="menuitem" href="/painel">${ICON.history}Meu painel</a>
                 <a role="menuitem" href="/painel#conta">${ICON.user}Meus dados</a>
+                ${tecnico ? `<a role="menuitem" href="/tecnico">${ICON.sliders}Speed teste técnico</a>` : ''}
                 ${admin ? `<a role="menuitem" href="/admin">${ICON.shield}Administração</a>` : ''}
                 <button role="menuitem" type="button" id="botao-sair">${ICON.logout}Sair</button>
             </div></div>`;
@@ -57,7 +66,7 @@ function renderTopo(pagina, sessao) {
         conta = `<a class="botao botao-secundario botao-pequeno" href="/entrar${pagina === 'teste' ? '' : '?next=' + encodeURIComponent(location.pathname)}">${ICON.login}Entrar</a>`;
     }
 
-    topo.innerHTML = `<div class="topo-dentro">${marcaHtml()}<nav class="nav" aria-label="Principal">${nav}</nav><div class="conta-area">${conta}</div></div>`;
+    topo.innerHTML = `<div class="topo-dentro">${marcaHtml(pagina)}<nav class="nav" aria-label="Principal">${nav}</nav><div class="conta-area">${conta}</div></div>`;
 
     // navegação do celular
     let cel = $('#nav-celular');
@@ -75,6 +84,7 @@ function renderTopo(pagina, sessao) {
     ] : [
         { id: 'teste', href: '/', rotulo: 'Teste', icone: ICON.gauge },
         { id: 'painel', href: logado ? '/painel' : '/entrar?next=%2Fpainel', rotulo: 'Histórico', icone: ICON.history },
+        ...(tecnico ? [{ id: 'tecnico', href: '/tecnico', rotulo: 'Técnico', icone: ICON.sliders }] : []),
         ...(admin ? [{ id: 'admin', href: '/admin', rotulo: 'Admin', icone: ICON.shield }] : []),
         { id: 'conta', href: logado ? '/painel#conta' : '/entrar', rotulo: logado ? 'Conta' : 'Entrar', icone: ICON.user },
     ];

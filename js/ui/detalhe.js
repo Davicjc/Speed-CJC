@@ -5,8 +5,8 @@
 import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { confirmar, copiar, esc, evento, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, raw, setHtml, toast } from '../core/util.js';
-import { veredito } from './qualidade.js';
-import { NOME_MODO, PARTES_DIAG, desenharDiag, textoCompleto, usosHtml } from './relatorio.js';
+import { planoParaCliente, veredito } from './qualidade.js';
+import { NOME_MODO, desenharDiag, partesDiag, textoCompleto, usosHtml } from './relatorio.js';
 
 function dialogo() {
     let d = document.getElementById('gaveta-teste');
@@ -23,7 +23,12 @@ function dialogo() {
 
 const ms = (v) => (v != null ? `${fmtMs(v)} ms` : '–');
 
-export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = null, aoExcluir, aoAbrirUsuario }) {
+/**
+ * tom 'cliente' (painel da pessoa): números completos, sem selos negativos, sem
+ * NAT, rota nem conferência. tom 'tecnico' (administração e /tecnico): tudo.
+ */
+export async function abrirDetalhe({ carregar, cfg = {}, admin = false, tom = admin ? 'tecnico' : 'cliente', plano = null, aoExcluir, aoAbrirUsuario }) {
+    const tecnico = tom === 'tecnico';
     const d = dialogo();
     d.innerHTML = `<div class="gaveta-topo"><h2 id="gaveta-titulo">Carregando teste…</h2><button type="button" class="botao botao-fantasma botao-icone" data-fechar aria-label="Fechar">${ICON.x}</button></div>
         <div class="gaveta-corpo"><div class="esqueleto" style="height:90px"></div><div class="esqueleto" style="height:200px"></div></div>`;
@@ -37,7 +42,11 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = 
         d.querySelector('#gaveta-titulo').textContent = 'Teste indisponível';
         return;
     }
-    const v = veredito(t);
+    const v = veredito(t, { tom });
+    const at = t.atendimento || null;
+    // técnico: o plano informado no atendimento vale mais que o da conta
+    if (tecnico && at && at.plano) plano = at.plano;
+    const pctPlano = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
     const link = `${location.origin}/r/${t.id}`;
     const adv = t.advanced || {};
     const loc = t.location;
@@ -46,14 +55,15 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = 
     const dev = t.device || {};
     const con = t.connection || {};
     const curva = t.curve && ((t.curve.download || []).length || (t.curve.upload || []).length) ? t.curve : null;
-    const texto = textoCompleto(t, { link, plano, empresa: cfg.serverName || 'Audicom Telecom' });
+    const texto = textoCompleto(t, { link, plano, empresa: cfg.serverName || 'Audicom Telecom', tom });
 
     const blocos = [];
     blocos.push(html`<div class="det-cabeca">
         <span class="protocolo">Protocolo ${t.protocol}</span>
         <div class="linha-flex">
             <span class="selo azul">${NOME_MODO[t.mode] || t.mode}</span>
-            ${t.verified ? raw(`<span class="selo ok">${ICON.check}Conferido pelo servidor</span>`) : raw(`<span class="selo atencao">${ICON.alert}Não conferido</span>`)}
+            ${tecnico ? raw(t.origem === 'tecnico' ? '<span class="selo origem-tecnico">Teste técnico</span>' : '<span class="selo">Página do cliente</span>') : ''}
+            ${!tecnico ? '' : t.verified ? raw(`<span class="selo ok">${ICON.check}Conferido pelo servidor</span>`) : raw(`<span class="selo atencao">${ICON.alert}Não conferido</span>`)}
         </div></div>`);
     blocos.push(html`<dl class="det-leituras">
         <div><dt>Download</dt><dd>${fmtMbps(t.download)}<small>Mbps</small></dd></div>
@@ -65,8 +75,15 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = 
     </dl>`);
 
     blocos.push(html`<div class="det-secao"><h3>${v.titulo}</h3><p class="suave det-desc">${v.texto}</p>
-        ${plano && t.download != null ? html`<p class="det-plano">Recebeu <strong>${Math.round((t.download / plano) * 100)}%</strong> do plano de ${plano} Mbps no download.</p>` : ''}
-        <ul class="usos det-usos" aria-label="O que a conexão aguenta">${raw(usosHtml(t))}</ul></div>`);
+        ${pctPlano != null ? html`<p class="det-plano">Recebeu <strong>${pctPlano}%</strong> do plano de ${plano} Mbps no download.</p>` : ''}
+        <ul class="usos det-usos" aria-label="O que a conexão aguenta">${raw(usosHtml(t, { tom }))}</ul></div>`);
+    if (tecnico && at) {
+        blocos.push(html`<div class="det-secao"><h3>Atendimento</h3><dl class="dados">
+            ${at.cliente ? html`<dt>Cliente</dt><dd>${at.cliente}</dd>` : ''}
+            ${at.plano ? html`<dt>Plano</dt><dd>${at.plano} Mbps</dd>` : ''}
+            ${at.obs ? html`<dt>Observação</dt><dd>${at.obs}</dd>` : ''}
+        </dl></div>`);
+    }
 
     if (curva) {
         blocos.push(raw(`<div class="det-secao"><div class="det-titulo-linha"><h3>Velocidade durante o teste</h3>
@@ -87,7 +104,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = 
         blocos.push(html`<div class="det-secao"><h3>Quem fez</h3><dl class="dados">
             <dt>Nome</dt><dd>${(t.user && t.user.name) || '–'}</dd>
             <dt>E-mail</dt><dd>${(t.user && t.user.email) || '–'}</dd>
-        </dl>${t.uid ? raw('<button type="button" class="botao botao-secundario botao-pequeno" data-usuario style="margin-top:10px">Ver a conta</button>') : ''}</div>`);
+        </dl>${t.uid && aoAbrirUsuario ? raw('<button type="button" class="botao botao-secundario botao-pequeno" data-usuario style="margin-top:10px">Ver a conta</button>') : ''}</div>`);
     } else if (admin) {
         blocos.push(html`<div class="det-secao"><h3>Quem fez</h3><p class="suave" style="font-size:var(--t-sm)">Teste feito sem login.</p></div>`);
     }
@@ -117,7 +134,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = 
         ${dev.screen ? html`<dt>Tela</dt><dd>${dev.screen}</dd>` : ''}
     </dl></div>`);
 
-    const partes = t.mode === 'completo' ? PARTES_DIAG.filter((k) => k in adv) : [];
+    const partes = t.mode === 'completo' ? partesDiag(tom).filter((k) => k in adv) : [];
     if (partes.length) {
         blocos.push(raw(`<div class="det-grupo"><h3 class="det-grupo-titulo">Diagnóstico completo</h3>${partes.map((k) => `<div class="det-secao" data-diag="${k}"></div>`).join('')}</div>`));
     }
@@ -142,7 +159,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, plano = 
     d.querySelector('#gaveta-titulo').textContent = `Teste de ${fmtDataHora(t.createdAt)}`;
     setHtml(d.querySelector('.gaveta-corpo'), raw(blocos.map(String).join('')));
 
-    for (const k of partes) desenharDiag(d.querySelector(`[data-diag="${k}"]`), k, adv[k], { estilo: 'secao' });
+    for (const k of partes) desenharDiag(d.querySelector(`[data-diag="${k}"]`), k, adv[k], { estilo: 'secao', tom });
     if (curva) {
         const { graficoLinhas } = await import('./graficos.js');
         const pontos = (a) => (a || []).map(([x, y]) => ({ x, y }));

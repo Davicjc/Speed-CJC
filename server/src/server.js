@@ -20,6 +20,7 @@ import { renderResultPage } from './result-page.js';
 import { validateResult, verifyAgainstServer } from './results.js';
 import { handleAccount } from './routes-account.js';
 import { createAdminRoutes } from './routes-admin.js';
+import { createTecnicoRoutes } from './routes-tecnico.js';
 import { createSessions } from './sessions.js';
 import { createSlotManager } from './slots.js';
 import { PAGES, resolvePublic, serveFile } from './static.js';
@@ -81,6 +82,7 @@ const limits = {
 
 const ctx = { config, db, users, sessions, store, authn, captcha, mailer, backups, geo, hub, presence, clock, slots, rtc, platforms, limits, lookupIsp, isHttps, siteOrigin, log };
 const handleAdmin = createAdminRoutes(ctx);
+const handleTecnico = createTecnicoRoutes({ authn, store, users });
 
 const err = (status, message, code) => Object.assign(new Error(message), { status, code });
 
@@ -118,8 +120,8 @@ function baseUrl(family, req) {
 const originOf = (u) => { try { return new URL(u).origin; } catch { return null; } };
 
 // ---------- páginas: endereço do site, prévia e estatísticas ----------
-// A administração fica fora das estatísticas.
-const comEstatistica = (page) => Boolean(config.gaId) && page !== 'admin';
+// A administração e o /tecnico (ferramentas internas) ficam fora das estatísticas.
+const comEstatistica = (page) => Boolean(config.gaId) && page !== 'admin' && page !== 'tecnico';
 
 function tagsEstatistica(page) {
     if (!comEstatistica(page)) return '';
@@ -177,6 +179,7 @@ Allow: /
 Disallow: /api/
 Disallow: /admin
 Disallow: /painel
+Disallow: /tecnico
 
 Sitemap: ${siteOrigin(req)}/sitemap.xml
 `;
@@ -189,7 +192,7 @@ function securityHeaders(req, page) {
     const scripts = new Set(["'self'", FOOTER_ORIGIN]);
     const frames = new Set();
     const imgs = new Set(["'self'", 'data:', 'blob:']);
-    if (page === 'teste') {
+    if (page === 'teste' || page === 'tecnico') {
         // IPv6 literal ([2804:…]) não é aceito em CSP: só nome DNS (v6.seu-dominio)
         for (const b of [baseUrl('IPv4', req), baseUrl('IPv6', req)]) { const o = b && originOf(b); if (o && !o.includes('[')) connect.add(o); }
         for (const u of Object.values(platforms.list().targets || {})) { const o = u && originOf(u); if (o) connect.add(o); }
@@ -205,7 +208,7 @@ function securityHeaders(req, page) {
         for (const o of ['https://*.google-analytics.com', 'https://*.googletagmanager.com']) imgs.add(o);
         for (const o of ['https://*.google-analytics.com', 'https://*.analytics.google.com', 'https://*.googletagmanager.com']) connect.add(o);
     }
-    if (page === 'painel' || page === 'admin') {
+    if (page === 'painel' || page === 'admin' || page === 'tecnico') {
         const tiles = config.map.tiles.replace('{s}', 'a');
         const o = originOf(tiles.replace(/\{[^}]+\}/g, '0'));
         if (o) {
@@ -308,8 +311,12 @@ async function handleApi(req, res, url, ip) {
         }
         if (!place && isp.city) place = { label: `${isp.city}${isp.region ? ' - ' + isp.region : ''}`, district: null, city: isp.city, region: isp.region, source: 'ip' };
 
+        // teste da página técnica só conta como técnico vindo de técnico ou administrador
+        const tecnico = r.origem === 'tecnico' && who && users.isTecnico(who.profile);
         const doc = {
             mode: r.mode,
+            origem: tecnico ? 'tecnico' : 'cliente',
+            atendimento: tecnico ? r.atendimento : null,
             download: r.download, upload: r.upload, ping: r.ping, jitter: r.jitter, loss: r.loss, bufferbloat: r.bufferbloat,
             pingMin: r.pingMin, pingMax: r.pingMax, loadedLatency: r.loadedLatency, dlWindowMs: r.dlWindowMs,
             verified: verification.verified, verification,
@@ -359,6 +366,7 @@ async function handleApi(req, res, url, ip) {
 
     if (await handleAccount(ctx, req, res, url, ip)) return;
     if (await handleAdmin(req, res, url, ip)) return;
+    if (await handleTecnico(req, res, url, ip)) return;
     throw err(404, 'rota não encontrada');
 }
 

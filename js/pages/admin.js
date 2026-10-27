@@ -273,6 +273,7 @@ function filtrosTestes() {
     if (v('#f-q')) q.set('q', v('#f-q'));
     if (v('#f-modo')) q.set('mode', v('#f-modo'));
     if (v('#f-quem')) q.set('uid', v('#f-quem'));
+    if (v('#f-origem')) q.set('origem', v('#f-origem'));
     // datas no fuso de Brasília
     if (v('#f-de')) q.set('from', String(Date.parse(v('#f-de') + 'T00:00:00-03:00')));
     if (v('#f-ate')) q.set('to', String(Date.parse(v('#f-ate') + 'T23:59:59-03:00')));
@@ -288,7 +289,7 @@ async function carregarTestes(mais = false) {
         const r = await api('/api/admin/tests?' + q);
         testesProximo = r.next;
         const linhas = html`${r.items.map((t) => html`<tr class="clicavel" data-id="${t.id}" tabindex="0">
-            <td>${fmtDataHora(t.createdAt)}<br><span class="fraco">${t.protocol} ${NOME_MODO[t.mode] ? '(' + NOME_MODO[t.mode] + ')' : ''}</span></td><td>${quem(t)}</td>
+            <td>${fmtDataHora(t.createdAt)}<br><span class="fraco">${t.protocol} ${NOME_MODO[t.mode] ? '(' + NOME_MODO[t.mode] + ')' : ''}</span>${t.origem === 'tecnico' ? raw(' <span class="selo origem-tecnico">Técnico</span>') : ''}</td><td>${quem(t)}${t.atendimento && t.atendimento.cliente ? html`<br><span class="fraco">Cliente: ${t.atendimento.cliente}</span>` : ''}</td>
             <td class="n">${fmtMbps(t.download)}</td><td class="n">${fmtMbps(t.upload)}</td><td class="n">${fmtMs(t.ping)}</td><td class="n">${t.loss != null ? fmtPct(t.loss) + '%' : '–'}</td>
             <td>${lugar(t)}</td><td class="fraco">${t.isp || '–'}</td>
             <td>${t.verified ? raw('<span class="selo ok">Sim</span>') : raw('<span class="selo atencao">Não</span>')}</td></tr>`)}`;
@@ -324,7 +325,8 @@ $('#testes-csv').addEventListener('click', (e) => comCarga(e.currentTarget, asyn
 
 // ---------- usuários ----------
 let usuariosProximo = null;
-const papel = (u) => (u.owner || u.isOwnerEmail ? raw('<span class="selo azul papel">Dono</span>') : u.role === 'admin' ? raw('<span class="selo azul papel">Administrador</span>') : raw('<span class="selo papel">Usuário</span>'));
+const papel = (u) => raw((u.owner || u.isOwnerEmail ? '<span class="selo azul papel">Dono</span>' : u.role === 'admin' ? '<span class="selo azul papel">Administrador</span>' : '<span class="selo papel">Usuário</span>')
+    + (u.tecnico ? ' <span class="selo origem-tecnico papel">Técnico</span>' : ''));
 const situacao = (u) => raw([
     u.disabled ? '<span class="selo ruim">Desativada</span>' : '<span class="selo ok">Ativa</span>',
     u.online ? '<span class="selo ok ponto vivo">Online</span>' : '',
@@ -384,6 +386,10 @@ async function abrirUsuario(uid) {
     else {
         acoes.push(raw(`<div class="linha-acao"><div><strong>${u.role === 'admin' ? 'Tirar acesso de administrador' : 'Tornar administrador'}</strong><p>${u.role === 'admin' ? 'A pessoa volta a ver só os próprios testes.' : 'Vê todos os testes e usuários e pode dar acesso a outras pessoas.'}${cfg.mail && !u.emailVerified && u.role !== 'admin' ? ' Só passa a valer depois que ela confirmar o e-mail.' : ''}</p></div>
             <button type="button" class="botao botao-secundario botao-pequeno" data-a="papel">${u.role === 'admin' ? 'Tirar acesso' : 'Tornar administrador'}</button></div>`));
+        if (u.role !== 'admin') {
+            acoes.push(raw(`<div class="linha-acao"><div><strong>${u.tecnico ? 'Tirar acesso técnico' : 'Dar acesso técnico'}</strong><p>${u.tecnico ? 'A pessoa deixa de usar o Speed Teste Técnico (/tecnico).' : 'Usa o Speed Teste Técnico (/tecnico), com todas as medidas, e vê os testes de todos os clientes. Não mexe em usuários nem acessos.'}</p></div>
+            <button type="button" class="botao botao-secundario botao-pequeno" data-a="tecnico">${u.tecnico ? 'Tirar acesso' : 'Dar acesso técnico'}</button></div>`));
+        }
         acoes.push(raw(`<div class="linha-acao"><div><strong>Link para nova senha</strong><p>Para quem esqueceu a senha. Você copia e manda pelo WhatsApp${cfg.mail ? ' (ou enviamos por e-mail)' : ''}. Vale 3 dias e funciona uma vez.</p></div>
             <button type="button" class="botao botao-secundario botao-pequeno" data-a="link">Gerar link</button></div>`));
         acoes.push(raw(`<div class="linha-acao"><div><strong>Encerrar sessões</strong><p>Desconecta a pessoa de todos os aparelhos.</p></div>
@@ -428,6 +434,11 @@ async function abrirUsuario(uid) {
         const tornar = u.role !== 'admin';
         if (!(await confirmar({ titulo: tornar ? `Tornar ${u.name} administrador?` : `Tirar o acesso de ${u.name}?`, texto: tornar ? 'A pessoa vai ver todos os testes e todos os usuários.' : 'A pessoa perde o acesso à administração na hora.', acao: tornar ? 'Tornar administrador' : 'Tirar acesso', perigo: !tornar }))) return;
         acao(e.currentTarget, () => api(`/api/admin/users/${encodeURIComponent(uid)}/role`, { method: 'POST', body: { role: tornar ? 'admin' : 'user' } }), tornar ? 'Acesso de administrador concedido.' : 'Acesso de administrador removido.');
+    });
+    if (b('tecnico')) b('tecnico').addEventListener('click', async (e) => {
+        const dar = !u.tecnico;
+        if (!(await confirmar({ titulo: dar ? `Dar acesso técnico a ${u.name}?` : `Tirar o acesso técnico de ${u.name}?`, texto: dar ? 'A pessoa vai usar o Speed Teste Técnico e ver os testes de todos os clientes.' : 'A pessoa perde o acesso ao /tecnico na hora.', acao: dar ? 'Dar acesso técnico' : 'Tirar acesso', perigo: !dar }))) return;
+        acao(e.currentTarget, () => api(`/api/admin/users/${encodeURIComponent(uid)}/tecnico`, { method: 'POST', body: { tecnico: dar } }), dar ? 'Acesso técnico concedido.' : 'Acesso técnico removido.');
     });
     if (b('link')) b('link').addEventListener('click', (e) => comCarga(e.currentTarget, async () => {
         try {

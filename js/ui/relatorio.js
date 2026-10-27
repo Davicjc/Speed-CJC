@@ -6,12 +6,14 @@ import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { esc, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct } from '../core/util.js';
 import { barrasHorizontais } from './graficos.js';
-import { usos, veredito } from './qualidade.js';
+import { planoParaCliente, usos, veredito } from './qualidade.js';
 
 export const NOME_MODO = { rapido: 'Teste rápido', completo: 'Diagnóstico completo' };
 
 const selo = (nivel, texto) => `<span class="selo ${nivel}">${esc(texto)}</span>`;
 const nivelMs = (ms) => (ms == null ? null : ms < 50 ? { nivel: 'ok', rotulo: 'Rápido' } : ms < 120 ? { nivel: 'ok', rotulo: 'Bom' } : { nivel: 'atencao', rotulo: 'Lento' });
+// tom do cliente: descreve o tempo sem chamar de lento
+const nivelMsCliente = (ms) => (ms == null ? null : ms < 50 ? { nivel: 'ok', rotulo: 'Rápido' } : ms < 120 ? { nivel: 'ok', rotulo: 'Bom' } : { nivel: '', rotulo: 'Mais demorado' });
 const sim = (v) => /sim|provável/.test(v || '');
 
 function aparelhoTexto(d) {
@@ -32,15 +34,16 @@ const DIAG = {
     protocolos: {
         titulo: 'IPv4 e IPv6',
         descricao: 'Download medido separadamente em cada versão do protocolo da internet.',
-        corpo(d) {
+        corpo(d, tom) {
             const linha = (nome, x = {}) => {
-                const estado = x.alcance === null || x.alcance === undefined ? selo('', 'Não verificável') : x.alcance ? selo('ok', 'Funciona') : selo('ruim', 'Sem acesso');
+                const estado = x.alcance === null || x.alcance === undefined ? selo('', 'Não verificável') : x.alcance ? selo('ok', 'Funciona')
+                    : tom === 'tecnico' ? selo('ruim', 'Sem acesso') : selo('', 'Não utilizado');
                 return `<div class="diag-linha"><strong>${nome} ${estado}</strong><span class="valor">${x.mbps != null ? fmtMbps(x.mbps) + ' <small class="suave">Mbps</small>' : '–'}</span>
                     ${x.ip ? `<p>Endereço: ${esc(x.ip)}</p>` : ''}</div>`;
             };
             return `<div class="diag-linhas">${linha('IPv4', d.ipv4)}${linha('IPv6', d.ipv6)}</div>
                 <p class="diag-explica">${d.ipv6 && d.ipv6.alcance ? 'A conexão já usa IPv6, o protocolo novo da internet.'
-                    : d.ipv6 && d.ipv6.alcance === false ? 'Sem IPv6, alguns serviços ficam dependentes de NAT. Não costuma ser um problema no dia a dia.'
+                    : d.ipv6 && d.ipv6.alcance === false ? (tom === 'tecnico' ? 'Sem IPv6, alguns serviços ficam dependentes de NAT. Não costuma ser um problema no dia a dia.' : 'A conexão está usando o IPv4, que atende normalmente todos os sites e aplicativos.')
                     : 'Não deu para verificar o IPv6 por este endereço do site.'}</p>`;
         },
     },
@@ -64,11 +67,11 @@ const DIAG = {
     relogio: {
         titulo: 'Relógio do aparelho',
         descricao: 'Comparado com a hora oficial do Brasil (NTP.br).',
-        corpo(d) {
+        corpo(d, tom) {
             if (!d) return '<p class="suave">Não foi possível comparar com a hora oficial.</p>';
             const s = d.offsetS;
             const abs = Math.abs(s);
-            const est = abs < 2 ? selo('ok', 'Certo') : abs < 60 ? selo('atencao', s > 0 ? 'Adiantado' : 'Atrasado') : selo('ruim', s > 0 ? 'Muito adiantado' : 'Muito atrasado');
+            const est = abs < 2 ? selo('ok', 'Certo') : abs < 60 || tom !== 'tecnico' ? selo('atencao', s > 0 ? 'Adiantado' : 'Atrasado') : selo('ruim', s > 0 ? 'Muito adiantado' : 'Muito atrasado');
             return `<div class="diag-linhas"><div class="diag-linha"><strong>Diferença ${est}</strong><span class="valor">${s > 0 ? '+' : s < 0 ? '−' : ''}${fmtNum(abs, abs < 10 ? 2 : 0)} <small class="suave">s</small></span>
                 <p>${abs < 2 ? 'Tudo certo.' : 'Relógio errado faz aplicativos de banco e sites seguros recusarem a conexão. Ative a data e hora automáticas no aparelho.'}${d.incertezaS != null ? ` Margem da medida: ${fmtNum(d.incertezaS * 1000, 0)} ms.` : ''}</p></div></div>`;
         },
@@ -85,36 +88,38 @@ const DIAG = {
     },
 };
 
-/** Ordem em que o diagnóstico completo aparece. */
+/** Ordem em que o diagnóstico completo aparece. NAT e rota são só do técnico (o cliente não vê, mas são coletados). */
 export const PARTES_DIAG = ['protocolos', 'nat', 'servicos', 'bancos', 'relogio', 'rota'];
+const SO_TECNICO = new Set(['nat', 'rota']);
+export const partesDiag = (tom = 'cliente') => (tom === 'tecnico' ? PARTES_DIAG : PARTES_DIAG.filter((k) => !SO_TECNICO.has(k)));
 
 /**
  * Desenha uma parte do diagnóstico dentro de `el`.
  * estilo 'painel': cabeçalho de cartão (página do teste); 'secao': título simples (gaveta).
  */
-export function desenharDiag(el, chave, d, { estilo = 'painel' } = {}) {
+export function desenharDiag(el, chave, d, { estilo = 'painel', tom = 'cliente' } = {}) {
     const p = DIAG[chave];
-    if (!p) return;
+    if (!p || (tom !== 'tecnico' && SO_TECNICO.has(chave))) return;
     const cabeca = estilo === 'painel'
         ? `<div class="painel-cabeca"><div><h3>${esc(p.titulo)}</h3>${p.descricao ? `<p>${esc(p.descricao)}</p>` : ''}</div></div>`
         : `<h3>${esc(p.titulo)}</h3>${p.descricao ? `<p class="suave det-desc">${esc(p.descricao)}</p>` : ''}`;
     if (p.barras) {
         el.innerHTML = `${cabeca}<div class="lista-barras"></div>`;
         barrasHorizontais(el.querySelector('.lista-barras'), (d || []).map((s) => ({ nome: s.label, valor: s.ms, vazio: s.indisponivel ? 'n/d' : s.ms === null ? '…' : 'falhou' })), {
-            formato: (v) => `${v} ms`, maximo: 250, cor: 'var(--serie-download)', nivel: nivelMs,
+            formato: (v) => `${v} ms`, maximo: 250, cor: 'var(--serie-download)', nivel: tom === 'tecnico' ? nivelMs : nivelMsCliente,
         });
     } else {
-        el.innerHTML = cabeca + p.corpo(d || {});
+        el.innerHTML = cabeca + p.corpo(d || {}, tom);
     }
     el.hidden = false;
 }
 
-const ICONE_ESTADO = { ok: ICON.checkCircle, atencao: ICON.alert, ruim: ICON.xCircle };
-const TEXTO_ESTADO = { ok: 'atende', atencao: 'no limite', ruim: 'não atende' };
+const ICONE_ESTADO = { ok: ICON.checkCircle, atencao: ICON.alert, ruim: ICON.xCircle, neutro: ICON.clock };
+const TEXTO_ESTADO = { ok: 'atende', atencao: 'no limite', ruim: 'não atende', neutro: 'pode variar neste momento' };
 
 /** Lista "o que a conexão aguenta" (4K, jogos, chamadas…). */
-export function usosHtml(t) {
-    return usos(t).map((u) => `<li class="${u.estado}">${ICONE_ESTADO[u.estado]}<strong>${esc(u.titulo)}<span class="sr-only">: ${TEXTO_ESTADO[u.estado]}</span></strong><span>${esc(u.detalhe)}</span></li>`).join('');
+export function usosHtml(t, { tom = 'cliente' } = {}) {
+    return usos(t, { tom }).map((u) => `<li class="${u.estado}">${ICONE_ESTADO[u.estado]}<strong>${esc(u.titulo)}<span class="sr-only">: ${TEXTO_ESTADO[u.estado]}</span></strong><span>${esc(u.detalhe)}</span></li>`).join('');
 }
 
 // ---------------------------------------------------------------- texto
@@ -127,21 +132,24 @@ const ms = (v) => (v == null ? 'não medido' : `${fmtMs(v)} ms`);
  * teste mediu (no modo completo, também o diagnóstico e a rota), menos as
  * coordenadas do aparelho: o local vai só pelo nome do bairro e da cidade.
  */
-export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom' } = {}) {
+export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom = 'cliente' } = {}) {
     const L = [];
-    const v = veredito(t);
+    const tecnico = tom === 'tecnico';
+    const v = veredito(t, { tom });
     const adv = t.advanced || {};
     const ll = t.loadedLatency || {};
 
     L.push(`*Teste de velocidade ${empresa}*`);
     const quando = [t.createdAt ? fmtDataHora(t.createdAt) : null, t.protocol ? `Protocolo ${t.protocol}` : null].filter(Boolean).join(' · ');
     if (quando) L.push(quando);
-    L.push(`${NOME_MODO[t.mode] || 'Teste'}: ${v.titulo}${t.verified === false ? ' (não conferido pelo servidor)' : ''}`);
+    L.push(`${NOME_MODO[t.mode] || 'Teste'}: ${v.titulo}${tecnico && t.verified === false ? ' (não conferido pelo servidor)' : ''}`);
+    if (tecnico && t.origem === 'tecnico') L.push('Teste técnico' + (t.atendimento && t.atendimento.cliente ? ` · cliente ${t.atendimento.cliente}` : ''));
 
     L.push('', '*Velocidade*');
     L.push(`Download: ${mbps(t.download)}`);
     L.push(`Upload: ${mbps(t.upload)}`);
-    if (plano && t.download != null) L.push(`Plano contratado: ${plano} Mbps (${Math.round((t.download / plano) * 100)}% no download)`);
+    const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
+    if (pct != null) L.push(`Plano contratado: ${plano} Mbps (${pct}% no download)`);
 
     L.push('', '*Latência e estabilidade*');
     L.push(`Ping: ${ms(t.ping)}${t.pingMin != null && t.pingMax != null ? ` (mín. ${fmtMs(t.pingMin)}, máx. ${fmtMs(t.pingMax)})` : ''}`);
@@ -167,11 +175,11 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom' } = 
             L.push('', '*IPv4 e IPv6*');
             for (const [nome, x] of [['IPv4', pr.ipv4], ['IPv6', pr.ipv6]]) {
                 if (!x) continue;
-                const est = x.alcance == null ? 'não verificável' : x.alcance ? `funciona${x.mbps != null ? `, ${fmtMbps(x.mbps)} Mbps` : ''}` : 'sem acesso';
+                const est = x.alcance == null ? 'não verificável' : x.alcance ? `funciona${x.mbps != null ? `, ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? 'sem acesso' : 'não utilizado';
                 L.push(`${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}`);
             }
         }
-        if (adv.nat) {
+        if (tecnico && adv.nat) {
             const n = adv.nat;
             L.push('', '*Roteador e NAT*');
             L.push(`Tipo de NAT: ${n.tipo || 'não medido'}`);
@@ -183,17 +191,17 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom' } = 
         const lista = (titulo, arr) => {
             if (!arr || !arr.length) return;
             L.push('', `*${titulo}*`);
-            for (const s of arr) L.push(`${s.label}: ${s.ms != null ? `${s.ms} ms` : s.indisponivel ? 'indisponível' : 'falhou'}`);
+            for (const s of arr) L.push(`${s.label}: ${s.ms != null ? `${s.ms} ms` : s.indisponivel ? 'indisponível' : tecnico ? 'falhou' : 'sem resposta'}`);
         };
         lista('Tempo até os aplicativos', adv.servicos);
         lista('Tempo até bancos e PIX', adv.bancos);
-        if (adv.rota && adv.rota.length) {
+        if (tecnico && adv.rota && adv.rota.length) {
             L.push('', '*Rota até a conexão*');
             for (const h of adv.rota) {
                 const extra = [h.media != null ? `${fmtMs(h.media)} ms` : null, h.perda ? `${fmtPct(h.perda)}% de perda` : null].filter(Boolean).join(', ');
                 L.push(`${h.hop}. ${h.host || 'não responde'}${extra ? ` (${extra})` : ''}`);
             }
-        } else if (adv.rotaErro) L.push('', `*Rota até a conexão:* não respondeu (${adv.rotaErro})`);
+        } else if (tecnico && adv.rotaErro) L.push('', `*Rota até a conexão:* não respondeu (${adv.rotaErro})`);
     }
 
     if (link) L.push('', `Resultado: ${link}`);

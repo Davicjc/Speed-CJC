@@ -2,17 +2,31 @@ import { coletarAparelho, conexaoDoNavegador, NOMES_CONEXAO } from '../core/devi
 import { ICON } from '../core/icons.js';
 import { guardarPendente } from '../core/pendentes.js';
 import { iniciarPagina } from '../core/shell.js';
-import { $, $$, copiar, esc, evento, fmtHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, setHtml, storage, store, toast } from '../core/util.js';
+import { $, $$, copiar, esc, evento, fmtHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, setHtml, store, toast } from '../core/util.js';
 import * as M from '../engine/motor.js';
 import { executarTeste } from '../engine/teste.js';
 import { iniciarConstelacao } from '../ui/constelacao.js';
 import { barrasHorizontais, graficoLinhas } from '../ui/graficos.js';
-import { classificar, dicas, veredito } from '../ui/qualidade.js';
+import { iniciarLocalizacao, pedirPosicao } from '../ui/localizacao.js';
+import { classificar, dicas, planoParaCliente, veredito } from '../ui/qualidade.js';
 import { desenharDiag, textoCompleto, usosHtml } from '../ui/relatorio.js';
 import { criarVelocimetro } from '../ui/velocimetro.js';
 
-const sessao = await iniciarPagina({ pagina: 'teste' });
+// A mesma página serve dois públicos: o cliente (/), com resultado honesto e
+// sem alarme, e o técnico (/tecnico), com tudo, para técnicos e administradores.
+const TOM = document.body.dataset.tom === 'tecnico' ? 'tecnico' : 'cliente';
+const TECNICO = TOM === 'tecnico';
+
+const sessao = await iniciarPagina({ pagina: TECNICO ? 'tecnico' : 'teste', exigirLogin: TECNICO });
 const cfg = sessao.cfg || {};
+if (TECNICO && !(sessao.me && sessao.me.isTecnico)) {
+    setHtml($('#conteudo'), html`<section class="miolo sem-acesso">${{ __raw: ICON.lock }}
+        <h1>Speed teste técnico</h1>
+        <p>Esta área é só para técnicos e administradores da Audicom. Se você é técnico, peça o acesso a um administrador.</p>
+        <a class="botao botao-primario" href="/">Ir para o teste de velocidade</a></section>`);
+    await new Promise(() => {}); // para aqui: sem acesso, nada mais carrega
+}
+const tec = TECNICO ? await import('../ui/tecnico.js') : null;
 const velo = criarVelocimetro($('#velo'));
 const rede = iniciarConstelacao();
 
@@ -23,9 +37,12 @@ let ultimoResultado = null;
 let quem = {}; // IP, operadora e cidade, como o servidor vê
 
 // ---------- opções ----------
-const AJUDA_MODO = {
+const AJUDA_MODO = TECNICO ? {
+    rapido: 'Velocidade, latência, linha cheia e perda por UDP, em cerca de 30 segundos.',
+    completo: 'Tudo: IPv4 e IPv6, NAT e CGNAT, rota salto a salto, aplicativos, bancos e relógio. Cerca de 1 minuto.',
+} : {
     rapido: 'Velocidade, latência e estabilidade, em cerca de 30 segundos.',
-    completo: 'Inclui IPv4 e IPv6, tipo de NAT, rota até você e o tempo até bancos e aplicativos. Cerca de 1 minuto.',
+    completo: 'Inclui IPv4 e IPv6, o tempo até bancos e aplicativos e o relógio do aparelho. Cerca de 1 minuto.',
 };
 $$('#modos button').forEach((b) => b.addEventListener('click', () => escolherModo(b.dataset.modo)));
 $('#modos').addEventListener('keydown', (e) => {
@@ -44,20 +61,13 @@ function escolherModo(m) {
     $('#modo-ajuda').textContent = AJUDA_MODO[m];
     $('[data-etapa="diagnostico"]').hidden = m !== 'completo';
 }
-escolherModo('rapido');
+escolherModo(TECNICO ? 'completo' : 'rapido');
 
 const chaveLocal = $('#usar-local');
-if (!window.isSecureContext || !navigator.geolocation) {
-    chaveLocal.checked = false;
-    chaveLocal.disabled = true;
-    $('#local-chave').style.opacity = '0.6';
-    $('#local-ajuda').textContent = 'A localização do aparelho só funciona quando o site é aberto por HTTPS. O teste usa a cidade aproximada do seu IP.';
-} else {
-    chaveLocal.checked = storage('audicom.usar-local', !!sessao.user);
-    chaveLocal.addEventListener('change', () => store('audicom.usar-local', chaveLocal.checked));
-}
+iniciarLocalizacao({ chave: chaveLocal, rotulo: $('#local-chave'), ajuda: $('#local-ajuda'), ocupado: () => rodando });
 
-if (cfg.accounts && !sessao.user) $('#chamada').hidden = false;
+if (!TECNICO && cfg.accounts && !sessao.user) $('#chamada').hidden = false;
+if (tec) tec.iniciarListaTecnica({ cfg });
 if (cfg.serverName) $('#c-servidor').textContent = `${cfg.serverName}, ${cfg.serverLocation || ''}`.replace(/, $/, '');
 
 // ---------- quem é você (IP e operadora, como o servidor vê) ----------
@@ -82,7 +92,7 @@ function leitura(tipo, v, { selo = false } = {}) {
     alvo.textContent = v == null ? '–' : FMT[tipo](v);
     const q = $(`#q-${tipo}`);
     if (selo) {
-        const c = classificar(tipo, v);
+        const c = classificar(tipo, v, { tom: TOM });
         q.innerHTML = c ? `<span class="selo ${c.nivel}">${esc(c.rotulo)}</span>` : '';
     } else q.innerHTML = '';
 }
@@ -110,23 +120,15 @@ function marcarEtapa(etapa) {
 function intensidade(mbps) { return Math.min(1, Math.log10(1 + Math.max(0, mbps)) / 3); }
 
 // ---------- localização ----------
-function pedirLocal() {
-    return new Promise((resolve) => {
-        const t = setTimeout(() => resolve(null), 15000);
-        navigator.geolocation.getCurrentPosition(
-            (p) => { clearTimeout(t); resolve({ lat: p.coords.latitude, lng: p.coords.longitude, accuracy: p.coords.accuracy }); },
-            (e) => {
-                clearTimeout(t);
-                if (e.code === 1) {
-                    toast('Localização não autorizada. O teste segue usando a cidade do seu IP.', 'info');
-                    chaveLocal.checked = false;
-                    store('audicom.usar-local', false);
-                }
-                resolve(null);
-            },
-            { enableHighAccuracy: true, timeout: 14000, maximumAge: 120000 },
-        );
-    });
+async function pedirLocal() {
+    const r = await pedirPosicao();
+    if (r.ok) return r.posicao;
+    if (r.codigo === 1) {
+        toast('Localização não autorizada. O teste segue usando a cidade do seu IP.', 'info');
+        chaveLocal.checked = false;
+        store('audicom.local', 'bloqueado');
+    }
+    return null;
 }
 
 // ---------- teste ----------
@@ -145,7 +147,7 @@ function limpar() {
     $('#resultado').hidden = true;
     $('#intro').hidden = false;
     $('#detalhes').hidden = true;
-    ['protocolos', 'nat', 'servicos', 'bancos', 'relogio', 'rota'].forEach((k) => { const p = $(`#d-${k}`); p.hidden = true; p.innerHTML = ''; });
+    ['protocolos', 'nat', 'servicos', 'bancos', 'relogio', 'rota', 'medidas'].forEach((k) => { const p = $(`#d-${k}`); if (p) { p.hidden = true; p.innerHTML = ''; } });
     $('#curva').innerHTML = '';
     velo.reiniciarEscala();
 }
@@ -239,6 +241,12 @@ function encerrar() {
 }
 
 // ---------- resultado ----------
+/** Plano para comparar: no técnico, o do atendimento; no cliente, o da conta. */
+function planoAtual() {
+    if (TECNICO) return tec.atendimento().plano;
+    return (sessao.me && sessao.me.profile && sessao.me.profile.planMbps) || null;
+}
+
 /** Média das amostras de cada meio segundo: a curva de velocidade do teste. */
 function balde(lista) {
     const m = new Map();
@@ -252,22 +260,26 @@ function mostrarResultado(r, amostras) {
     centro('Download', fmtMbps(r.download), 'Mbps');
     for (const t of ['download', 'upload', 'ping', 'jitter', 'bufferbloat']) leitura(t, r[t], { selo: true });
     leitura('perda', r.loss, { selo: true });
-    $('#status').textContent = r.erros.length ? `Parte do teste não foi medida: ${r.erros.map((x) => x.split(':')[0]).join(', ')}.` : 'Teste concluído.';
+    const faltou = r.erros.map((x) => x.split(':')[0]).join(', ');
+    $('#status').textContent = !r.erros.length ? 'Teste concluído.'
+        : TECNICO ? `Parte do teste não foi medida: ${r.erros.join('; ')}.`
+        : `Não deu para medir ${faltou} desta vez. Vale testar de novo em instantes.`;
 
-    const v = veredito(r);
+    const v = veredito(r, { tom: TOM });
     $('#r-quando').textContent = `Hoje às ${fmtHora(Date.now())}`;
     $('#r-titulo').textContent = v.titulo;
     $('#r-texto').textContent = v.texto;
 
-    const plano = sessao.me && sessao.me.profile && sessao.me.profile.planMbps;
-    if (plano && r.download != null) {
-        const pct = Math.round((r.download / plano) * 100);
-        setHtml($('#r-plano'), html`Você recebeu <strong>${pct}%</strong> do seu plano de ${plano} Mbps neste teste.`);
+    const plano = planoAtual();
+    // cliente: a comparação aparece quando o resultado chega perto do plano; técnico: sempre
+    const pct = TECNICO ? (plano && r.download != null ? Math.round((r.download / plano) * 100) : null) : planoParaCliente(r.download, plano);
+    if (pct != null) {
+        setHtml($('#r-plano'), html`${TECNICO ? 'O cliente recebeu' : 'Você recebeu'} <strong>${pct}%</strong> do plano de ${plano} Mbps neste teste.`);
         $('#r-plano').hidden = false;
     } else $('#r-plano').hidden = true;
 
-    $('#r-usos').innerHTML = usosHtml(r);
-    const ds = dicas(r, { tipoConexao: conexaoDoNavegador().type, planoMbps: plano });
+    $('#r-usos').innerHTML = usosHtml(r, { tom: TOM });
+    const ds = dicas(r, { tipoConexao: conexaoDoNavegador().type, planoMbps: plano, tom: TOM });
     $('#r-dicas').innerHTML = ds.map((d) => `<li>${esc(d)}</li>`).join('');
     $('#r-dicas').hidden = !ds.length;
 
@@ -300,7 +312,7 @@ function mostrarResultado(r, amostras) {
 async function mostrarAparelho() {
     const a = await coletarAparelho();
     const c = conexaoDoNavegador();
-    setHtml($('#d-aparelho'), html`<div class="painel-cabeca"><div><h3>Seu aparelho</h3><p>O que o navegador informa. Aparelho lento também deixa a internet "parecendo" lenta.</p></div></div>
+    setHtml($('#d-aparelho'), html`<div class="painel-cabeca"><div><h3>Seu aparelho</h3><p>O que o navegador informa. Um aparelho mais antigo também pode limitar o resultado.</p></div></div>
         <dl class="dados">
             <dt>Aparelho</dt><dd>${a.model ? `${a.type} ${a.model}` : a.type}</dd>
             <dt>Sistema</dt><dd>${[a.os, a.osVersion].filter(Boolean).join(' ') || 'Não informado'}</dd>
@@ -321,6 +333,8 @@ async function salvar(r, geo) {
         connection: conexaoDoNavegador(),
         advanced: r.advanced,
         curve: r.curva ? { download: r.curva.download.map((p) => [p.x, p.y]), upload: r.curva.upload.map((p) => [p.x, p.y]) } : null,
+        origem: TOM,
+        atendimento: TECNICO ? tec.atendimento() : null,
     };
     let res = null;
     const salvo = $('#r-salvo');
@@ -330,6 +344,7 @@ async function salvar(r, geo) {
         salvo.className = 'salvo atencao';
         setHtml(salvo, html`${{ __raw: ICON.alert }}<span>Não foi possível guardar o resultado (${e.message}). O resultado acima continua valendo.</span>`);
         habilitarCompartilhar(null, r, null, aparelho);
+        if (tec) tec.medidasDetalhadas($('#d-medidas'), comoRelatorio(r, null, aparelho), { erroAoGuardar: e.message });
         return;
     }
 
@@ -339,8 +354,12 @@ async function salvar(r, geo) {
     }
     setHtml($('#r-quando'), html`Hoje às ${fmtHora(Date.now())}. Protocolo <span class="mono-copy">${res.protocol}</span>`);
     habilitarCompartilhar(location.origin + res.path, r, res, aparelho);
+    if (tec) { tec.medidasDetalhadas($('#d-medidas'), comoRelatorio(r, res, aparelho), { res }); tec.recarregarLista(); }
 
-    if (res.saved === 'account') {
+    if (TECNICO) {
+        salvo.className = 'salvo ok';
+        setHtml(salvo, html`${{ __raw: ICON.checkCircle }}<span>Teste técnico guardado (protocolo ${res.protocol})${res.place && res.place.label ? `, com local: ${res.place.label}` : ''}. Aparece na lista abaixo e na administração.</span>`);
+    } else if (res.saved === 'account') {
         salvo.className = 'salvo ok';
         setHtml(salvo, html`${{ __raw: ICON.checkCircle }}<span>Guardado no seu painel${res.place && res.place.label ? `, com local: ${res.place.label}` : ''}. <a href="/painel">Ver meu histórico</a></span>`);
     } else {
@@ -352,7 +371,7 @@ async function salvar(r, geo) {
             setHtml(salvo, html`${{ __raw: ICON.checkCircle }}<span>Resultado registrado.</span>`);
         }
     }
-    if (res.verified === false) {
+    if (res.verified === false && TECNICO) {
         salvo.insertAdjacentHTML('beforeend', '<span class="suave" style="flex-basis:100%;font-size:var(--t-xs)">O servidor não conseguiu conferir todas as medidas deste teste; ele fica marcado como não conferido.</span>');
     }
 }
@@ -367,16 +386,19 @@ function comoRelatorio(r, res, aparelho) {
         isp: quem.isp || null,
         ip: quem.ip || null,
         ipFamily: quem.family || null,
+        asn: quem.asn || null,
+        ipLocation: quem.city ? { city: quem.city, region: quem.region, country: quem.country } : null,
         place: (res && res.place) || (quem.city ? { label: [quem.city, quem.region].filter(Boolean).join(' - '), source: 'ip' } : null),
         device: aparelho || null,
         connection: conexaoDoNavegador(),
         server: cfg.serverName ? { name: cfg.serverName, location: cfg.serverLocation } : null,
+        origem: TOM,
+        atendimento: TECNICO ? tec.atendimento() : null,
     };
 }
 
 function habilitarCompartilhar(link, r, res, aparelho) {
-    const plano = sessao.me && sessao.me.profile && sessao.me.profile.planMbps;
-    const texto = textoCompleto(comoRelatorio(r, res, aparelho), { link, plano, empresa: cfg.serverName || 'Audicom Telecom' });
+    const texto = textoCompleto(comoRelatorio(r, res, aparelho), { link, plano: planoAtual(), empresa: cfg.serverName || 'Audicom Telecom', tom: TOM });
     const bc = $('#copiar');
     bc.innerHTML = ICON.copy + 'Copiar resultado';
     bc.hidden = false;
@@ -394,7 +416,7 @@ function habilitarCompartilhar(link, r, res, aparelho) {
 
 // ---------- diagnóstico (modo completo) ----------
 function mostrarDiag(chave, d) {
-    desenharDiag($(`#d-${chave}`), chave, d);
+    desenharDiag($(`#d-${chave}`), chave, d, { tom: TOM });
     $('#detalhes').hidden = false;
 }
 

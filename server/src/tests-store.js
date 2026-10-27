@@ -9,7 +9,7 @@ const CLAIM_WINDOW_MS = 24 * 60 * 60_000;
 const DIA = "strftime('%Y-%m-%d', t.created_at / 1000, 'unixepoch', '-3 hours')";
 const HORA = "CAST(strftime('%H', t.created_at / 1000, 'unixepoch', '-3 hours') AS INTEGER)";
 const SELECT = 'SELECT t.*, u.name AS u_name, u.email AS u_email FROM tests t LEFT JOIN users u ON u.id = t.user_id';
-const COLUNAS = new Set(['id', 'protocol', 'createdAt', 'uid', 'user', 'claimToken']);
+const COLUNAS = new Set(['id', 'protocol', 'createdAt', 'uid', 'user', 'claimToken', 'origem']);
 
 export function createTestsStore({ db, log = console }) {
     function linha(r) {
@@ -24,6 +24,7 @@ export function createTestsStore({ db, log = console }) {
             mode: r.mode,
             download: r.download, upload: r.upload, ping: r.ping, jitter: r.jitter, loss: r.loss, bufferbloat: r.bufferbloat,
             verified: !!r.verified,
+            origem: r.origem || 'cliente',
             ip: r.ip, isp: r.isp,
             uid: r.user_id || null,
             user: r.user_id ? { name: r.u_name || null, email: r.u_email || null } : null,
@@ -50,11 +51,11 @@ export function createTestsStore({ db, log = console }) {
         for (let tentativa = 0; ; tentativa++) {
             try {
                 db.run(`INSERT INTO tests (id, protocol, created_at, user_id, mode, download, upload, ping, jitter, loss, bufferbloat, verified,
-                        ip, isp, city, region, place_label, lat, lng, claim_hash, claim_until, data)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        ip, isp, city, region, place_label, lat, lng, claim_hash, claim_until, data, origem)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                     id, proto, agora, t.uid || null, t.mode, t.download ?? null, t.upload ?? null, t.ping ?? null, t.jitter ?? null, t.loss ?? null, t.bufferbloat ?? null,
                     t.verified ? 1 : 0, t.ip || null, t.isp || null, place.city || null, place.region || null, place.label || null,
-                    Number.isFinite(loc.lat) ? loc.lat : null, Number.isFinite(loc.lng) ? loc.lng : null, claimHash, claimUntil, JSON.stringify(resto));
+                    Number.isFinite(loc.lat) ? loc.lat : null, Number.isFinite(loc.lng) ? loc.lng : null, claimHash, claimUntil, JSON.stringify(resto), t.origem === 'tecnico' ? 'tecnico' : 'cliente');
                 break;
             } catch (e) {
                 // protocolo repetido no mesmo minuto (raríssimo): sorteia outro
@@ -82,6 +83,8 @@ export function createTestsStore({ db, log = console }) {
             loss: d.loss ?? null,
             bufferbloat: d.bufferbloat ?? null,
             verified: !!d.verified,
+            origem: d.origem || 'cliente',
+            atendimento: d.atendimento ? { cliente: d.atendimento.cliente || null, plano: d.atendimento.plano ?? null } : null,
             isp: d.isp || null,
             ip: d.ip || null,
             place: d.place || null,
@@ -94,12 +97,13 @@ export function createTestsStore({ db, log = console }) {
     }
 
     /** Página de testes, do mais novo para o mais antigo (o id já vem nessa ordem). */
-    function list({ uid, mode = null, from = null, to = null, after = null, limit = 50 } = {}) {
+    function list({ uid, mode = null, origem = null, from = null, to = null, after = null, limit = 50 } = {}) {
         limit = Math.min(Math.max(Number(limit) || 50, 1), 1000);
         const onde = [], vals = [];
         if (uid === null) onde.push('t.user_id IS NULL');
         else if (uid !== undefined) { onde.push('t.user_id = ?'); vals.push(uid); }
         if (mode) { onde.push('t.mode = ?'); vals.push(mode); }
+        if (origem) { onde.push('t.origem = ?'); vals.push(origem); }
         if (Number.isFinite(from)) { onde.push('t.created_at >= ?'); vals.push(from); }
         if (Number.isFinite(to)) { onde.push('t.created_at <= ?'); vals.push(to); }
         if (after && isId(after)) { onde.push('t.id > ?'); vals.push(after); }

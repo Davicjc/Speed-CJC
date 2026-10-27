@@ -29,6 +29,7 @@ export const PAGES = {
     '/entrar': 'entrar.html',
     '/cadastro': 'entrar.html',
     '/painel': 'painel.html',
+    '/tecnico': 'tecnico.html',
     '/admin': 'admin.html',
     '/como-medimos': 'como-medimos.html',
     '/privacidade': 'privacidade.html',

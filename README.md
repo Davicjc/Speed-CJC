@@ -67,6 +67,12 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
   WhatsApp), encerrar sessões, desativar, excluir.
 - Auditoria de toda ação de administrador e estado do sistema.
 
+**Speed Teste Técnico** (`/tecnico`): para técnicos e administradores, com
+login. Mesmo teste, tema próprio (grafite e âmbar), todas as medidas sem filtro,
+dados do atendimento (cliente, plano, observação) e a lista dos testes de todos
+os clientes. A página do cliente coleta tudo, mas mostra o resultado em tom
+honesto e sem alarme, para o teste não virar chamado por susto.
+
 **SEO e estatísticas**: título, descrição, dados estruturados (schema.org),
 perguntas frequentes, sitemap e robots gerados pelo servidor; Google Analytics 4
 opcional, com faixa de cookies e consentimento (LGPD).

@@ -40,6 +40,7 @@ export async function handleAccount(ctx, req, res, url, ip) {
             emailVerified: !!profile.email_verified,
             isAdmin: users.isAdmin(profile),
             isOwner: users.isOwner(profile),
+            isTecnico: users.isTecnico(profile),
             mail: mailer.enabled,
         };
     }

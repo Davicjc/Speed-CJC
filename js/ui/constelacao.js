@@ -6,6 +6,8 @@
 // lentos e fica parado para quem pediu menos movimento no sistema.
 
 const CORES = { download: [0, 212, 255], upload: [148, 121, 255] };
+// cor da rede (linhas e nós) vem do tema da página: --constelacao: "r, g, b"
+const corDaRede = () => (getComputedStyle(document.body).getPropertyValue('--constelacao').trim() || '96, 128, 255');
 
 let estado = null;
 
@@ -98,6 +100,7 @@ export function iniciarConstelacao() {
         return true;
     }
 
+    const rede = corDaRede();
     function desenhar(dt) {
         ctx.clearRect(0, 0, W, H);
         const mover = !calmo.matches;
@@ -118,13 +121,13 @@ export function iniciarConstelacao() {
                 const d2 = dx * dx + dy * dy;
                 if (d2 > DIST * DIST) continue;
                 const al = (1 - Math.sqrt(d2) / DIST) * 0.22;
-                ctx.strokeStyle = `rgba(96, 128, 255, ${al})`;
+                ctx.strokeStyle = `rgba(${rede}, ${al})`;
                 ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
             }
         }
         // nós
         for (const n of nos) {
-            ctx.fillStyle = n.brilho === 1 ? 'rgba(220, 232, 255, 0.85)' : `rgba(110, 140, 255, ${n.brilho})`;
+            ctx.fillStyle = n.brilho === 1 ? 'rgba(235, 240, 255, 0.85)' : `rgba(${rede}, ${Math.min(1, n.brilho + 0.1)})`;
             ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
         }
         // pacotes

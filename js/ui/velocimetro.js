@@ -25,16 +25,19 @@ function el(nome, attrs = {}, pai) {
     return e;
 }
 
+// cores do arco vêm do tema da página (variáveis --velo-*), com o azul da marca como padrão
+const cor = (nome, padrao) => getComputedStyle(document.body).getPropertyValue(nome).trim() || padrao;
+
 export function criarVelocimetro(alvo) {
     let escala = ESCALA_PADRAO;
     const svg = el('svg', { viewBox: '0 0 400 400', class: 'velo-svg', role: 'img', 'aria-hidden': 'true' });
     const defs = el('defs', {}, svg);
     const gradDl = el('linearGradient', { id: 'grad-dl', x1: '0', y1: '1', x2: '1', y2: '0' }, defs);
-    el('stop', { offset: '0', 'stop-color': '#1B3FD8' }, gradDl);
-    el('stop', { offset: '1', 'stop-color': '#00D4FF' }, gradDl);
+    el('stop', { offset: '0', 'stop-color': cor('--velo-dl-1', '#1B3FD8') }, gradDl);
+    el('stop', { offset: '1', 'stop-color': cor('--velo-dl-2', '#00D4FF') }, gradDl);
     const gradUl = el('linearGradient', { id: 'grad-ul', x1: '0', y1: '1', x2: '1', y2: '0' }, defs);
-    el('stop', { offset: '0', 'stop-color': '#2B3FD8' }, gradUl);
-    el('stop', { offset: '1', 'stop-color': '#A08BFF' }, gradUl);
+    el('stop', { offset: '0', 'stop-color': cor('--velo-ul-1', '#2B3FD8') }, gradUl);
+    el('stop', { offset: '1', 'stop-color': cor('--velo-ul-2', '#A08BFF') }, gradUl);
     const gradHz = el('linearGradient', { id: 'grad-hz', x1: '0', y1: '0', x2: '1', y2: '1' }, defs);
     el('stop', { offset: '0', 'stop-color': '#7FA2FF', 'stop-opacity': '0' }, gradHz);
     el('stop', { offset: '0.55', 'stop-color': '#E6EEFF', 'stop-opacity': '1' }, gradHz);
@@ -42,8 +45,8 @@ export function criarVelocimetro(alvo) {
     const brilho = el('filter', { id: 'brilho', x: '-30%', y: '-30%', width: '160%', height: '160%' }, defs);
     el('feGaussianBlur', { stdDeviation: '7' }, brilho);
     const fundoDisco = el('radialGradient', { id: 'disco', cx: '50%', cy: '45%', r: '55%' }, defs);
-    el('stop', { offset: '0', 'stop-color': '#0E2463', 'stop-opacity': '0.85' }, fundoDisco);
-    el('stop', { offset: '1', 'stop-color': '#081535', 'stop-opacity': '0' }, fundoDisco);
+    el('stop', { offset: '0', 'stop-color': cor('--velo-disco', '#0E2463'), 'stop-opacity': '0.85' }, fundoDisco);
+    el('stop', { offset: '1', 'stop-color': cor('--navy-800', '#081535'), 'stop-opacity': '0' }, fundoDisco);
 
     el('circle', { cx: CX, cy: CY, r: 182, fill: 'url(#disco)' }, svg);
     el('circle', { cx: CX, cy: CY, r: 182, fill: 'none', stroke: 'rgba(244,246,249,0.06)', 'stroke-width': '1' }, svg);

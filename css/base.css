@@ -468,3 +468,28 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
 @keyframes cookies-sobe { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 @media (max-width: 760px) { .faixa-cookies { left: 10px; right: 10px; bottom: calc(78px + env(safe-area-inset-bottom)); } }
 @media (prefers-reduced-motion: reduce) { .faixa-cookies { animation: none; } }
+
+/* ---------- faixa da localização (pergunta com calma; ver js/ui/localizacao.js) ---------- */
+.faixa-local {
+    position: fixed; z-index: 59; left: 16px; right: 16px; bottom: 16px; margin: 0 auto; max-width: 680px;
+    display: grid; grid-template-columns: auto 1fr; gap: 12px 16px; align-items: start;
+    padding: 16px 18px; border-radius: var(--r-lg); border: 1px solid var(--linha-forte);
+    background: var(--vidro); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: var(--sombra);
+    animation: cookies-sobe .3s cubic-bezier(.2, .8, .2, 1);
+}
+.faixa-local-icone { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: rgba(0, 212, 255, 0.12); color: var(--ciano); }
+.tema-tecnico .faixa-local-icone { background: rgba(255, 176, 32, 0.14); }
+.faixa-local-icone svg { width: 20px; height: 20px; }
+.faixa-local-texto strong { font-family: var(--fonte-display); font-size: var(--t-md); }
+.faixa-local-texto p { margin: 4px 0 0; font-size: var(--t-sm); color: var(--texto-2); line-height: 1.5; }
+.faixa-local-acoes { grid-column: 1 / -1; display: flex; justify-content: flex-end; gap: 8px; }
+@media (min-width: 640px) { .faixa-local { grid-template-columns: auto 1fr auto; align-items: center; } .faixa-local-acoes { grid-column: auto; } }
+@media (max-width: 760px) { .faixa-local { left: 10px; right: 10px; bottom: calc(78px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { .faixa-local { animation: none; } }
+
+/* "o que a conexão aguenta", tom do cliente: o que pode variar aparece em cor neutra */
+.usos li.neutro svg { color: var(--azul-claro); }
+
+/* origem do teste (administração e /tecnico) */
+.selo.origem-tecnico { color: #1A0E04; background: linear-gradient(135deg, #FFB020, #FF8A3D); }
+.selo.origem-cliente { color: var(--texto-2); background: rgba(244, 246, 249, 0.08); }

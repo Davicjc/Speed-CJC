@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Speed Teste Técnico | Audicom Telecom</title>
+<meta name="description" content="Ferramenta interna da Audicom Telecom: teste de velocidade técnico com diagnóstico completo.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0E1219">
+<link rel="icon" href="/favicon.ico">
+<link rel="apple-touch-icon" href="/assets/icone-192.png">
+<link rel="manifest" href="/site.webmanifest">
+<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/css/base.css">
+<link rel="stylesheet" href="/css/teste.css">
+<link rel="stylesheet" href="/css/tecnico.css">
+</head>
+<body class="pagina-teste tema-tecnico" data-tom="tecnico">
+<a class="pular" href="#conteudo">Pular para o teste técnico</a>
+<header class="topo" id="topo"></header>
+
+<main id="conteudo">
+    <section class="palco miolo" aria-label="Speed teste técnico">
+        <div class="palco-texto">
+            <div class="intro" id="intro">
+                <h1><span class="sobretitulo">Speed teste técnico Audicom</span>Diagnóstico completo da conexão</h1>
+                <p class="lead">Todas as medidas, sem filtro: velocidade, latência com a linha cheia, perda por UDP, IPv4 e IPv6, NAT e CGNAT, rota salto a salto e tempo até aplicativos e bancos. O teste fica guardado junto com o atendimento.</p>
+
+                <fieldset class="atendimento" id="atendimento">
+                    <legend>Atendimento</legend>
+                    <div class="atendimento-grade">
+                        <div class="campo"><label for="at-cliente">Cliente (nome, código ou contrato)</label><input class="entrada" id="at-cliente" maxlength="80" autocomplete="off"></div>
+                        <div class="campo"><label for="at-plano">Plano (Mbps)</label><input class="entrada" id="at-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off"></div>
+                        <div class="campo total"><label for="at-obs">Observação</label><input class="entrada" id="at-obs" maxlength="500" autocomplete="off" placeholder="Ex.: teste no cabo, ONU trocada, Wi-Fi 5 GHz na sala"></div>
+                    </div>
+                </fieldset>
+
+                <div class="opcoes">
+                    <div class="segmento" role="radiogroup" aria-label="Tipo de teste" id="modos">
+                        <button type="button" role="radio" aria-checked="true" data-modo="rapido">Teste rápido</button>
+                        <button type="button" role="radio" aria-checked="false" data-modo="completo">Diagnóstico completo</button>
+                    </div>
+                    <p class="opcao-ajuda" id="modo-ajuda">Velocidade, latência e estabilidade, em cerca de 30 segundos.</p>
+                    <label class="chave" id="local-chave">
+                        <input type="checkbox" id="usar-local">
+                        <span class="trilho" aria-hidden="true"></span>
+                        Registrar a localização do aparelho
+                    </label>
+                    <p class="opcao-ajuda" id="local-ajuda">Mostra no seu histórico e no mapa onde cada teste foi feito. O navegador pede permissão.</p>
+                </div>
+            </div>
+
+            <div class="resultado" id="resultado" hidden tabindex="-1">
+                <p class="resultado-quando" id="r-quando"></p>
+                <h2 id="r-titulo"></h2>
+                <p class="lead" id="r-texto"></p>
+                <p class="plano" id="r-plano" hidden></p>
+                <ul class="usos" id="r-usos" aria-label="O que a conexão aguenta"></ul>
+                <ul class="dicas" id="r-dicas" hidden></ul>
+                <div class="resultado-acoes">
+                    <button type="button" class="botao botao-primario" id="de-novo">Testar de novo</button>
+                    <button type="button" class="botao botao-secundario" id="copiar" hidden></button>
+                    <a class="botao botao-secundario" id="whatsapp" target="_blank" rel="noopener" hidden></a>
+                </div>
+                <div class="salvo" id="r-salvo" aria-live="polite"></div>
+            </div>
+        </div>
+
+        <div class="palco-velo">
+            <div class="velo" id="velo" data-modo="ocioso">
+                <div class="velo-centro">
+                    <span class="velo-rotulo" id="velo-rotulo">Download</span>
+                    <span class="velo-numero num" id="velo-numero">0</span>
+                    <span class="velo-unidade" id="velo-unidade">Mbps</span>
+                </div>
+                <button type="button" class="velo-iniciar" id="iniciar" aria-describedby="modo-ajuda">
+                    <span>Iniciar</span>
+                </button>
+            </div>
+            <ol class="etapas" id="etapas" aria-label="Etapas do teste">
+                <li data-etapa="ping">Latência</li>
+                <li data-etapa="download">Download</li>
+                <li data-etapa="upload">Upload</li>
+                <li data-etapa="estabilidade">Estabilidade</li>
+                <li data-etapa="diagnostico" hidden>Diagnóstico</li>
+            </ol>
+            <p class="status" id="status" role="status" aria-live="polite"></p>
+            <button type="button" class="botao botao-fantasma botao-pequeno parar" id="parar" hidden>Parar o teste</button>
+        </div>
+    </section>
+
+    <section class="miolo leituras-faixa" aria-label="Medidas">
+        <dl class="leituras" id="leituras">
+            <div class="leitura" data-tipo="download">
+                <dt><i class="chave-serie" style="--c: var(--serie-download)"></i>Download</dt>
+                <dd><b class="num" id="v-download">–</b><small>Mbps</small><span class="leitura-selo" id="q-download"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="upload">
+                <dt><i class="chave-serie" style="--c: var(--serie-upload)"></i>Upload</dt>
+                <dd><b class="num" id="v-upload">–</b><small>Mbps</small><span class="leitura-selo" id="q-upload"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="ping">
+                <dt>Ping</dt>
+                <dd><b class="num" id="v-ping">–</b><small>ms</small><span class="leitura-selo" id="q-ping"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="jitter">
+                <dt>Jitter</dt>
+                <dd><b class="num" id="v-jitter">–</b><small>ms</small><span class="leitura-selo" id="q-jitter"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="perda">
+                <dt>Perda de pacotes</dt>
+                <dd><b class="num" id="v-perda">–</b><small>%</small><span class="leitura-selo" id="q-perda"></span></dd>
+            </div>
+            <div class="leitura" data-tipo="bufferbloat">
+                <dt>Ping com a linha cheia</dt>
+                <dd><b class="num" id="v-bufferbloat">–</b><small>ms a mais</small><span class="leitura-selo" id="q-bufferbloat"></span></dd>
+            </div>
+        </dl>
+        <dl class="conexao" id="conexao">
+            <div><dt>Seu IP</dt><dd id="c-ip"><span class="esqueleto" style="width:120px"></span></dd></div>
+            <div><dt>Operadora</dt><dd id="c-isp"><span class="esqueleto" style="width:140px"></span></dd></div>
+            <div><dt>Local</dt><dd id="c-local"><span class="esqueleto" style="width:110px"></span></dd></div>
+            <div><dt>Servidor</dt><dd id="c-servidor">Audicom Telecom, Uberlândia, MG</dd></div>
+        </dl>
+    </section>
+
+    <section class="miolo detalhes" id="detalhes" hidden aria-labelledby="detalhes-titulo">
+        <h2 id="detalhes-titulo">Detalhes do teste</h2>
+        <div class="detalhes-grade">
+            <article class="painel largo" id="d-curva">
+                <div class="painel-cabeca">
+                    <div><h3>Velocidade durante o teste</h3><p>Cada ponto é a velocidade medida em um intervalo curto. Linha estável é sinal de conexão saudável.</p></div>
+                    <div class="legenda"><span><i style="background:var(--serie-download)"></i>Download</span><span><i class="tracejado" style="color:var(--serie-upload)"></i>Upload</span></div>
+                </div>
+                <div id="curva"></div>
+            </article>
+            <article class="painel" id="d-protocolos" hidden></article>
+            <article class="painel" id="d-nat" hidden></article>
+            <article class="painel" id="d-servicos" hidden></article>
+            <article class="painel" id="d-bancos" hidden></article>
+            <article class="painel" id="d-relogio" hidden></article>
+            <article class="painel" id="d-aparelho"></article>
+            <article class="painel total" id="d-medidas" hidden></article>
+            <article class="painel total" id="d-rota" hidden></article>
+        </div>
+    </section>
+
+    <section class="miolo testes-tec" id="testes-tec" aria-labelledby="testes-tec-titulo" hidden>
+        <div class="testes-tec-cabeca">
+            <div>
+                <h2 id="testes-tec-titulo">Testes de todos os clientes</h2>
+                <p>Os feitos na página do cliente e aqui no técnico. Clique para ver tudo o que foi medido.</p>
+            </div>
+            <form class="filtros-tec" id="filtros-tec" role="search">
+                <input class="entrada" id="busca-tec" type="search" placeholder="Protocolo AUD-…, nome ou e-mail" aria-label="Buscar testes">
+                <div class="segmento" role="radiogroup" aria-label="Origem do teste" id="origem-tec">
+                    <button type="button" role="radio" aria-checked="true" data-origem="">Todos</button>
+                    <button type="button" role="radio" aria-checked="false" data-origem="cliente">Clientes</button>
+                    <button type="button" role="radio" aria-checked="false" data-origem="tecnico">Técnicos</button>
+                </div>
+            </form>
+        </div>
+        <div class="tabela-wrap painel" style="padding:0">
+            <table class="tabela">
+                <thead><tr><th>Data</th><th>Protocolo</th><th>Origem</th><th>Quem / cliente</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th class="n">Perda</th><th>Operadora</th><th>Local</th></tr></thead>
+                <tbody id="linhas-tec"></tbody>
+            </table>
+        </div>
+        <p style="margin-top:12px"><button type="button" class="botao botao-secundario botao-pequeno" id="mais-tec" hidden>Carregar mais</button></p>
+    </section>
+</main>
+
+<footer class="rodape" id="rodape"></footer>
+<script type="module" src="/js/pages/teste.js"></script>
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

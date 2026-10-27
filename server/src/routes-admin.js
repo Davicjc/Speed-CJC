@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { isId } from './ids.js';
+import { buscarTestes } from './busca-testes.js';
 import { MODES, validateEmail } from './results.js';
 import { readJsonBody, sendJson } from './util.js';
 
@@ -130,26 +130,7 @@ export function createAdminRoutes(ctx) {
 
         // ---------- testes ----------
         if (p === '/api/admin/tests' && m === 'GET') {
-            const q = (url.searchParams.get('q') || '').trim();
-            const mode = MODES.includes(url.searchParams.get('mode')) ? url.searchParams.get('mode') : null;
-            let uid = url.searchParams.get('uid') || undefined;
-            if (uid === 'anon') uid = null;
-            let matchedUsers = null;
-            if (q) {
-                if (/^AUD-/i.test(q)) {
-                    const t = store.findByProtocol(q);
-                    return sendJson(res, 200, { items: t ? [store.summary(t)] : [], next: null }), true;
-                }
-                if (isId(q)) {
-                    const t = store.get(q);
-                    return sendJson(res, 200, { items: t ? [store.summary(t)] : [], next: null }), true;
-                }
-                matchedUsers = users.list({ q, limit: 8 }).items;
-                if (!matchedUsers.length) return sendJson(res, 200, { items: [], next: null, matchedUsers }), true;
-                if (uid === undefined) uid = matchedUsers[0].uid;
-            }
-            const page = store.list({ uid, mode, from: n('from'), to: n('to'), after: url.searchParams.get('after'), limit: n('limit') || 50 });
-            return sendJson(res, 200, { ...page, matchedUsers }), true;
+            return sendJson(res, 200, buscarTestes({ store, users, url })), true;
         }
 
         if (p === '/api/admin/tests.csv' && m === 'GET') {
@@ -201,7 +182,7 @@ export function createAdminRoutes(ctx) {
 
         // ---------- usuários ----------
         if (p === '/api/admin/users' && m === 'GET') {
-            const role = ['admin', 'user'].includes(url.searchParams.get('role')) ? url.searchParams.get('role') : null;
+            const role = ['admin', 'user', 'tecnico'].includes(url.searchParams.get('role')) ? url.searchParams.get('role') : null;
             const page = users.list({ q: url.searchParams.get('q'), role, after: url.searchParams.get('after'), limit: n('limit') || 50 });
             page.items = page.items.map(u => ({ ...u, online: presence.isOnline(u.uid) }));
             return sendJson(res, 200, page), true;
@@ -233,7 +214,7 @@ export function createAdminRoutes(ctx) {
             return sendJson(res, 200, { ok: true, created, link, emailSent, user: users.view(alvo) }), true;
         }
 
-        const um = /^\/api\/admin\/users\/([A-Za-z0-9]{20})(\/(role|status|revoke|reset-link))?$/.exec(p);
+        const um = /^\/api\/admin\/users\/([A-Za-z0-9]{20})(\/(role|tecnico|status|revoke|reset-link))?$/.exec(p);
         if (um) {
             const uid = um[1];
             const action = um[3];
@@ -256,6 +237,19 @@ export function createAdminRoutes(ctx) {
                 if (target.role === role) return sendJson(res, 200, { user: users.view(target) }), true;
                 const updated = users.update(uid, { role });
                 users.audit({ actor: actorInfo, action: role === 'admin' ? 'deu acesso de administrador' : 'tirou acesso de administrador', target: users.view(target), ip });
+                hub.publish('user-updated', { uid });
+                return sendJson(res, 200, { user: users.view(updated) }), true;
+            }
+
+            if (action === 'tecnico' && m === 'POST') {
+                // dá acesso a todos os testes de todos os clientes: pede a senha de novo
+                authn.requireRecentLogin(sess);
+                guardTarget(actor, target);
+                const body = await readJsonBody(req, 1024);
+                const tecnico = body.tecnico === true;
+                if (!!target.tecnico === tecnico) return sendJson(res, 200, { user: users.view(target) }), true;
+                const updated = users.update(uid, { tecnico });
+                users.audit({ actor: actorInfo, action: tecnico ? 'deu acesso técnico' : 'tirou acesso técnico', target: users.view(target), ip });
                 hub.publish('user-updated', { uid });
                 return sendJson(res, 200, { user: users.view(updated) }), true;
             }

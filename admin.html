@@ -116,6 +116,8 @@
                     <div class="campo"><label for="f-ate">Até</label><input class="entrada" type="date" id="f-ate"></div>
                     <div class="campo"><label for="f-quem">Quem</label>
                         <select class="entrada" id="f-quem"><option value="">Todos</option><option value="anon">Só sem conta</option></select></div>
+                    <div class="campo"><label for="f-origem">Origem</label>
+                        <select class="entrada" id="f-origem"><option value="">Todas</option><option value="cliente">Página do cliente</option><option value="tecnico">Teste técnico</option></select></div>
                     <button type="submit" class="botao botao-primario botao-pequeno" style="min-height:40px">Filtrar</button>
                 </form>
                 <div id="testes-usuarios"></div>
@@ -135,7 +137,7 @@
                     <div class="campo busca"><label for="u-q">Buscar</label>
                         <div class="busca-wrap"><span data-i="search"></span><input class="entrada" id="u-q" placeholder="Começo do nome ou do e-mail" autocomplete="off"></div></div>
                     <div class="campo"><label for="u-papel">Papel</label>
-                        <select class="entrada" id="u-papel"><option value="">Todos</option><option value="admin">Administradores</option><option value="user">Usuários</option></select></div>
+                        <select class="entrada" id="u-papel"><option value="">Todos</option><option value="admin">Administradores</option><option value="tecnico">Técnicos</option><option value="user">Usuários</option></select></div>
                     <button type="submit" class="botao botao-primario botao-pequeno" style="min-height:40px">Buscar</button>
                 </form>
                 <div class="painel">

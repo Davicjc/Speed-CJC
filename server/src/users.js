@@ -35,6 +35,7 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
             planMbps: u.plan_mbps ?? null,
             role: u.role === 'owner' ? 'admin' : u.role,
             owner: u.role === 'owner',
+            tecnico: !!u.tecnico,
             disabled: !!u.disabled,
             emailVerified: !!u.email_verified,
             createdAt: u.created_at,
@@ -66,7 +67,7 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
         return get(id);
     }
 
-    const CAMPOS = { name: 'name', phone: 'phone', city: 'city', planMbps: 'plan_mbps', role: 'role', disabled: 'disabled', emailVerified: 'email_verified' };
+    const CAMPOS = { name: 'name', phone: 'phone', city: 'city', planMbps: 'plan_mbps', role: 'role', disabled: 'disabled', emailVerified: 'email_verified', tecnico: 'tecnico' };
     function update(id, patch) {
         const sets = [], vals = [];
         for (const [k, v] of Object.entries(patch)) {
@@ -95,6 +96,8 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
 
     const isOwner = (u) => !!u && u.role === 'owner';
     const isAdmin = (u) => !!u && !u.disabled && (u.role === 'owner' || (u.role === 'admin' && (!mailEnabled || !!u.email_verified)));
+    /** Acesso ao /tecnico: quem recebeu o papel de técnico, e todo administrador. */
+    const isTecnico = (u) => !!u && !u.disabled && (!!u.tecnico || isAdmin(u));
 
     /** Último acesso, sem escrever a cada clique (no máximo 1 vez a cada 2 min). */
     function touch(id, info = {}, { login = false } = {}) {
@@ -118,6 +121,7 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
         }
         if (role === 'admin') onde.push("role IN ('admin', 'owner')");
         else if (role === 'user') onde.push("role = 'user'");
+        else if (role === 'tecnico') onde.push('tecnico = 1');
         if (after) {
             const cur = get(String(after));
             if (cur) { onde.push('(created_at, id) < (?, ?)'); vals.push(cur.created_at, cur.id); }
@@ -131,6 +135,7 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
     const counts = () => ({
         users: db.get('SELECT COUNT(*) n FROM users').n,
         admins: db.get("SELECT COUNT(*) n FROM users WHERE role IN ('admin', 'owner')").n,
+        tecnicos: db.get('SELECT COUNT(*) n FROM users WHERE tecnico = 1').n,
     });
     const newUsersByDay = (desde) => db.all(
         "SELECT strftime('%Y-%m-%d', created_at / 1000, 'unixepoch', '-3 hours') dia, COUNT(*) n FROM users WHERE created_at >= ? GROUP BY dia", desde);
@@ -165,5 +170,5 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
         };
     }
 
-    return { get, getByEmail, view, create, update, setPassword, checkLogin, checkPassword, isOwner, isAdmin, touch, list, counts, newUsersByDay, remove, audit, listAudit };
+    return { get, getByEmail, view, create, update, setPassword, checkLogin, checkPassword, isOwner, isAdmin, isTecnico, touch, list, counts, newUsersByDay, remove, audit, listAudit };
 }

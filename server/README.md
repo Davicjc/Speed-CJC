@@ -27,6 +27,8 @@ npm run admin -- dono seu@email "Seu nome"
 | `tests-store.js` | testes no banco, agregados por dia/hora/operadora/cidade, "pegar" teste feito sem login, retenção |
 | `ids.js` | ids em ordem cronológica inversa, protocolo `AUD-…` |
 | `routes-account.js` | cadastro com captcha, login, sessão, e-mail, nova senha, perfil, aparelhos conectados, histórico, exportação e exclusão (LGPD), presença |
+| `routes-tecnico.js` | o /tecnico: lista e detalhe dos testes de todos os clientes (só leitura, técnico ou admin) |
+| `busca-testes.js` | busca de testes por protocolo, id, nome ou e-mail, com filtros (admin e técnico) |
 | `routes-admin.js` | visão geral, ao vivo (SSE), testes, planilha, usuários, papéis, link de senha, auditoria, sistema |
 | `captcha.js` | Cloudflare Turnstile ou desafio próprio (prova de trabalho), resposta de uso único |
 | `presence.js` | quem está online agora + canal ao vivo dos administradores |
@@ -51,6 +53,7 @@ npm run admin -- dono seu@email "Seu nome"
 | `npm run admin -- listar` | donos e administradores |
 | `npm run admin -- rebaixar email` | tira o papel de dono |
 | `npm run admin -- reativar email` | reativa uma conta desativada |
+| `npm run admin -- tecnico email` / `sem-tecnico email` | dá ou tira o acesso ao /tecnico |
 | `bash tools/instalar.sh [--dominio …] [--dono …]` | VM crua → site no ar: pacotes, Node 22, projeto, dependências, serviço (e publicação, com `--dominio`) |
 | `bash tools/publicar.sh --dominio … [--ip …] [--dono …]` | publica: `.env`, NTP, Caddy, firewall, serviço e dono (`--simular` só mostra) |
 | `bash tools/servico.sh` | instala/atualiza e liga o serviço do systemd a partir do modelo `deploy/audicom-speedtest.service` |
@@ -123,10 +126,12 @@ Com login (cookie de sessão): `/api/me` (GET, PATCH, DELETE),
 `/api/me/logout-all`, `/api/me/export`, `/api/me/tests`, `/api/me/tests/<id>`,
 `/api/presence`, `POST /api/results/<id>/claim`.
 
+Técnico (login + acesso técnico ou admin): `GET /api/tecnico/tests` (`q`, `origem`, `mode`, `after`) e `/api/tecnico/tests/<id>`.
+
 Administração (login + papel admin, e e-mail confirmado se houver SMTP):
 `/api/admin/overview`, `/map`, `/online`, `/stream` (SSE), `/system`, `/tests`,
 `/tests.csv`, `/tests/<id>`, `/users`, `/users/invite`, `/users/<uid>`
-(GET, DELETE; + `/role`, `/status`, `/revoke`, `/reset-link`), `/audit`.
+(GET, DELETE; + `/role`, `/tecnico`, `/status`, `/revoke`, `/reset-link`), `/audit`.
 Ações sensíveis respondem `code: "reauth"` se a senha não foi digitada nos
 últimos 15 minutos.
 

@@ -32,6 +32,7 @@ segurança, segurança, LGPD e solução de problemas.
 18. [Conferência final](#18-conferência-final)
 19. [Personalizar para o seu provedor](#19-personalizar-para-o-seu-provedor)
 20. [SEO, Google e estatísticas](#20-seo-google-e-estatísticas)
+21. [Speed Teste Técnico e o tom do cliente](#21-speed-teste-técnico-e-o-tom-do-cliente)
 
 ---
 
@@ -303,6 +304,7 @@ Tudo em `https://velocidade.seuprovedor.com.br/admin`:
 Ações em uma pessoa (*Usuários → pessoa*):
 
 - **Tornar administrador / Tirar acesso**
+- **Dar acesso técnico / Tirar acesso:** libera o Speed Teste Técnico (`/tecnico`), seção 21.
 - **Link para nova senha:** para quem esqueceu a senha. Vale 3 dias e funciona
   uma vez. Tem botão de copiar e de mandar pelo WhatsApp.
 - **Encerrar sessões:** desconecta a pessoa de todos os aparelhos.
@@ -323,6 +325,8 @@ npm run admin -- link email@dominio          # link para a pessoa criar nova sen
 npm run admin -- listar                      # donos e administradores
 npm run admin -- rebaixar email@dominio      # tira o "dono" (vira administrador comum)
 npm run admin -- reativar email@dominio      # reativa uma conta desativada
+npm run admin -- tecnico email@dominio       # dá acesso ao Speed Teste Técnico (/tecnico)
+npm run admin -- sem-tecnico email@dominio   # tira o acesso técnico
 ```
 
 Úteis quando ninguém consegue entrar na administração (por exemplo, o dono
@@ -555,4 +559,78 @@ Como funciona:
 
 Para ver `download_mbps` e os outros números em relatórios, cadastre-os em
 *Administrador → Definições personalizadas → Métricas personalizadas*.
+
+---
+
+## 21. Speed Teste Técnico e o tom do cliente
+
+### Duas páginas, a mesma medição
+
+| | Teste do cliente (`/`) | Speed Teste Técnico (`/tecnico`) |
+|---|---|---|
+| Quem usa | qualquer pessoa | técnicos e administradores, **com login** |
+| Visual | azul da Audicom | grafite e âmbar, selo **TÉCNICO** no topo |
+| Medição | a mesma (rápido ou completo) | a mesma; abre no diagnóstico completo |
+| O que coleta | **tudo**: velocidade, latência, perda, IPv4/IPv6, NAT, CGNAT, rota, aplicativos, bancos, relógio | tudo, mais os dados do atendimento |
+| O que mostra | resultado honesto e sem alarme (abaixo) | tudo, sem filtro: Regular/Ruim, NAT, CGNAT, rota, conferência, medidas detalhadas |
+| Lista de testes | o histórico da própria pessoa (`/painel`) | os testes de **todos** os clientes, da página do cliente e do técnico, com busca por protocolo, nome ou e-mail |
+
+Todo teste guarda de onde veio (`origem`: cliente ou técnico). A administração
+filtra por origem em *Testes*.
+
+### O tom do cliente: honesto e sem alarme
+
+Para o teste não virar chamado por susto, a página do cliente, o painel dele e
+o link público **não usam palavras fortes**. Os números são sempre os mesmos;
+muda só o jeito de contar:
+
+| Situação | Cliente vê | Técnico vê |
+|---|---|---|
+| Download baixo | "Básico" | "Ruim" |
+| Ping alto | "Alto" | "Ruim" |
+| Jitter alto | "Oscilando" | "Ruim" |
+| Perda de pacotes | "Sem perdas", "Mínima", "Moderada", "Acima do comum" | "Ótimo" … "Ruim" |
+| Conexão instável | "Conexão oscilando neste momento", com dicas práticas | "Conexão instável" |
+| Uso que não atende (ex.: 4K) | aparece com o que o uso pede, em cor neutra | "não atende", em vermelho |
+| Resultado bem abaixo do plano | a porcentagem não aparece; sugere testar no cabo | "O cliente recebeu X% do plano" |
+| NAT, CGNAT e rota | coletados, mas não mostrados | mostrados |
+
+As dicas para o cliente falam só do que ele mesmo pode fazer (cabo, Wi-Fi,
+pausar downloads) e nunca mandam "chamar o suporte". O botão "Enviar no
+WhatsApp" do cliente leva velocidade, latência, operadora, IP, local, aparelho
+e o protocolo `AUD-…`: com o protocolo, o suporte abre o teste completo no
+`/tecnico` ou na administração.
+
+### Dar acesso a um técnico
+
+1. A pessoa cria a conta normalmente pelo site.
+2. Na *Administração → Usuários → (pessoa)*, clique em **Dar acesso técnico**
+   (pede a sua senha de novo). Ou, no terminal:
+   `npm run admin -- tecnico email@dominio`.
+3. O menu dela ganha **Técnico**. Administradores já têm o acesso.
+
+O técnico **não** mexe em usuários nem em acessos: só faz testes técnicos e lê
+os testes de todos.
+
+### O atendimento
+
+No `/tecnico`, antes de iniciar, o técnico pode preencher **Cliente** (nome,
+código ou contrato), **Plano** (Mbps) e **Observação** (ex.: "teste no cabo,
+ONU trocada"). Isso fica guardado com o teste, aparece na lista, na
+administração e no texto do WhatsApp, e o plano informado vira a base da
+porcentagem do resultado.
+
+### Localização
+
+Na primeira visita, a página do teste pergunta, numa faixa discreta, se a pessoa
+quer marcar os testes no mapa:
+
+- **Ativou e o navegador permitiu:** fica ligada sempre, naquele aparelho.
+- **Agora não:** volta a perguntar de vez em quando, só depois de alguns dias e
+  em parte das visitas, nunca em seguida.
+- **O navegador bloqueou:** não pergunta mais. A pessoa libera nas configurações
+  do site (cadeado na barra de endereço).
+
+A faixa nunca aparece junto com a de cookies, e a localização só funciona em
+HTTPS.
 

@@ -96,6 +96,12 @@ const MIGRACOES = [
         ip TEXT
     );
     `,
+    // 2: acesso técnico (o /tecnico) e de onde veio cada teste (página do cliente ou técnica)
+    `
+    ALTER TABLE users ADD COLUMN tecnico INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE tests ADD COLUMN origem TEXT NOT NULL DEFAULT 'cliente';
+    CREATE INDEX tests_origem ON tests (origem, id);
+    `,
 ];
 
 export function openDatabase(file, log = console) {

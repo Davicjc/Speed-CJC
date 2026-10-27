@@ -45,6 +45,16 @@ export function createAuthn({ sessions, users, log = console }) {
         return u;
     }
 
+    /** Exige acesso técnico (papel de técnico ou administrador): o /tecnico. */
+    function requireTecnico(req, ip) {
+        const u = requireUser(req, ip);
+        if (!users.isTecnico(u.profile)) {
+            log.warn(`[tecnico] acesso negado a ${u.profile.email} (${ip})`);
+            throw err(403, 'O teste técnico é só para técnicos e administradores da Audicom.', 'forbidden');
+        }
+        return u;
+    }
+
     /**
      * Ações sensíveis (dar/tirar admin, desativar, excluir) pedem a senha de
      * novo se ela não foi digitada nesta sessão nos últimos N minutos. Um
@@ -54,5 +64,5 @@ export function createAuthn({ sessions, users, log = console }) {
         if (Date.now() - sess.reauth_at > maxAgeS * 1000) throw err(401, 'Por segurança, confirme sua senha para fazer isso.', 'reauth');
     }
 
-    return { atual, requireUser, optionalUser, requireAdmin, requireRecentLogin };
+    return { atual, requireUser, optionalUser, requireAdmin, requireTecnico, requireRecentLogin };
 }
