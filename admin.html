@@ -142,8 +142,8 @@
                     <button type="submit" class="botao botao-primario botao-pequeno" style="min-height:40px">Buscar</button>
                 </form>
                 <div class="painel">
-                    <div class="tabela-wrap"><table class="tabela"><thead><tr>
-                        <th>Pessoa</th><th>Papel</th><th class="n">Testes</th><th>Criada em</th><th>Último acesso</th><th>Situação</th>
+                    <div class="tabela-wrap"><table class="tabela tabela-usuarios"><thead><tr>
+                        <th>Pessoa</th><th>Acesso</th><th class="n">Testes</th><th>Criada em</th><th>Último acesso</th><th>Situação</th>
                     </tr></thead><tbody id="usuarios-linhas"></tbody></table></div>
                     <div class="mais" id="usuarios-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
                 </div>
@@ -151,14 +151,12 @@
 
             <!-- administradores -->
             <section id="v-admins" aria-labelledby="h-admins" hidden>
-                <div class="admin-titulo"><div><h1 id="h-admins">Administradores</h1><p>Quem pode ver todos os testes, todos os usuários e dar acesso a outras pessoas.</p></div></div>
-                <div class="grade-conta">
-                    <div class="painel">
-                        <div class="painel-cabeca"><div><h2>Com acesso agora</h2></div></div>
-                        <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Pessoa</th><th>Tipo</th><th>Último acesso</th><th></th></tr></thead><tbody id="admins-linhas"></tbody></table></div>
-                    </div>
-                    <div class="pilha">
-                        <form class="painel" id="admins-form" method="post" novalidate>
+                <div class="admin-titulo"><div><h1 id="h-admins">Administradores e técnicos</h1><p>Quem tem acesso além do próprio histórico: administradores veem e gerenciam tudo; técnicos usam o /tecnico.</p></div></div>
+                <div class="painel">
+                    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Pessoa</th><th>Acesso</th><th>Último acesso</th><th></th></tr></thead><tbody id="admins-linhas"></tbody></table></div>
+                </div>
+                <div class="grade-admins">
+                    <form class="painel" id="admins-form" method="post" novalidate>
                             <div class="painel-cabeca"><div><h2>Dar acesso de administrador</h2><p>Se a pessoa ainda não tem conta, criamos uma e ela recebe um e-mail para escolher a senha.</p></div></div>
                             <div class="pilha">
                                 <div class="campo"><label for="a-email">E-mail da pessoa</label><input class="entrada" id="a-email" type="email" required autocomplete="off"></div>
@@ -177,7 +175,6 @@
                                 <li>Toda ação fica registrada na auditoria, com quem fez, quando e de qual IP.</li>
                             </ul>
                         </div>
-                    </div>
                 </div>
             </section>
 

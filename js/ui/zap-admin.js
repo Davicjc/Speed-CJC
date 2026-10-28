@@ -21,7 +21,10 @@ let grupos = null;
 let timer = null;
 let alterado = false;
 
+let ligado = false;
 export function iniciarZapAdmin() {
+    if (ligado) { alterado = false; return atualizar(); }
+    ligado = true;
     const el = $('#zap-conteudo');
     el.addEventListener('click', aoClicar);
     el.addEventListener('change', (e) => {

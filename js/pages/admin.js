@@ -325,13 +325,14 @@ $('#testes-csv').addEventListener('click', (e) => comCarga(e.currentTarget, asyn
 
 // ---------- usuários ----------
 let usuariosProximo = null;
-const papel = (u) => raw((u.owner || u.isOwnerEmail ? '<span class="selo azul papel">Dono</span>' : u.role === 'admin' ? '<span class="selo azul papel">Administrador</span>' : '<span class="selo papel">Usuário</span>')
-    + (u.tecnico ? ' <span class="selo origem-tecnico papel">Técnico</span>' : ''));
-const situacao = (u) => raw([
-    u.disabled ? '<span class="selo ruim">Desativada</span>' : '<span class="selo ok">Ativa</span>',
-    u.online ? '<span class="selo ok ponto vivo">Online</span>' : '',
-    u.emailVerified ? '' : '<span class="selo atencao">E-mail não confirmado</span>',
-].join(' '));
+// um selo só por pessoa: o acesso mais alto (administrador já usa o /tecnico)
+const papel = (u) => raw(u.owner || u.isOwnerEmail ? '<span class="selo azul papel">Dono</span>'
+    : u.role === 'admin' ? '<span class="selo azul papel">Administrador</span>'
+    : u.tecnico ? '<span class="selo origem-tecnico papel">Técnico</span>'
+    : '<span class="selo papel">Usuário</span>');
+const situacao = (u) => raw((u.disabled ? '<span class="selo ruim">Desativada</span>'
+    : u.online ? '<span class="selo ok ponto vivo">Online</span>' : '<span class="selo ok">Ativa</span>')
+    + (cfg.mail && !u.emailVerified && !u.disabled ? '<span class="nota-cel atencao">e-mail não confirmado</span>' : ''));
 async function carregarUsuarios(mais = false) {
     const q = new URLSearchParams({ limit: '50' });
     if ($('#u-q').value.trim()) q.set('q', $('#u-q').value.trim());
@@ -344,8 +345,8 @@ async function carregarUsuarios(mais = false) {
         usuariosProximo = r.next;
         const linhas = html`${r.items.map((u) => html`<tr class="clicavel" data-uid="${u.uid}" tabindex="0">
             <td>${html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(u.name, u.email)}</span><div><strong>${u.name}</strong><span>${u.email}</span></div></div>`}</td>
-            <td>${papel(u)}</td><td class="n">${fmtInt(u.testsCount)}</td><td>${fmtData(u.createdAt)}</td>
-            <td>${u.lastSeenAt || u.lastLoginAt ? fmtRelativo(Math.max(u.lastSeenAt || 0, u.lastLoginAt || 0)) : 'nunca'}</td><td>${situacao(u)}</td></tr>`)}`;
+            <td class="selos">${papel(u)}</td><td class="n">${fmtInt(u.testsCount)}</td><td class="sem-quebra">${fmtData(u.createdAt)}</td>
+            <td class="sem-quebra">${u.lastSeenAt || u.lastLoginAt ? fmtRelativo(Math.max(u.lastSeenAt || 0, u.lastLoginAt || 0)) : 'nunca'}</td><td class="selos">${situacao(u)}</td></tr>`)}`;
         if (mais) tb.insertAdjacentHTML('beforeend', String(linhas)); else setHtml(tb, linhas);
         if (!mais && !r.items.length) tb.innerHTML = '<tr><td colspan="6"><div class="vazio"><span>Nenhuma conta encontrada.</span></div></td></tr>';
         ligarLinhas(tb);
@@ -534,13 +535,16 @@ $('#usuarios-adicionar').addEventListener('click', dialogoAdicionar);
 async function carregarAdmins() {
     const tb = $('#admins-linhas');
     try {
-        const r = await api('/api/admin/users?role=admin&limit=200');
-        setHtml(tb, html`${r.items.map((u) => html`<tr class="clicavel" data-uid="${u.uid}" tabindex="0">
+        const [adm, tec] = await Promise.all([api('/api/admin/users?role=admin&limit=200'), api('/api/admin/users?role=tecnico&limit=200')]);
+        const ordem = (u) => (u.owner ? 0 : u.role === 'admin' ? 1 : 2);
+        const todos = [...adm.items, ...tec.items.filter((t) => !adm.items.some((a) => a.uid === t.uid))]
+            .sort((a, b) => ordem(a) - ordem(b) || a.name.localeCompare(b.name, 'pt-BR'));
+        setHtml(tb, html`${todos.map((u) => html`<tr class="clicavel" data-uid="${u.uid}" tabindex="0">
             <td>${html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(u.name, u.email)}</span><div><strong>${u.name}</strong><span>${u.email}</span></div></div>`}</td>
-            <td>${papel(u)}${u.emailVerified ? '' : raw(' <span class="selo atencao">Falta confirmar o e-mail</span>')}</td>
-            <td>${u.lastSeenAt ? fmtRelativo(u.lastSeenAt) : 'nunca'}</td>
-            <td>${u.uid === eu.uid ? raw('<span class="fraco">Você</span>') : ''}</td></tr>`)}`);
-        if (!r.items.length) tb.innerHTML = '<tr><td colspan="4"><span class="fraco">Nenhum administrador além dos donos.</span></td></tr>';
+            <td class="selos">${papel(u)}${u.disabled ? raw('<span class="nota-cel atencao">conta desativada</span>') : cfg.mail && !u.emailVerified && u.role === 'admin' ? raw('<span class="nota-cel atencao">falta confirmar o e-mail</span>') : ''}</td>
+            <td class="sem-quebra">${u.lastSeenAt ? fmtRelativo(u.lastSeenAt) : 'nunca'}</td>
+            <td class="sem-quebra">${u.uid === eu.uid ? raw('<span class="fraco">Você</span>') : ''}</td></tr>`)}`);
+        if (!todos.length) tb.innerHTML = '<tr><td colspan="4"><span class="fraco">Nenhum administrador ou técnico além dos donos.</span></td></tr>';
         ligarLinhas(tb);
     } catch (e) { tb.innerHTML = `<tr><td colspan="4">${esc(e.message)}</td></tr>`; }
 }
@@ -616,7 +620,7 @@ $('#sistema-atualizar').addEventListener('click', (e) => comCarga(e.currentTarge
 
 const CARREGAR = {
     geral: () => carregarGeral(),
-    vivo: () => desenharOnline(),
+    vivo: () => api('/api/admin/online').then((r) => { online = r.items; desenharOnline(); desenharAgora({ ...(ultimoLive || {}), ...r.live }); }).catch(() => desenharOnline()),
     testes: () => carregarTestes(),
     usuarios: () => carregarUsuarios(),
     admins: () => carregarAdmins(),
@@ -624,6 +628,22 @@ const CARREGAR = {
     sistema: () => carregarSistema(),
     zap: () => import('../ui/zap-admin.js').then((m) => m.iniciarZapAdmin()),
 };
+
+// "Recarregar" em cada aba, para não precisar apertar F5 (Visão geral e Sistema já têm o "Atualizar")
+for (const v of VISTAS) {
+    const titulo = document.querySelector(`#v-${v} .admin-titulo`);
+    if (!titulo || titulo.querySelector('[id$="-atualizar"]')) continue;
+    const acoes = document.createElement('div');
+    acoes.className = 'admin-titulo-acoes';
+    [...titulo.children].slice(1).forEach((el) => acoes.appendChild(el));
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'botao botao-secundario botao-pequeno';
+    b.innerHTML = ICON.refresh + 'Recarregar';
+    b.addEventListener('click', () => comCarga(b, async () => { await CARREGAR[v](); toast('Lista atualizada.'); }));
+    acoes.prepend(b);
+    titulo.appendChild(acoes);
+}
 
 abrirVista(location.hash.slice(1) || 'geral', { historico: false });
 if (!$('#vivo-feed').children.length) $('#vivo-feed').innerHTML = '<li style="display:block"><span>Nada ainda. Os próximos testes e cadastros aparecem aqui na hora.</span></li>';

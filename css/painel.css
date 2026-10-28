@@ -89,7 +89,7 @@
 .admin-nav .contador.vivo { background: var(--ok-fundo); color: #9BF0C4; }
 .admin-nav hr { border: 0; border-top: 1px solid var(--linha); margin: 10px 0; }
 .admin-conteudo { display: grid; gap: 20px; min-width: 0; }
-.admin-conteudo > section { display: grid; gap: 16px; }
+.admin-conteudo > section { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
 .admin-titulo { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .admin-titulo h1 { font-size: var(--t-2xl); letter-spacing: -0.02em; }
 .admin-titulo p { color: var(--texto-3); font-size: var(--t-sm); margin-top: 4px; }
@@ -201,3 +201,13 @@
 .zap-fotos button svg { width: 14px; height: 14px; }
 .zap-escolher { display: inline-flex; align-items: center; gap: 8px; }
 .zap-escolher input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+
+/* listas da administração: um selo por célula, nada empilhado nem quebrando */
+.tabela td.selos, .tabela td.sem-quebra { white-space: nowrap; }
+.tabela .nota-cel { display: block; margin-top: 4px; font-size: var(--t-xs); color: var(--texto-3); white-space: nowrap; }
+.tabela .nota-cel.atencao { color: var(--atencao); }
+.admin-titulo-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.grade-admins { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 960px) { .grade-admins { grid-template-columns: minmax(0, 1fr); } }
+
+@media (max-width: 1180px) { .tabela-usuarios th:nth-child(4), .tabela-usuarios td:nth-child(4) { display: none; } }
