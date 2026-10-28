@@ -163,7 +163,7 @@ function enviarPagina(req, res, p, headers, status = 200) {
 }
 
 /** Páginas que o Google deve encontrar (as de conta e administração ficam de fora). */
-const NO_MAPA = [['/', 'index.html', '1.0', 'weekly'], ['/como-medimos', 'como-medimos.html', '0.8', 'monthly'], ['/privacidade', 'privacidade.html', '0.3', 'yearly'], ['/termos', 'termos.html', '0.3', 'yearly']];
+const NO_MAPA = [['/', 'index.html', '1.0', 'weekly'], ['/como-medimos', 'como-medimos.html', '0.8', 'monthly'], ['/privacidade', 'privacidade.html', '0.3', 'yearly'], ['/termos', 'termos.html', '0.3', 'yearly'], ['/tree', 'tree.html', '0.3', 'monthly']];
 
 async function mapaDoSite(req) {
     const origem = siteOrigin(req);

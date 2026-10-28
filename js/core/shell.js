@@ -131,6 +131,7 @@ function renderRodape(cfg) {
             <li><a href="${esc(sup.site || 'https://audicomtelecom.com.br')}" target="_blank" rel="noopener">Site da Audicom</a></li>
             <li><a href="/privacidade">Política de privacidade</a></li>
             <li><a href="/termos">Termos de uso</a></li>
+            <li><a href="/tree">Mapa do site</a></li>
             <li>© ${new Date().getFullYear()} Audicom Telecom</li>
         </ul></div></div>`;
 }

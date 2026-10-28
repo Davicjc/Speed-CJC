@@ -30,6 +30,7 @@ export const PAGES = {
     '/cadastro': 'entrar.html',
     '/painel': 'painel.html',
     '/tecnico': 'tecnico.html',
+    '/tree': 'tree.html',
     '/admin': 'admin.html',
     '/como-medimos': 'como-medimos.html',
     '/privacidade': 'privacidade.html',
