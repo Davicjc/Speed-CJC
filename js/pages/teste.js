@@ -215,6 +215,12 @@ async function iniciar() {
         velo.modo('ocioso');
         marcarEtapa(null);
         leituraAtiva(null);
+        if (e.code === 'limite') {
+            $('#status').textContent = 'Limite de testes sem conta atingido hoje.';
+            avisoLimite(e.message);
+            encerrar();
+            return;
+        }
         $('#status').textContent = e.name === 'AbortError' ? 'Teste interrompido.' : `Não foi possível concluir o teste: ${e.message}`;
         if (e.name !== 'AbortError') toast('O teste não terminou. Confira sua conexão e tente de novo.', 'ruim');
         encerrar();
@@ -227,6 +233,25 @@ async function iniciar() {
     mostrarResultado(r, amostras);
     evento('teste_concluido', { modo, download_mbps: Math.round(r.download || 0), upload_mbps: Math.round(r.upload || 0), ping_ms: Math.round(r.ping || 0) });
     salvar(r, await geo);
+}
+
+/** Cota diária sem login: convida a entrar, sem tom de bronca. */
+function avisoLimite(motivo) {
+    const volta = encodeURIComponent(location.pathname);
+    const d = document.createElement('dialog');
+    d.className = 'modal';
+    d.innerHTML = `<div class="modal-corpo">
+        <h2>Continue testando com a sua conta</h2>
+        <p>${esc(motivo)}</p>
+        <p class="suave" style="font-size:var(--t-sm)">A conta é gratuita, leva menos de um minuto, e todos os testes vão para o seu histórico, com gráfico e mapa.</p>
+        <div class="modal-acoes">
+            <a class="botao botao-fantasma" href="/entrar?next=${volta}">Já tenho conta</a>
+            <a class="botao botao-primario" href="/cadastro?next=${volta}">Criar conta grátis</a>
+        </div></div>`;
+    document.body.appendChild(d);
+    d.addEventListener('close', () => d.remove());
+    d.addEventListener('click', (ev) => { if (ev.target === d) d.close(); });
+    d.showModal();
 }
 
 function encerrar() {

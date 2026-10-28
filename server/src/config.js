@@ -136,6 +136,10 @@ export const config = {
     // apagar ou excluir a conta.
     anonRetentionDays: int('ANON_RETENTION_DAYS', 365),
 
+    // testes sem login por dia: por aparelho, e teto por IP (contra robôs; folgado para CGNAT)
+    anonTestsPerDay: int('ANON_TESTS_PER_DAY', 6),
+    anonTestsPerIpDay: int('ANON_TESTS_PER_IP_DAY', 60),
+
     // Google Analytics 4 (ex.: G-ABC123XYZ). Vazio = desligado. Só registra
     // depois que a pessoa aceita os cookies de estatística (LGPD).
     gaId: /^G-[A-Z0-9]{4,20}$/.test(str('GA_MEASUREMENT_ID', '')) ? str('GA_MEASUREMENT_ID', '') : null,

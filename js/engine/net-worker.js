@@ -152,20 +152,24 @@ async function cmdClock() {
     return { synced: true, offsetMs: best.offset, uncertaintyMs: best.rtt / 2 };
 }
 
-async function cmdSlot(_, progress) {
+async function cmdSlot({ aparelho } = {}, progress) {
     let denied = null;
     const onQueue = (m) => {
         if (m.type === 'slot-wait') progress({ position: m.position, active: m.active, max: m.max });
-        if (m.type === 'slot-denied') denied = m.reason || 'Limite de testes nesta sessão';
+        if (m.type === 'slot-denied') denied = m;
     };
     listeners.add(onQueue);
     try {
-        sendJson({ type: 'slot-request' });
+        sendJson({ type: 'slot-request', aparelho });
         const g = await Promise.race([
             waitJson('slot-granted', 10 * 60_000),
             // o servidor pode recusar (limite de vagas por conexão): não adianta esperar
             new Promise((_r, reject) => {
-                const t = setInterval(() => { if (denied) { clearInterval(t); reject(new Error(denied)); } }, 100);
+                const t = setInterval(() => {
+                    if (!denied) return;
+                    clearInterval(t);
+                    reject(Object.assign(new Error(denied.reason || 'Limite de testes nesta sessão'), { code: denied.code || null }));
+                }, 100);
                 setTimeout(() => clearInterval(t), 10 * 60_000);
             }),
         ]);
@@ -336,6 +340,6 @@ onmessage = async (ev) => {
         const data = await fn(args || {}, (p) => postMessage({ id, type: 'progress', data: p }));
         postMessage({ id, type: 'result', data });
     } catch (e) {
-        postMessage({ id, type: 'error', error: e && e.message ? e.message : String(e) });
+        postMessage({ id, type: 'error', error: e && e.message ? e.message : String(e), code: (e && e.code) || null });
     }
 };

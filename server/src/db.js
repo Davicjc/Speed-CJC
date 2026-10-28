@@ -102,6 +102,15 @@ const MIGRACOES = [
     ALTER TABLE tests ADD COLUMN origem TEXT NOT NULL DEFAULT 'cliente';
     CREATE INDEX tests_origem ON tests (origem, id);
     `,
+    // 3: cota diária de testes sem login (por aparelho e por IP, guardados só como hash)
+    `
+    CREATE TABLE cotas (
+        chave TEXT NOT NULL,
+        dia TEXT NOT NULL,
+        n INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (chave, dia)
+    );
+    `,
 ];
 
 export function openDatabase(file, log = console) {

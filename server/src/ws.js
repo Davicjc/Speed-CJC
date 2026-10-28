@@ -14,7 +14,7 @@ const MAX_PER_IP = 40;
 const MAX_SLOTS_PER_CONN = 10;
 const SLOT_WINDOW_MS = 10 * 60_000;
 
-export function attachWebSocket(server, { slots, clock, measurements, trustProxy, log = console }) {
+export function attachWebSocket(server, { slots, clock, measurements, trustProxy, authn = null, cotas = null, log = console }) {
     const wss = new WebSocketServer({ noServer: true, maxPayload: 8 * 1024, perMessageDeflate: false });
     const perIp = new Map();
 
@@ -42,7 +42,16 @@ export function attachWebSocket(server, { slots, clock, measurements, trustProxy
         measurements.open(connId, ip);
         const myTokens = new Set();
         const slotTimes = [];
-        const notify = (m) => { if (m.type === 'slot-granted') myTokens.add(m.token); send(m); };
+        // quem está logado não tem cota diária; sem login, a cota vale por aparelho e por IP
+        const logado = !!(authn && authn.optionalUser(req, ip));
+        let aparelho = null;
+        const notify = (m) => {
+            if (m.type === 'slot-granted') {
+                myTokens.add(m.token);
+                if (!logado && cotas) cotas.contar(ip, aparelho);
+            }
+            send(m);
+        };
         const creditDownload = (token) => {
             const s = slots.get(token);
             if (s && s.owner === ws) { measurements.addDownloadBytes(connId, s.dlBytes); s.dlBytes = 0; }
@@ -70,6 +79,12 @@ export function attachWebSocket(server, { slots, clock, measurements, trustProxy
                     if (slotTimes.length >= MAX_SLOTS_PER_CONN) {
                         log.warn(`[slots] ${ip} pediu vaga demais nesta conexão; recusando`);
                         return send({ type: 'slot-denied', reason: 'Muitos testes seguidos nesta sessão — recarregue a página para testar de novo.' });
+                    }
+                    if (!logado && cotas) {
+                        aparelho = typeof msg.aparelho === 'string' ? msg.aparelho.slice(0, 64) : null;
+                        if (!cotas.pode(ip, aparelho)) {
+                            return send({ type: 'slot-denied', code: 'limite', reason: `Você já fez ${cotas.porAparelho} testes hoje sem conta. Entre ou crie sua conta gratuita para continuar testando.` });
+                        }
                     }
                     slotTimes.push(now);
                     slots.request(ws, notify);

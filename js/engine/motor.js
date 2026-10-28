@@ -17,13 +17,13 @@ function garantirWorker() {
     if (worker) return worker;
     worker = new Worker(WORKER_URL);
     worker.onmessage = (ev) => {
-        const { id, type, data, error } = ev.data;
+        const { id, type, data, error, code } = ev.data;
         if (type === 'event') { ouvintes.forEach((h) => h(data)); return; }
         const c = chamadas.get(id);
         if (!c) return;
         if (type === 'progress') { if (c.progresso) c.progresso(data); return; }
         chamadas.delete(id);
-        if (type === 'result') c.resolve(data); else c.reject(new Error(error));
+        if (type === 'result') c.resolve(data); else c.reject(Object.assign(new Error(error), { code: code || null }));
     };
     worker.onerror = () => {
         chamadas.forEach((c) => c.reject(new Error('O motor de medição parou inesperadamente')));
@@ -65,7 +65,18 @@ export async function preparar() {
 
 export const ping = (opts, porAmostra) => chamar('ping', opts, porAmostra);
 export const relogio = () => chamar('clock');
-export const pegarVaga = (naFila) => chamar('slot', {}, naFila);
+/** Id aleatório deste navegador, só para a cota diária de testes sem login (não identifica a pessoa). */
+function idDoAparelho() {
+    try {
+        let id = localStorage.getItem('audicom.aparelho');
+        if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) {
+            id = Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'[b & 63]).join('');
+            localStorage.setItem('audicom.aparelho', id);
+        }
+        return id;
+    } catch { return null; }
+}
+export const pegarVaga = (naFila) => chamar('slot', { aparelho: idDoAparelho() }, naFila);
 export const liberarVaga = (token) => chamar('release', { token });
 export const download = (opts, progresso) => chamar('download', { base: location.origin, ...opts }, progresso);
 export const upload = (opts, progresso) => chamar('upload', { base: location.origin, ...opts }, progresso);

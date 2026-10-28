@@ -9,11 +9,11 @@ import { fileURLToPath } from 'node:url';
 
 const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-export async function subirServidor() {
+export async function subirServidor(envExtra = {}) {
     if (process.env.BASE) return { base: process.env.BASE.replace(/\/$/, ''), dataDir: process.env.DATA_DIR || null, parar() {} };
     const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audicom-teste-'));
     const porta = 20000 + Math.floor(Math.random() * 20000);
-    const env = { ...process.env, PORT: String(porta), DATA_DIR: dataDir, GEOCODER: 'off', SIGNUP_LIMIT_PER_HOUR: '1000', SMTP_HOST: '', NTP_SERVERS: 'a.st1.ntp.br' };
+    const env = { ...process.env, PORT: String(porta), DATA_DIR: dataDir, GEOCODER: 'off', SIGNUP_LIMIT_PER_HOUR: '1000', ANON_TESTS_PER_DAY: '1000', ANON_TESTS_PER_IP_DAY: '1000', SMTP_HOST: '', NTP_SERVERS: 'a.st1.ntp.br', ...envExtra };
     const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'src/server.js'], { cwd: raiz, env, stdio: ['ignore', 'pipe', 'pipe'] });
     let saida = '';
     await new Promise((ok, falha) => {

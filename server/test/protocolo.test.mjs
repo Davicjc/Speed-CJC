@@ -140,3 +140,34 @@ test('fila: com o limite cheio, os seguintes esperam e sobem quando abre vaga', 
     await promovido;
     socks.forEach((s) => s.close());
 });
+
+test('sem login: cota diária de testes por aparelho, com teto por IP', async () => {
+    const outro = await subirServidor({ ANON_TESTS_PER_DAY: '2', ANON_TESTS_PER_IP_DAY: '3' });
+    const url = outro.base.replace(/^http/, 'ws') + '/ws';
+    const abrir = () => new Promise((res, rej) => { const s = new WebSocket(url); s.once('open', () => res(s)); s.once('error', rej); });
+    const pedir = async (aparelho) => {
+        const s = await abrir();
+        const resposta = new Promise((res) => s.on('message', (d) => {
+            const t = d.toString();
+            if (t[0] === 'p') return;
+            const m = JSON.parse(t);
+            if (m.type === 'slot-granted' || m.type === 'slot-denied') res(m);
+        }));
+        s.send(JSON.stringify({ type: 'slot-request', aparelho }));
+        const m = await resposta;
+        if (m.type === 'slot-granted') s.send(JSON.stringify({ type: 'slot-release', token: m.token }));
+        s.close();
+        return m;
+    };
+    try {
+        const a = 'aparelho-A-1234567890', b = 'aparelho-B-1234567890';
+        assert.equal((await pedir(a)).type, 'slot-granted');
+        assert.equal((await pedir(a)).type, 'slot-granted');
+        const negado = await pedir(a);
+        assert.equal(negado.type, 'slot-denied', 'o 3º teste do mesmo aparelho no dia é recusado');
+        assert.equal(negado.code, 'limite');
+        assert.match(negado.reason, /2 testes hoje sem conta/);
+        assert.equal((await pedir(b)).type, 'slot-granted', 'outro aparelho no mesmo IP (CGNAT) ainda testa');
+        assert.equal((await pedir('aparelho-C-1234567890')).type, 'slot-denied', 'o teto por IP segura quem troca de id');
+    } finally { outro.parar(); }
+});

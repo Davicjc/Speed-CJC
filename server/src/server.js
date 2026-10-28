@@ -7,6 +7,7 @@ import zlib from 'node:zlib';
 import { createAuthn } from './authn.js';
 import { createCaptcha } from './captcha.js';
 import { config } from './config.js';
+import { createCotas } from './cotas.js';
 import { createBackups, openDatabase } from './db.js';
 import { createGeocoder } from './geo.js';
 import { lookupIsp } from './isp.js';
@@ -48,6 +49,7 @@ if (mailer.enabled) mailer.verificar();
 const users = createUsers({ db, mailEnabled: mailer.enabled, log });
 const sessions = createSessions({ db, sessionDays: config.sessionDays, log });
 const store = createTestsStore({ db, log });
+const cotas = createCotas({ db, dataDir: config.dataDir, porAparelho: config.anonTestsPerDay, porIp: config.anonTestsPerIpDay, log });
 const authn = createAuthn({ sessions, users, log });
 const captcha = createCaptcha({ dataDir: config.dataDir, turnstileSiteKey: config.captcha.turnstileSiteKey, turnstileSecret: config.captcha.turnstileSecret, powMax: config.captcha.powMax, log });
 const geo = createGeocoder({ provider: config.geocoder, url: config.nominatimUrl, userAgent: `audicom-speedtest/2.0 (${config.publicUrl || config.support.site}; ${config.support.email})`, log });
@@ -484,7 +486,7 @@ server.keepAliveTimeout = 10_000;
 server.headersTimeout = 15_000;
 server.requestTimeout = 120_000;
 
-attachWebSocket(server, { slots, clock, measurements, trustProxy: config.trustProxy, log });
+attachWebSocket(server, { slots, clock, measurements, trustProxy: config.trustProxy, authn, cotas, log });
 
 await Promise.race([clock.sync().catch(() => {}), new Promise(r => setTimeout(r, 5000))]);
 
