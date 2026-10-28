@@ -7,6 +7,7 @@ import * as M from '../engine/motor.js';
 import { executarTeste } from '../engine/teste.js';
 import { iniciarConstelacao } from '../ui/constelacao.js';
 import { barrasHorizontais, graficoLinhas } from '../ui/graficos.js';
+import { convidarInstalar } from '../ui/instalar.js';
 import { iniciarLocalizacao, pedirPosicao } from '../ui/localizacao.js';
 import { classificar, dicas, planoParaCliente, veredito } from '../ui/qualidade.js';
 import { desenharDiag, textoCompleto, usosHtml } from '../ui/relatorio.js';
@@ -65,6 +66,7 @@ escolherModo(TECNICO ? 'completo' : 'rapido');
 
 const chaveLocal = $('#usar-local');
 iniciarLocalizacao({ chave: chaveLocal, rotulo: $('#local-chave'), ajuda: $('#local-ajuda'), ocupado: () => rodando });
+convidarInstalar({ tecnico: TECNICO, ocupado: () => rodando });
 
 if (!TECNICO && cfg.accounts && !sessao.user) $('#chamada').hidden = false;
 if (tec) tec.iniciarListaTecnica({ cfg });

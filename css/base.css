@@ -493,3 +493,24 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
 /* origem do teste (administração e /tecnico) */
 .selo.origem-tecnico { color: #1A0E04; background: linear-gradient(135deg, #FFB020, #FF8A3D); }
 .selo.origem-cliente { color: var(--texto-2); background: rgba(244, 246, 249, 0.08); }
+
+/* ---------- convite para instalar o app (js/ui/instalar.js) ---------- */
+dialog.app-convite { width: min(400px, calc(100% - 32px)); overflow: visible; }
+dialog.app-convite[open] { animation: app-sobe .35s cubic-bezier(.2, 1.3, .4, 1); }
+.app-convite-corpo { padding: 44px 24px 22px; display: grid; gap: 12px; text-align: center; justify-items: center; }
+.app-convite-icone { position: absolute; top: -36px; left: 50%; transform: translateX(-50%); width: 76px; height: 76px; border-radius: 22px; padding: 6px; background: var(--navy-700); border: 1px solid var(--linha-forte); box-shadow: 0 10px 30px rgba(0, 0, 0, .45); animation: app-balanca 2.6s ease-in-out .4s infinite; }
+.app-convite-icone img { width: 100%; height: 100%; border-radius: 16px; display: block; }
+.app-brilho { position: absolute; top: -12px; right: -14px; fill: #FFC93C; filter: drop-shadow(0 0 6px rgba(255, 201, 60, .6)); animation: app-pisca 1.8s ease-in-out infinite; }
+@keyframes app-pisca { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .55; transform: scale(.82) rotate(12deg); } }
+.app-convite h2 { font-size: var(--t-xl); line-height: 1.2; }
+.app-convite p { color: var(--texto-2); font-size: var(--t-sm); max-width: 32ch; }
+.app-passos { list-style: none; counter-reset: passo; display: grid; gap: 8px; width: 100%; text-align: left; margin: 4px 0; padding: 0; }
+.app-passos li { counter-increment: passo; position: relative; padding: 10px 12px 10px 44px; border-radius: 12px; background: rgba(255, 255, 255, .04); border: 1px solid var(--linha-forte); font-size: var(--t-sm); line-height: 1.45; color: var(--texto); }
+.app-passos li::before { content: counter(passo); position: absolute; left: 12px; top: 10px; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--ciano); color: #06121f; font: 700 0.75rem var(--fonte-display); }
+.app-passos svg { display: inline-block; vertical-align: -4px; margin: 0 2px; color: var(--ciano); }
+.app-convite-acoes { display: grid; gap: 6px; width: 100%; margin-top: 4px; }
+.app-convite-acoes .botao { width: 100%; justify-content: center; }
+@keyframes app-sobe { from { opacity: 0; transform: translateY(40px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes app-balanca { 0%, 70%, 100% { transform: translateX(-50%) rotate(0); } 78% { transform: translateX(-50%) rotate(-8deg); } 86% { transform: translateX(-50%) rotate(7deg); } 93% { transform: translateX(-50%) rotate(-3deg); } }
+@media (max-width: 760px) { dialog.app-convite { margin: auto auto calc(16px + env(safe-area-inset-bottom)); } }
+@media (prefers-reduced-motion: reduce) { dialog.app-convite[open], .app-convite-icone, .app-brilho { animation: none; } }

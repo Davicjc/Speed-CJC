@@ -1,0 +1,16 @@
+{
+  "id": "/tecnico",
+  "name": "Speed Teste Técnico Audicom",
+  "short_name": "Audicom Técnico",
+  "description": "Diagnóstico completo da conexão para os técnicos da Audicom Telecom.",
+  "start_url": "/tecnico",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0E1219",
+  "theme_color": "#0E1219",
+  "lang": "pt-BR",
+  "icons": [
+    { "src": "/assets/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/icone-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -708,3 +708,24 @@ aparelho, sem travar clientes que dividem o mesmo IP (CGNAT). O dia vira à
 meia-noite de Brasília. O banco guarda só códigos embaralhados do aparelho e do
 IP, apagados em até 2 dias.
 
+
+## 24. App no celular e no computador
+
+Alguns segundos depois de abrir o teste (`/`) ou o `/tecnico`, aparece um convite
+para instalar o teste como aplicativo. Ele não aparece durante um teste, nem para
+quem já abriu como app; quem toca em **Agora não** só vê de novo depois de 5 dias.
+O `/tecnico` instala como **Audicom Técnico** e abre direto no diagnóstico.
+
+| Aparelho e navegador | O que o convite faz |
+|---|---|
+| Android: Chrome, Edge, Samsung Internet, Opera | Botão **Instalar** abre a janela do navegador |
+| Computador: Chrome, Edge | Botão **Instalar** |
+| iPhone/iPad: Safari, Chrome, Firefox, Edge | Passo a passo: Compartilhar → Adicionar à Tela de Início |
+| Android: Firefox, ou sem HTTPS | Passo a passo pelo menu ⋮ → Instalar / Adicionar à tela inicial |
+| Mac com Safari | Passo a passo: Arquivo → Adicionar ao Dock |
+| Dentro do Instagram, Facebook, WhatsApp | Pede para abrir no navegador primeiro |
+| Firefox no computador | Não aparece (o Firefox não instala sites) |
+
+O botão **Instalar** só existe com **HTTPS** (no endereço `http://IP:8080`, o
+Android cai no passo a passo e cria um atalho). O `sw.js` não tem cache nem
+intercepta nada: o teste de velocidade mede a rede direto.

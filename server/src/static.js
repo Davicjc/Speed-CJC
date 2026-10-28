@@ -44,7 +44,7 @@ export const PAGES = {
 export function resolvePublic(root, urlPath) {
     let rel;
     try { rel = decodeURIComponent(urlPath); } catch { return null; }
-    const allowed = ['/favicon.ico', '/robots.txt', '/site.webmanifest'].includes(rel) || /^\/(css|js|assets|vendor)\/[\w\-./]+$/.test(rel);
+    const allowed = ['/favicon.ico', '/robots.txt', '/site.webmanifest', '/tecnico.webmanifest', '/sw.js'].includes(rel) || /^\/(css|js|assets|vendor)\/[\w\-./]+$/.test(rel);
     if (!allowed || rel.includes('..') || rel.includes('\0')) return null;
     const abs = path.join(root, rel);
     return abs.startsWith(root + path.sep) ? abs : null;
