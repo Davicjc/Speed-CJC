@@ -111,7 +111,18 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
             if (!destino) throw err(400, 'Escolha um dos destinos liberados pela administração.');
             const fotos = Array.isArray(body.fotos) ? body.fotos : [];
             if (fotos.length > MAX_FOTOS) throw err(400, `No máximo ${MAX_FOTOS} fotos por envio.`);
-            const at = t.atendimento || {};
+            // dados do atendimento: os da janela de envio valem (e ficam guardados no teste)
+            const texto = (v, max) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+            const veio = body.atendimento && typeof body.atendimento === 'object' ? body.atendimento : {};
+            const planoVeio = Number(veio.plano);
+            const at = {
+                cliente: texto(veio.cliente, 80) ?? (t.atendimento || {}).cliente ?? null,
+                plano: Number.isFinite(planoVeio) && planoVeio > 0 && planoVeio <= 100_000 ? Math.round(planoVeio) : (t.atendimento || {}).plano ?? null,
+                obs: texto(veio.obs, 500) ?? texto(body.obs, 500) ?? (t.atendimento || {}).obs ?? null,
+            };
+            const temAt = at.cliente || at.plano || at.obs;
+            if (temAt && JSON.stringify(at) !== JSON.stringify(t.atendimento || null)) store.setAtendimento(t.id, at);
+            t.atendimento = temAt ? at : null;
             const imagens = fotos.map((f, i) => {
                 const imagem = base64(f && f.imagem, MAX_FOTO);
                 if (!imagem) throw err(400, `A foto ${i + 1} não é uma imagem JPEG válida (ou passa de 3 MB).`);
@@ -119,21 +130,20 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
                 return {
                     imagem: imagem.toString('base64'),
                     miniatura: mini ? mini.toString('base64') : null,
-                    legenda: `Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente ? ` · ${at.cliente}` : ''}`,
+                    legenda: `📸 Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente ? ` · ${at.cliente}` : ''}`,
                 };
             });
-            const obs = typeof body.obs === 'string' ? body.obs.trim().slice(0, 500) : '';
             const link = `${siteOrigin(req)}/r/${t.id}`;
             const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || 'Audicom Telecom', tom: 'tecnico' });
             const linhas = [
-                `📶 *Enviado por ${profile.name}* (${profile.email})`,
-                t.user ? `Teste feito pela conta: ${t.user.name || '–'} (${t.user.email || '–'})` : 'Teste feito sem conta.',
-                obs ? `Observação: ${obs}` : null,
-                '',
+                `👷 *Enviado por:* ${profile.name} (${profile.email})`,
+                t.user ? `👤 *Conta do teste:* ${t.user.name || '–'} (${t.user.email || '–'})` : '👤 *Conta do teste:* feito sem conta',
+                imagens.length ? `📸 ${imagens.length === 1 ? '1 foto logo abaixo' : `${imagens.length} fotos logo abaixo`}` : null,
+                '━━━━━━━━━━━━━━━',
                 relat,
             ].filter((l) => l !== null);
             await zap.enviar(destino.jid, linhas.join('\n'), imagens);
-            users.audit({ actor: quem(profile), action: 'enviou teste para o WhatsApp', detail: { protocolo: t.protocol, destino: destino.nome, fotos: imagens.length }, ip });
+            users.audit({ actor: quem(profile), action: 'enviou teste para o WhatsApp', detail: { protocolo: t.protocol, destino: destino.nome, fotos: imagens.length, cliente: at.cliente || null }, ip });
             log.info(`[whatsapp] ${t.protocol} enviado para "${destino.nome}" por ${profile.email} (${imagens.length} foto(s))`);
             return sendJson(res, 200, { ok: true, destino: destino.nome, fotos: imagens.length }), true;
         }

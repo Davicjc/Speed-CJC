@@ -64,8 +64,15 @@ body.tema-tecnico .fundo {
 .tema-tecnico .sobretitulo { color: var(--ciano); }
 
 /* ---------- atendimento (cliente, plano, observação) ---------- */
-.atendimento { margin-top: 26px; display: grid; gap: 10px; max-width: 520px; padding: 16px; border: 1px solid var(--linha-forte); border-radius: var(--r-lg); background: rgba(19, 25, 37, 0.6); }
-.atendimento legend { font-family: var(--fonte-display); font-weight: 600; font-size: var(--t-sm); letter-spacing: 0.04em; color: var(--ciano); padding: 0 6px; }
+.atendimento { margin-top: 26px; max-width: 520px; padding: 14px 16px; border: 1px solid var(--linha-forte); border-radius: var(--r-lg); background: rgba(19, 25, 37, 0.6); }
+.atendimento summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.atendimento summary::-webkit-details-marker { display: none; }
+.atendimento summary::after { content: '+'; margin-left: auto; font-family: var(--fonte-display); font-size: 1.3rem; line-height: 1; color: var(--ciano); transition: transform .2s; }
+.atendimento[open] summary::after { transform: rotate(45deg); }
+.atendimento-titulo { font-family: var(--fonte-display); font-weight: 600; font-size: var(--t-sm); letter-spacing: 0.04em; color: var(--ciano); }
+.atendimento-resumo { font-size: var(--t-xs); color: var(--texto-3); }
+.atendimento-resumo.preenchido { color: var(--texto); font-weight: 500; }
+.atendimento[open] .atendimento-grade { margin-top: 12px; }
 .atendimento-grade { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 10px; }
 .atendimento .campo { margin: 0; }
 .atendimento .campo label { font-size: var(--t-xs); }
@@ -91,3 +98,11 @@ body.tema-tecnico .fundo {
 .sem-acesso svg { width: 44px; height: 44px; color: var(--ciano); }
 .sem-acesso h1 { font-size: clamp(1.6rem, 3vw, 2.1rem); }
 .sem-acesso p { color: var(--texto-2); }
+
+/* atendimento no celular: cartão no topo, campos grandes para o dedo */
+@media (max-width: 760px) {
+    .atendimento { margin-top: 0; max-width: none; padding: 14px; }
+    .atendimento-grade { grid-template-columns: minmax(0, 1fr); }
+    .atendimento .entrada { min-height: 48px; font-size: 16px; }
+}
+

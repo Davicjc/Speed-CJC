@@ -389,7 +389,7 @@ async function salvar(r, geo) {
         bz.className = 'botao botao-primario';
         bz.id = 'zap-enviar-teste';
         bz.innerHTML = ICON.whatsapp + 'Enviar para o Zap';
-        bz.addEventListener('click', () => import('../ui/zap-envio.js').then((m) => m.abrirEnvioZap({ id: res.id, protocol: res.protocol, atendimento: tec.atendimento() })));
+        bz.addEventListener('click', () => import('../ui/zap-envio.js').then((m) => m.abrirEnvioZap({ id: res.id, protocol: res.protocol, atendimento: tec.atendimento(), place: res.place })));
         $('#de-novo').after(bz);
     }
 

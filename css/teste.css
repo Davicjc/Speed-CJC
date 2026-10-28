@@ -230,3 +230,31 @@
     .guia-tabela td, .guia-tabela td.n { display: flex; justify-content: space-between; gap: 16px; padding: 3px 0; border: 0; text-align: right; white-space: normal; }
     .guia-tabela td::before { content: attr(data-rotulo); color: var(--texto-3); font-family: var(--fonte); text-align: left; }
 }
+
+/* ---------- celular: só o teste (o título fica para o Google e para leitores de tela) ---------- */
+@media (max-width: 760px) {
+    .palco { display: flex; flex-direction: column; align-items: stretch; gap: 14px; padding-top: 14px; }
+    .palco-texto, .intro, .opcoes { display: contents; }
+    .palco-texto h1, .palco-texto .intro > .lead {
+        position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap;
+    }
+    .atendimento { order: 1; }
+    #modos { order: 2; width: 100%; }
+    #modo-ajuda { order: 2; margin: -6px 0 0; text-align: center; max-width: none; }
+    .palco-velo { order: 3; }
+    .velo { width: min(330px, 84vw); }
+    .chave { order: 4; justify-self: center; align-self: center; }
+    #local-ajuda { display: none; }
+    .resultado { order: 5; display: flex; flex-direction: column; }
+    .resultado .resultado-quando { order: 0; }
+    .resultado h2 { order: 1; }
+    .resultado .resultado-acoes { order: 2; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 14px; }
+    .resultado .resultado-acoes .botao { justify-content: center; width: 100%; }
+    .resultado .resultado-acoes .botao:first-child { grid-column: 1 / -1; }
+    .resultado .salvo { order: 3; }
+    .resultado .plano { order: 4; }
+    .resultado .lead { order: 5; }
+    .resultado .usos { order: 6; }
+    .resultado .dicas { order: 7; }
+}
+

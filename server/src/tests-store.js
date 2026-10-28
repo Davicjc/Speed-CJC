@@ -112,6 +112,17 @@ export function createTestsStore({ db, log = console }) {
         return { items: itens.map(summary), next: rows.length > limit ? itens[itens.length - 1].id : null };
     }
 
+    /** Dados do atendimento (cliente, plano, observação) informados pelo técnico depois do teste. */
+    function setAtendimento(id, at) {
+        const r = db.get('SELECT data FROM tests WHERE id = ?', id);
+        if (!r) return false;
+        let d = {};
+        try { d = JSON.parse(r.data || '{}'); } catch { d = {}; }
+        d.atendimento = at;
+        db.run('UPDATE tests SET data = ? WHERE id = ?', JSON.stringify(d), id);
+        return true;
+    }
+
     function remove(id) {
         const t = get(id);
         if (!t) return null;
@@ -168,5 +179,5 @@ export function createTestsStore({ db, log = console }) {
         return { desde, porDia, horas, modos, topIsps, topCities, periodo: p };
     }
 
-    return { save, get, summary, list, findByProtocol, remove, claim, deleteUserTests, purgeAnonymous, recentWithLocation, counts, overview, idTime };
+    return { save, get, summary, list, findByProtocol, remove, claim, deleteUserTests, purgeAnonymous, recentWithLocation, counts, overview, idTime, setAtendimento };
 }

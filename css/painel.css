@@ -211,3 +211,9 @@
 @media (max-width: 960px) { .grade-admins { grid-template-columns: minmax(0, 1fr); } }
 
 @media (max-width: 1180px) { .tabela-usuarios th:nth-child(4), .tabela-usuarios td:nth-child(4) { display: none; } }
+.zap-campos { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; gap: 10px; }
+@media (max-width: 480px) { .zap-campos { grid-template-columns: minmax(0, 1fr); } }
+.zap-local { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 10px; border-radius: var(--r-md); font-size: var(--t-sm); color: var(--texto-2); background: rgba(244, 246, 249, 0.05); border: 1px solid var(--linha); }
+.zap-local svg { width: 16px; height: 16px; flex-shrink: 0; color: var(--texto-3); }
+.zap-local.ok { color: var(--texto); background: var(--ok-fundo); border-color: rgba(61, 214, 140, 0.3); }
+.zap-local.ok svg { color: var(--ok); }

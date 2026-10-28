@@ -28,14 +28,14 @@
                 <h1><span class="sobretitulo">Speed teste técnico Audicom</span>Diagnóstico completo da conexão</h1>
                 <p class="lead">Todas as medidas, sem filtro: velocidade, latência com a linha cheia, perda por UDP, IPv4 e IPv6, NAT e CGNAT, rota salto a salto e tempo até aplicativos e bancos. O teste fica guardado junto com o atendimento.</p>
 
-                <fieldset class="atendimento" id="atendimento">
-                    <legend>Atendimento</legend>
+                <details class="atendimento" id="atendimento" open>
+                    <summary><span class="atendimento-titulo">Dados do atendimento</span><span class="atendimento-resumo" id="at-resumo">cliente, plano e observação</span></summary>
                     <div class="atendimento-grade">
                         <div class="campo"><label for="at-cliente">Cliente (nome, código ou contrato)</label><input class="entrada" id="at-cliente" maxlength="80" autocomplete="off"></div>
-                        <div class="campo"><label for="at-plano">Plano (Mbps)</label><input class="entrada" id="at-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off"></div>
+                        <div class="campo"><label for="at-plano">Plano (Mbps)</label><input class="entrada" id="at-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off" placeholder="Ex.: 500"></div>
                         <div class="campo total"><label for="at-obs">Observação</label><input class="entrada" id="at-obs" maxlength="500" autocomplete="off" placeholder="Ex.: teste no cabo, ONU trocada, Wi-Fi 5 GHz na sala"></div>
                     </div>
-                </fieldset>
+                </details>
 
                 <div class="opcoes">
                     <div class="segmento" role="radiogroup" aria-label="Tipo de teste" id="modos">

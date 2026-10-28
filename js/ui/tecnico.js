@@ -127,3 +127,18 @@ export function iniciarListaTecnica({ cfg }) {
     carregar();
 }
 
+
+// atendimento: no celular começa fechado, mostrando o resumo do que já foi preenchido
+const dobra = document.getElementById('atendimento');
+if (dobra) {
+    if (window.matchMedia('(max-width: 760px)').matches) dobra.open = false;
+    const resumir = () => {
+        const a = atendimento();
+        const partes = [a.cliente, a.plano ? `${a.plano} Mbps` : null, a.obs ? 'com observação' : null].filter(Boolean);
+        const el = $('#at-resumo');
+        el.textContent = partes.length ? partes.join(' · ') : 'cliente, plano e observação';
+        el.classList.toggle('preenchido', partes.length > 0);
+    };
+    dobra.addEventListener('input', resumir);
+    resumir();
+}

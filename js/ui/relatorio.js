@@ -6,7 +6,7 @@ import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { esc, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct } from '../core/util.js';
 import { barrasHorizontais } from './graficos.js';
-import { planoParaCliente, usos, veredito } from './qualidade.js';
+import { classificar, planoParaCliente, usos, veredito } from './qualidade.js';
 
 export const NOME_MODO = { rapido: 'Teste rápido', completo: 'Diagnóstico completo' };
 
@@ -131,9 +131,21 @@ const mbps = (v) => (v == null ? 'não medido' : `${fmtMbps(v)} Mbps`);
 const ms = (v) => (v == null ? 'não medido' : `${fmtMs(v)} ms`);
 
 /**
- * Texto completo do teste, para o WhatsApp e para copiar. Leva tudo o que o
- * teste mediu (no modo completo, também o diagnóstico e a rota), menos as
- * coordenadas do aparelho: o local vai só pelo nome do bairro e da cidade.
+ * Bolinha de cada medida no texto: verde, amarela e vermelha para o técnico;
+ * para o cliente, só verde, azul e branca (nunca vermelho: mesmo critério da tela).
+ */
+function bolinha(tipo, valor, tom) {
+    const c = classificar(tipo, valor, { tom });
+    if (!c) return '';
+    if (tom === 'tecnico') return c.nivel === 'ok' ? ' 🟢' : c.nivel === 'atencao' ? ' 🟡' : ' 🔴';
+    return c.nivel === 'ok' ? ' 🟢' : c.nivel === 'azul' ? ' 🔵' : ' ⚪';
+}
+
+/**
+ * Texto completo do teste para o WhatsApp e para copiar, com emojis e seções.
+ * Leva tudo o que o teste mediu (no modo completo, também o diagnóstico; a rota
+ * e o NAT só para o técnico), menos as coordenadas do aparelho: o local vai
+ * pelo nome do bairro e da cidade.
  */
 export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom = 'cliente' } = {}) {
     const L = [];
@@ -141,72 +153,76 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
     const v = veredito(t, { tom });
     const adv = t.advanced || {};
     const ll = t.loadedLatency || {};
+    const at = t.atendimento || {};
+    const icone = v.nivel === 'ok' ? '✅' : v.nivel === 'ruim' ? '❌' : tecnico ? '⚠️' : 'ℹ️';
 
-    L.push(`*Teste de velocidade ${empresa}*`);
-    const quando = [t.createdAt ? fmtDataHora(t.createdAt) : null, t.protocol ? `Protocolo ${t.protocol}` : null].filter(Boolean).join(' · ');
+    L.push(`📶 *Teste de velocidade · ${empresa}*`);
+    const quando = [t.protocol ? `🧾 ${t.protocol}` : null, t.createdAt ? fmtDataHora(t.createdAt) : null].filter(Boolean).join(' · ');
     if (quando) L.push(quando);
-    L.push(`${NOME_MODO[t.mode] || 'Teste'}: ${v.titulo}${tecnico && t.verified === false ? ' (não conferido pelo servidor)' : ''}`);
-    if (tecnico && t.origem === 'tecnico') L.push('Teste técnico' + (t.atendimento && t.atendimento.cliente ? ` · cliente ${t.atendimento.cliente}` : ''));
+    L.push(`${icone} ${NOME_MODO[t.mode] || 'Teste'}: *${v.titulo}*`);
+    if (tecnico && t.verified === false) L.push('⚠️ Não conferido pelo servidor');
 
-    L.push('', '*Velocidade*');
-    L.push(`Download: ${mbps(t.download)}`);
-    L.push(`Upload: ${mbps(t.upload)}`);
-    const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
-    if (pct != null) L.push(`Plano contratado: ${plano} Mbps (${pct}% no download)`);
-
-    L.push('', '*Latência e estabilidade*');
-    L.push(`Ping: ${ms(t.ping)}${t.pingMin != null && t.pingMax != null ? ` (mín. ${fmtMs(t.pingMin)}, máx. ${fmtMs(t.pingMax)})` : ''}`);
-    L.push(`Jitter: ${ms(t.jitter)}`);
-    L.push(`Perda de pacotes: ${t.loss != null ? fmtPct(t.loss) + '%' : 'não medida'}`);
-    if (t.bufferbloat != null) {
-        const det = [ll.download != null ? `${fmtMs(ll.download)} ms durante o download` : null, ll.upload != null ? `${fmtMs(ll.upload)} ms durante o upload` : null].filter(Boolean).join(' e ');
-        L.push(`Ping com a linha cheia: +${fmtMs(t.bufferbloat)} ms${det ? ` (ping de ${det})` : ''}`);
+    if (tecnico && (at.cliente || at.plano || at.obs)) {
+        L.push('', '🏠 *Atendimento*');
+        if (at.cliente) L.push(`• Cliente: ${at.cliente}`);
+        if (at.plano) L.push(`• Plano: ${at.plano} Mbps`);
+        if (at.obs) L.push(`• Obs.: ${at.obs}`);
     }
 
-    L.push('', '*Conexão*');
-    L.push(`Operadora: ${t.isp || 'não identificada'}`);
-    if (t.ip) L.push(`IP: ${t.ip}${t.ipFamily ? ` (${t.ipFamily})` : ''}`);
-    if (t.place && t.place.label) L.push(`Local: ${t.place.label}${t.place.source === 'aparelho' ? ' (localização do aparelho)' : t.place.source === 'ip' ? ' (aproximado pelo IP)' : ''}`);
-    if (t.connection && t.connection.type) L.push(`Conexão do aparelho: ${NOMES_CONEXAO[t.connection.type] || t.connection.type}`);
+    L.push('', '🚀 *Velocidade*');
+    L.push(`⬇️ Download: *${mbps(t.download)}*${bolinha('download', t.download, tom)}`);
+    L.push(`⬆️ Upload: *${mbps(t.upload)}*${bolinha('upload', t.upload, tom)}`);
+    const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
+    if (pct != null) L.push(`📦 Plano de ${plano} Mbps: ${pct}% no download`);
+
+    L.push('', '⏱️ *Latência e estabilidade*');
+    L.push(`🏓 Ping: ${ms(t.ping)}${t.pingMin != null && t.pingMax != null ? ` (mín. ${fmtMs(t.pingMin)} · máx. ${fmtMs(t.pingMax)})` : ''}${bolinha('ping', t.ping, tom)}`);
+    L.push(`〰️ Jitter: ${ms(t.jitter)}${bolinha('jitter', t.jitter, tom)}`);
+    L.push(`📉 Perda de pacotes: ${t.loss != null ? fmtPct(t.loss) + '%' : 'não medida'}${bolinha('perda', t.loss, tom)}`);
+    if (t.bufferbloat != null) {
+        const det = [ll.download != null ? `${fmtMs(ll.download)} ms no download` : null, ll.upload != null ? `${fmtMs(ll.upload)} ms no upload` : null].filter(Boolean).join(' · ');
+        L.push(`🚦 Ping com a linha cheia: +${fmtMs(t.bufferbloat)} ms${det ? ` (${det})` : ''}${bolinha('bufferbloat', t.bufferbloat, tom)}`);
+    }
+
+    L.push('', '🌐 *Conexão*');
+    L.push(`🏢 Operadora: ${t.isp || 'não identificada'}`);
+    if (t.ip) L.push(`🔢 IP: ${t.ip}${t.ipFamily ? ` (${t.ipFamily})` : ''}`);
+    if (t.place && t.place.label) L.push(`📍 Local: ${t.place.label}${t.place.source === 'aparelho' ? ' (GPS do aparelho)' : ' (aproximado pelo IP)'}`);
+    else L.push('📍 Local: sem localização');
     const ap = aparelhoTexto(t.device);
-    if (ap) L.push(`Aparelho: ${ap}`);
-    if (t.server && t.server.name) L.push(`Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
+    if (ap) L.push(`📱 Aparelho: ${ap}`);
+    if (t.connection && t.connection.type) L.push(`📡 Conexão do aparelho: ${NOMES_CONEXAO[t.connection.type] || t.connection.type}`);
+    if (t.server && t.server.name) L.push(`🖥️ Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
 
     if (t.mode === 'completo') {
+        const diag = [];
         const pr = adv.protocolos;
         if (pr) {
-            L.push('', '*IPv4 e IPv6*');
             for (const [nome, x] of [['IPv4', pr.ipv4], ['IPv6', pr.ipv6]]) {
                 if (!x) continue;
-                const est = x.alcance == null ? 'não verificável' : x.alcance ? `funciona${x.mbps != null ? `, ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? 'sem acesso' : 'não utilizado';
-                L.push(`${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}`);
+                const est = x.alcance == null ? '➖ não testado' : x.alcance ? `✅ funciona${x.mbps != null ? ` · ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? '❌ sem acesso' : '➖ não utilizado';
+                diag.push(`🌍 ${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}`);
             }
         }
         if (tecnico && adv.nat) {
             const n = adv.nat;
-            L.push('', '*Roteador e NAT*');
-            L.push(`Tipo de NAT: ${n.tipo || 'não medido'}`);
-            L.push(`Duplo NAT: ${n.duploNat || 'não medido'}${n.motivo ? ` (${n.motivo})` : ''}`);
-            L.push(`IP compartilhado (CGNAT): ${n.cgnat ? 'sim' : 'não'}`);
-            if (n.roteadoresInternos != null) L.push(`Roteadores dentro da casa: ${n.roteadoresInternos}`);
+            diag.push(`🔀 NAT: ${n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
+            if (n.roteadoresInternos != null) diag.push(`🏠 Roteadores dentro da casa: ${n.roteadoresInternos}`);
         }
-        if (adv.relogio) L.push('', `*Relógio do aparelho:* ${relogioTexto(adv.relogio)}`);
-        const lista = (titulo, arr) => {
-            if (!arr || !arr.length) return;
-            L.push('', `*${titulo}*`);
-            for (const s of arr) L.push(`${s.label}: ${s.ms != null ? `${s.ms} ms` : s.indisponivel ? 'indisponível' : tecnico ? 'falhou' : 'sem resposta'}`);
-        };
-        lista('Tempo até os aplicativos', adv.servicos);
-        lista('Tempo até bancos e PIX', adv.bancos);
+        if (adv.relogio) diag.push(`🕒 Relógio do aparelho: ${Math.abs(adv.relogio.offsetS) < 2 ? '✅ certo' : `⚠️ ${relogioTexto(adv.relogio)}`}`);
+        if (diag.length) L.push('', '🔬 *Diagnóstico*', ...diag);
+        const linha = (arr) => arr.map((s) => `${s.label} ${s.ms != null ? s.ms : s.indisponivel ? 'n/d' : '–'}`).join(' · ');
+        if (adv.servicos && adv.servicos.length) L.push('', '📲 *Aplicativos* (ms)', linha(adv.servicos));
+        if (adv.bancos && adv.bancos.length) L.push('', '🏦 *Bancos e PIX* (ms)', linha(adv.bancos));
         if (tecnico && adv.rota && adv.rota.length) {
-            L.push('', '*Rota até a conexão*');
+            L.push('', `🛣️ *Rota até a conexão* (${adv.rota.length} saltos)`);
             for (const h of adv.rota) {
-                const extra = [h.media != null ? `${fmtMs(h.media)} ms` : null, h.perda ? `${fmtPct(h.perda)}% de perda` : null].filter(Boolean).join(', ');
-                L.push(`${h.hop}. ${h.host || 'não responde'}${extra ? ` (${extra})` : ''}`);
+                const extra = [h.media != null ? `${fmtMs(h.media)} ms` : null, h.perda ? `${fmtPct(h.perda)}% perda` : null].filter(Boolean).join(' · ');
+                L.push(`${h.hop}. ${h.host || '* não responde'}${extra ? ` · ${extra}` : ''}`);
             }
-        } else if (tecnico && adv.rotaErro) L.push('', `*Rota até a conexão:* não respondeu (${adv.rotaErro})`);
+        } else if (tecnico && adv.rotaErro) L.push('', `🛣️ Rota: não respondeu (${adv.rotaErro})`);
     }
 
-    if (link) L.push('', `Resultado: ${link}`);
+    if (link) L.push('', `🔗 ${link}`);
     return L.join('\n');
 }

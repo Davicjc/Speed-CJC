@@ -628,6 +628,11 @@ ONU trocada"). Isso fica guardado com o teste, aparece na lista, na
 administração e no texto do WhatsApp, e o plano informado vira a base da
 porcentagem do resultado.
 
+No celular, o cartão **Dados do atendimento** fica fechado no topo, mostrando o
+que já foi preenchido; um toque abre os campos. A tela do celular mostra só o
+seletor (Teste rápido ou Diagnóstico completo), o velocímetro e, no fim, o
+resultado com os botões logo abaixo do título.
+
 ### Localização
 
 Na primeira visita, a página do teste pergunta, numa faixa discreta, se a pessoa
@@ -666,9 +671,14 @@ vê esse botão.
 ### Enviar (técnico)
 
 Depois de um teste no `/tecnico`, ou abrindo qualquer teste na lista, clique em
-**Enviar para o Zap**: escolha o destino, escreva uma observação se quiser e
-anexe até 6 fotos. Vão juntos: todas as medidas e o diagnóstico (com a rota), o
-atendimento, a conta que fez o teste e quem está enviando.
+**Enviar para o Zap**. A janela mostra se o teste tem a localização do aparelho
+e traz os campos **Cliente** (nome, código ou contrato), **Plano** (Mbps) e
+**Observação**, já preenchidos com o que foi digitado antes do teste; o que for
+mudado ali fica guardado no teste. Escolha o destino e anexe até 6 fotos. A
+mensagem sai organizada em blocos, com emojis: atendimento, velocidade
+(com bolinhas verde, amarela ou vermelha), latência, conexão e localização,
+diagnóstico, aplicativos e bancos, rota, a conta que fez o teste e quem está
+enviando.
 
 ### Segurança e LGPD
 

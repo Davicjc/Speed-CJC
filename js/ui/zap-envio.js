@@ -61,13 +61,24 @@ export async function abrirEnvioZap(t) {
         return;
     }
 
+    const at = t.atendimento || {};
+    const local = t.place && t.place.label
+        ? (t.place.source === 'aparelho' ? { ok: true, texto: `Com localização do aparelho: ${t.place.label}` } : { ok: false, texto: `Sem localização do aparelho (cidade pelo IP: ${t.place.label})` })
+        : { ok: false, texto: 'Sem localização' };
     d.innerHTML = `<form class="modal-corpo" method="dialog" novalidate>
         <h2>Enviar para o Zap</h2>
-        <p class="suave" style="font-size:var(--t-sm)">Teste ${esc(t.protocol || '')}${t.atendimento && t.atendimento.cliente ? ` · ${esc(t.atendimento.cliente)}` : ''}. Vai com todas as medidas, quem fez o teste e quem está enviando.</p>
+        <p class="suave" style="font-size:var(--t-sm)">Teste ${esc(t.protocol || '')}. Vai com todas as medidas, quem fez o teste e quem está enviando.</p>
+        <p class="zap-local ${local.ok ? 'ok' : ''}">${ICON.pin}<span>${esc(local.texto)}</span></p>
         <div class="campo"><label for="zap-destino">Para</label>
             <select class="entrada" id="zap-destino">${info.destinos.map((x) => `<option value="${esc(x.jid)}" ${x.jid === info.padrao ? 'selected' : ''}>${x.tipo === 'grupo' ? 'Grupo: ' : ''}${esc(x.nome)}</option>`).join('')}</select></div>
-        <div class="campo"><label for="zap-obs">Observação (opcional)</label>
-            <textarea class="entrada" id="zap-obs" rows="2" maxlength="500" placeholder="Ex.: troquei o conector, cliente satisfeito"></textarea></div>
+        <div class="zap-campos">
+            <div class="campo"><label for="zap-cliente">Cliente (nome, código ou contrato)</label>
+                <input class="entrada" id="zap-cliente" maxlength="80" autocomplete="off" value="${esc(at.cliente || '')}"></div>
+            <div class="campo"><label for="zap-plano">Plano (Mbps)</label>
+                <input class="entrada" id="zap-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off" placeholder="Ex.: 500" value="${at.plano ? esc(String(at.plano)) : ''}"></div>
+        </div>
+        <div class="campo"><label for="zap-obs">Observação</label>
+            <textarea class="entrada" id="zap-obs" rows="2" maxlength="500" placeholder="Ex.: troquei o conector, Wi-Fi 5 GHz na sala">${esc(at.obs || '')}</textarea></div>
         <div class="campo"><span class="rotulo-campo">Fotos (até ${MAX_FOTOS})</span>
             <label class="botao botao-secundario botao-pequeno zap-escolher">${ICON.plus}Anexar fotos
                 <input type="file" accept="image/*" multiple id="zap-arquivos"></label>
@@ -106,7 +117,8 @@ export async function abrirEnvioZap(t) {
         erro.hidden = true;
         try {
             const r = await api('/api/tecnico/zap/enviar', { method: 'POST', body: {
-                teste: t.id, destino: d.querySelector('#zap-destino').value, obs: d.querySelector('#zap-obs').value,
+                teste: t.id, destino: d.querySelector('#zap-destino').value,
+                atendimento: { cliente: d.querySelector('#zap-cliente').value, plano: d.querySelector('#zap-plano').value ? Number(d.querySelector('#zap-plano').value) : null, obs: d.querySelector('#zap-obs').value },
                 fotos: fotos.map((f) => ({ imagem: f.imagem, miniatura: f.miniatura })),
             } });
             toast(`Enviado para ${r.destino}${r.fotos ? `, com ${r.fotos} foto(s)` : ''}.`, 'ok');
