@@ -146,6 +146,8 @@ function limpar() {
     leituraAtiva(null);
     $('#resultado').hidden = true;
     $('#intro').hidden = false;
+    const bz = $('#zap-enviar-teste');
+    if (bz) bz.remove();
     $('#detalhes').hidden = true;
     ['protocolos', 'nat', 'servicos', 'bancos', 'relogio', 'rota', 'medidas'].forEach((k) => { const p = $(`#d-${k}`); if (p) { p.hidden = true; p.innerHTML = ''; } });
     $('#curva').innerHTML = '';
@@ -379,7 +381,17 @@ async function salvar(r, geo) {
     }
     setHtml($('#r-quando'), html`Hoje às ${fmtHora(Date.now())}. Protocolo <span class="mono-copy">${res.protocol}</span>`);
     habilitarCompartilhar(location.origin + res.path, r, res, aparelho);
-    if (tec) { tec.medidasDetalhadas($('#d-medidas'), comoRelatorio(r, res, aparelho), { res }); tec.recarregarLista(); }
+    if (tec) {
+        tec.medidasDetalhadas($('#d-medidas'), comoRelatorio(r, res, aparelho), { res });
+        tec.recarregarLista();
+        const bz = document.createElement('button');
+        bz.type = 'button';
+        bz.className = 'botao botao-primario';
+        bz.id = 'zap-enviar-teste';
+        bz.innerHTML = ICON.whatsapp + 'Enviar para o Zap';
+        bz.addEventListener('click', () => import('../ui/zap-envio.js').then((m) => m.abrirEnvioZap({ id: res.id, protocol: res.protocol, atendimento: tec.atendimento() })));
+        $('#de-novo').after(bz);
+    }
 
     if (TECNICO) {
         salvo.className = 'salvo ok';

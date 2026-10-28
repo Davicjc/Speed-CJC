@@ -150,6 +150,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, tom = ad
     }
 
     blocos.push(raw(`<div class="det-acoes">
+        ${tecnico ? `<button type="button" class="botao botao-primario botao-pequeno" data-zap-enviar>${ICON.whatsapp}Enviar para o Zap</button>` : ''}
         <a class="botao botao-secundario botao-pequeno" href="https://wa.me/?text=${encodeURIComponent(texto)}" target="_blank" rel="noopener" data-whatsapp>${ICON.whatsapp}Enviar no WhatsApp</a>
         <button type="button" class="botao botao-secundario botao-pequeno" data-copiar>${ICON.copy}Copiar resultado</button>
         <a class="botao botao-secundario botao-pequeno" href="/r/${esc(t.id)}" target="_blank" rel="noopener">${ICON.external}Página pública</a>
@@ -182,6 +183,8 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, tom = ad
         if (ok) evento('share', { method: 'copiar', content_type: 'resultado' });
     });
     d.querySelector('[data-whatsapp]').addEventListener('click', () => evento('share', { method: 'whatsapp', content_type: 'resultado' }));
+    const bz = d.querySelector('[data-zap-enviar]');
+    if (bz) bz.addEventListener('click', () => import('./zap-envio.js').then((m) => m.abrirEnvioZap(t)));
     const bu = d.querySelector('[data-usuario]');
     if (bu && aoAbrirUsuario) bu.addEventListener('click', () => { d.close(); aoAbrirUsuario(t.uid); });
     const bx = d.querySelector('[data-excluir]');

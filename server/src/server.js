@@ -22,6 +22,8 @@ import { validateResult, verifyAgainstServer } from './results.js';
 import { handleAccount } from './routes-account.js';
 import { createAdminRoutes } from './routes-admin.js';
 import { createTecnicoRoutes } from './routes-tecnico.js';
+import { createZapRoutes } from './routes-zap.js';
+import { createZap } from './zap.js';
 import { createSessions } from './sessions.js';
 import { createSlotManager } from './slots.js';
 import { PAGES, resolvePublic, serveFile } from './static.js';
@@ -85,6 +87,8 @@ const limits = {
 const ctx = { config, db, users, sessions, store, authn, captcha, mailer, backups, geo, hub, presence, clock, slots, rtc, platforms, limits, lookupIsp, isHttps, siteOrigin, log };
 const handleAdmin = createAdminRoutes(ctx);
 const handleTecnico = createTecnicoRoutes({ authn, store, users });
+const zap = createZap({ db, dataDir: config.dataDir, log });
+const handleZap = createZapRoutes({ authn, users, store, zap, config, siteOrigin, createRateLimiter, log });
 
 const err = (status, message, code) => Object.assign(new Error(message), { status, code });
 
@@ -388,6 +392,7 @@ async function handleApi(req, res, url, ip) {
     }
 
     if (await handleAccount(ctx, req, res, url, ip)) return;
+    if (await handleZap(req, res, url, ip)) return;
     if (await handleAdmin(req, res, url, ip)) return;
     if (await handleTecnico(req, res, url, ip)) return;
     throw err(404, 'rota não encontrada');
@@ -532,6 +537,7 @@ function shutdown(sig) {
     rtc.shutdown();
     clock.stop();
     platforms.stop();
+    zap.parar();
     setTimeout(() => { try { db.close(); } catch { /* ok */ } process.exit(0); }, 1500).unref();
 }
 process.on('SIGTERM', () => shutdown('SIGTERM'));

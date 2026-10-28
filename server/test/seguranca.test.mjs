@@ -225,6 +225,34 @@ test('acesso técnico: só técnico e admin usam o /tecnico; teste "técnico" de
     assert.equal((await est.dono.get('/api/tecnico/tests')).status, 200, 'administrador também usa o /tecnico');
 });
 
+test('WhatsApp: só admin conecta e escolhe destinos; técnico só envia para destino liberado, com foto de verdade', async () => {
+    assert.equal((await est.navC.get('/api/tecnico/zap')).status, 403, 'cliente comum não vê o envio');
+    assert.equal((await est.navC.post('/api/tecnico/zap/enviar', { teste: est.testeA })).status, 403);
+    srv.admin('tecnico', B.email);
+    assert.equal((await est.navB.get('/api/admin/zap')).status, 403, 'técnico não mexe na conexão');
+    assert.equal((await est.navB.post('/api/admin/zap/destinos', { destinos: [] })).status, 403);
+
+    const z = await est.dono.get('/api/admin/zap');
+    assert.equal(z.status, 200);
+    assert.equal(z.body.estado, 'desligado', 'nada liga sozinho');
+    assert.equal((await est.dono.post('/api/admin/zap/destinos', { destinos: [{ jid: '5534999999999@c.us; drop', nome: 'x' }] })).status, 400, 'destino com formato estranho é recusado');
+    const ok = await est.dono.post('/api/admin/zap/destinos', { destinos: [{ jid: '120363000000000000@g.us', nome: 'Suporte' }], padrao: '120363000000000000@g.us' });
+    assert.equal(ok.status, 200);
+    assert.equal(ok.body.destinos[0].tipo, 'grupo');
+
+    const info = await est.navB.get('/api/tecnico/zap');
+    assert.equal(info.status, 200);
+    assert.equal(info.body.pronto, false, 'desconectado: não está pronto');
+    assert.equal((await est.navB.post('/api/tecnico/zap/enviar', { teste: est.testeA, destino: '5511988887777@s.whatsapp.net' })).status, 400, 'só destinos liberados');
+    const naoFoto = Buffer.from('<script>alert(1)</script>').toString('base64');
+    assert.equal((await est.navB.post('/api/tecnico/zap/enviar', { teste: est.testeA, destino: '120363000000000000@g.us', fotos: [{ imagem: naoFoto }] })).status, 400, 'arquivo que não é JPEG é recusado');
+    const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 0, 0x10, 0x4a, 0x46, 0x49, 0x46, 0, 1, 0xff, 0xd9]).toString('base64');
+    const off = await est.navB.post('/api/tecnico/zap/enviar', { teste: est.testeA, destino: '120363000000000000@g.us', fotos: [{ imagem: jpeg }] });
+    assert.equal(off.status, 503, 'desconectado: falha avisando, sem derrubar nada');
+    assert.equal((await fetch(`${BASE}/api/health`)).status, 200, 'o site segue no ar');
+    srv.admin('sem-tecnico', B.email);
+});
+
 test('ação sensível pede a senha de novo depois de 15 minutos', async () => {
     const db = banco();
     db.prepare('UPDATE sessions SET reauth_at = 0').run();

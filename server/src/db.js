@@ -111,6 +111,13 @@ const MIGRACOES = [
         PRIMARY KEY (chave, dia)
     );
     `,
+    // 4: ajustes do sistema feitos pelo painel (ex.: WhatsApp ligado e destinos permitidos)
+    `
+    CREATE TABLE ajustes (
+        chave TEXT PRIMARY KEY,
+        valor TEXT NOT NULL
+    );
+    `,
 ];
 
 export function openDatabase(file, log = console) {

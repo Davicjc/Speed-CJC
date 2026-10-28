@@ -177,3 +177,27 @@
 .det-grupo-titulo { font-size: var(--t-lg); margin-top: 16px; }
 .det-secao .det-desc + .diag-linhas, .det-secao .det-desc + .lista-barras, .det-secao .det-desc + .tabela-wrap { margin-top: 12px; }
 @media (min-width: 520px) { .det-usos { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* administração → WhatsApp */
+.zap-conta { display: flex; align-items: center; gap: 8px; font-family: var(--fonte-display); font-weight: 600; margin: 4px 0 6px; }
+.zap-conta svg { width: 18px; height: 18px; color: #25D366; }
+.zap-qr { display: grid; grid-template-columns: 240px 1fr; gap: 18px; align-items: center; margin-top: 10px; }
+.zap-qr img { width: 240px; height: 240px; border-radius: var(--r-md); background: #fff; padding: 8px; }
+.zap-qr ol { margin: 0; padding-left: 18px; display: grid; gap: 8px; font-size: var(--t-sm); color: var(--texto-2); }
+@media (max-width: 640px) { .zap-qr { grid-template-columns: 1fr; justify-items: start; } }
+.zap-destinos, .zap-grupos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.zap-destinos li, .zap-grupos li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 10px; border: 1px solid var(--linha); border-radius: var(--r-md); }
+.zap-destinos label { display: flex; align-items: center; gap: 10px; cursor: pointer; flex: 1; min-width: 0; }
+.zap-destinos label span, .zap-grupos li > span { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.zap-destinos svg { width: 16px; height: 16px; color: var(--texto-3); flex-shrink: 0; }
+.zap-destinos small, .zap-grupos small { color: var(--texto-3); font-size: var(--t-xs); }
+.zap-grupos { max-height: 360px; overflow: auto; }
+
+/* envio para o WhatsApp (técnico e administração) */
+.zap-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-top: 8px; }
+.zap-fotos figure { margin: 0; position: relative; aspect-ratio: 1; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--linha-forte); }
+.zap-fotos img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.zap-fotos button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(4, 11, 33, 0.8); color: #fff; cursor: pointer; display: grid; place-items: center; }
+.zap-fotos button svg { width: 14px; height: 14px; }
+.zap-escolher { display: inline-flex; align-items: center; gap: 8px; }
+.zap-escolher input { position: absolute; width: 1px; height: 1px; opacity: 0; }

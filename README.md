@@ -77,6 +77,8 @@ honesto e sem alarme, para o teste não virar chamado por susto.
 perguntas frequentes, sitemap e robots gerados pelo servidor; Google Analytics 4
 opcional, com faixa de cookies e consentimento (LGPD).
 
+**WhatsApp dos técnicos**: a administração conecta um WhatsApp por QR code e libera grupos e contatos; o técnico manda qualquer teste, com até 6 fotos, com um clique (processo isolado, fotos sem metadados e não gravadas). Sem login, cada aparelho faz até 6 testes por dia.
+
 **Mapa do site** (`/tree`): todos os caminhos em árvore, para quem cada um é e se a conta atual tem acesso, com botões de copiar o link, enviar no WhatsApp e compartilhar o mapa.
 
 **Resultado público** (`/r/<id>`): o link que vai no WhatsApp, com prévia, sem

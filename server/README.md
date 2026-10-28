@@ -28,6 +28,9 @@ npm run admin -- dono seu@email "Seu nome"
 | `ids.js` | ids em ordem cronológica inversa, protocolo `AUD-…` |
 | `routes-account.js` | cadastro com captcha, login, sessão, e-mail, nova senha, perfil, aparelhos conectados, histórico, exportação e exclusão (LGPD), presença |
 | `routes-tecnico.js` | o /tecnico: lista e detalhe dos testes de todos os clientes (só leitura, técnico ou admin) |
+| `zap.js`, `zap-worker.mjs` | WhatsApp: processo separado (WhatsApp Web por QR code), reiniciado sozinho; estado, QR e destinos |
+| `routes-zap.js` | conectar/desconectar e destinos (admin); enviar teste com fotos para destino liberado (técnico) |
+| `cotas.js` | cota diária de testes sem login (por aparelho, teto por IP; só hashes no banco) |
 | `busca-testes.js` | busca de testes por protocolo, id, nome ou e-mail, com filtros (admin e técnico) |
 | `routes-admin.js` | visão geral, ao vivo (SSE), testes, planilha, usuários, papéis, link de senha, auditoria, sistema |
 | `captcha.js` | Cloudflare Turnstile ou desafio próprio (prova de trabalho), resposta de uso único |

@@ -33,6 +33,8 @@ segurança, segurança, LGPD e solução de problemas.
 19. [Personalizar para o seu provedor](#19-personalizar-para-o-seu-provedor)
 20. [SEO, Google e estatísticas](#20-seo-google-e-estatísticas)
 21. [Speed Teste Técnico e o tom do cliente](#21-speed-teste-técnico-e-o-tom-do-cliente)
+22. [WhatsApp dos técnicos](#22-whatsapp-dos-técnicos)
+23. [Limite de testes sem conta](#23-limite-de-testes-sem-conta)
 
 ---
 
@@ -201,6 +203,7 @@ mudar: `systemctl restart audicom-speedtest`.
 | `ANON_RETENTION_DAYS` | 365 | testes feitos sem conta são apagados depois disso |
 | `SIGNUP_LIMIT_PER_HOUR` | 6 | cadastros por IP por hora |
 | `GEOCODER` | nominatim | endereço a partir do GPS (`off` desliga) |
+| `ANON_TESTS_PER_DAY` / `ANON_TESTS_PER_IP_DAY` | 6 / 60 | testes por dia sem login, por aparelho / teto por IP (seção 23) |
 | `GA_MEASUREMENT_ID` | desligado | Google Analytics 4 (ex.: `G-ABC123XYZ`); só registra depois do aceite dos cookies (seção 20) |
 
 ---
@@ -638,4 +641,60 @@ quer marcar os testes no mapa:
 
 A faixa nunca aparece junto com a de cookies, e a localização só funciona em
 HTTPS.
+
+---
+
+## 22. WhatsApp dos técnicos
+
+O técnico (e o administrador) pode mandar qualquer teste, **com fotos do
+atendimento**, para um grupo ou contato de WhatsApp da empresa. O cliente não
+vê esse botão.
+
+### Conectar (administrador)
+
+1. Separe um **número de WhatsApp só para isso** (não o principal da empresa).
+   A conexão é a mesma do WhatsApp Web, feita por uma biblioteca não oficial:
+   o WhatsApp pode bloquear números que pareçam automação.
+2. *Administração → WhatsApp → Conectar WhatsApp* (pede a sua senha de novo).
+3. No celular desse número: *Configurações → Aparelhos conectados → Conectar um
+   aparelho*, e aponte para o QR code da tela.
+4. Em **Adicionar destino**, escolha os grupos (o número precisa participar deles)
+   ou adicione contatos pelo número. Marque o destino **padrão** e clique em
+   **Salvar destinos**.
+5. **Enviar mensagem de teste** confere se chegou.
+
+### Enviar (técnico)
+
+Depois de um teste no `/tecnico`, ou abrindo qualquer teste na lista, clique em
+**Enviar para o Zap**: escolha o destino, escreva uma observação se quiser e
+anexe até 6 fotos. Vão juntos: todas as medidas e o diagnóstico (com a rota), o
+atendimento, a conta que fez o teste e quem está enviando.
+
+### Segurança e LGPD
+
+- O WhatsApp roda num **processo separado**: se ele travar ou cair, o teste de
+  velocidade continua no ar e o processo volta sozinho.
+- Só administradores conectam, desconectam e escolhem destinos, sempre pedindo a
+  senha de novo. O técnico só escolhe entre os destinos liberados: não dá para
+  mandar para um número qualquer.
+- O texto é montado no servidor, a partir do teste guardado.
+- As fotos são reduzidas no navegador (que também apaga a posição GPS e outros
+  dados da câmera), conferidas no servidor (só JPEG, até 3 MB cada) e enviadas
+  da memória: **não ficam gravadas** no servidor.
+- Limite de 30 envios por hora por técnico. A *Auditoria* registra cada conexão,
+  mudança de destinos e envio (quem, qual teste, para onde, quantas fotos).
+- A sessão do WhatsApp fica em `server/data/whatsapp/` (só o root lê). Quem tem
+  esses arquivos controla o WhatsApp conectado: eles nunca vão para o git. Para
+  cortar o acesso, use **Desconectar** no painel ou remova o aparelho no celular.
+
+---
+
+## 23. Limite de testes sem conta
+
+Sem login, cada aparelho faz **6 testes por dia** (`ANON_TESTS_PER_DAY`). No 7º,
+a página convida a entrar ou criar a conta gratuita; com login não há limite. Um
+teto por IP (`ANON_TESTS_PER_IP_DAY`, padrão 60) segura robôs que trocam de
+aparelho, sem travar clientes que dividem o mesmo IP (CGNAT). O dia vira à
+meia-noite de Brasília. O banco guarda só códigos embaralhados do aparelho e do
+IP, apagados em até 2 dias.
 

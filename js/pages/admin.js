@@ -40,7 +40,7 @@ const lugar = (t) => (t.place && t.place.label) || '–';
 const quem = (t) => (t.user ? html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(t.user.name, t.user.email)}</span><div><strong>${t.user.name || t.user.email}</strong><span>${t.user.email || ''}</span></div></div>` : html`<span class="fraco">Sem conta</span>`);
 
 // ---------- navegação ----------
-const VISTAS = ['geral', 'vivo', 'testes', 'usuarios', 'admins', 'auditoria', 'sistema'];
+const VISTAS = ['geral', 'vivo', 'testes', 'usuarios', 'admins', 'auditoria', 'zap', 'sistema'];
 const carregadas = new Set();
 function abrirVista(v, { historico = true } = {}) {
     if (!VISTAS.includes(v)) v = 'geral';
@@ -622,6 +622,7 @@ const CARREGAR = {
     admins: () => carregarAdmins(),
     auditoria: () => carregarAuditoria(),
     sistema: () => carregarSistema(),
+    zap: () => import('../ui/zap-admin.js').then((m) => m.iniciarZapAdmin()),
 };
 
 abrirVista(location.hash.slice(1) || 'geral', { historico: false });
