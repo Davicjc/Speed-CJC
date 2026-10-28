@@ -66,6 +66,8 @@ export const config = {
     // sem PUBLIC_IPV4, o IP público anunciado no teste UDP é o do domínio no DNS (registro A)
     publicIPv4FromDns: !process.env.PUBLIC_IPV4 && Boolean(process.env.PUBLIC_URL),
     publicIPv6: str('PUBLIC_IPV6', detectAddress('IPv6')),
+    // endereço IPv4 da própria máquina (o diagnóstico usa quando o nome só-IPv4 não existe no DNS)
+    localIPv4: detectAddress('IPv4'),
     // URLs completas pros testes separados de IPv4/IPv6 (ex.: https://v4.velocidadeteste.audicomtelecom.com.br).
     ipv4Base: str('IPV4_BASE_URL', null),
     ipv6Base: str('IPV6_BASE_URL', null),

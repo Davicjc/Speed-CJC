@@ -105,16 +105,37 @@ function siteOrigin(req) {
  * esquema acompanha o da página e, no ideal, IPV4_BASE_URL e IPV6_BASE_URL
  * apontam para nomes DNS só-A e só-AAAA.
  */
+// Os nomes só-IPv4 e só-IPv6 (IPV4_BASE_URL / IPV6_BASE_URL) só valem depois
+// de existirem no DNS. Enquanto não existem, o diagnóstico usa o endereço da
+// própria máquina, para o teste de IPv4 e IPv6 não falhar sempre. Conferido a
+// cada 10 min.
+const nomesNoDns = { IPv4: false, IPv6: false };
+async function conferirNomes() {
+    for (const [fam, url, consulta] of [['IPv4', config.ipv4Base, 'resolve4'], ['IPv6', config.ipv6Base, 'resolve6']]) {
+        if (!url) { nomesNoDns[fam] = false; continue; }
+        try { nomesNoDns[fam] = (await dns[consulta](new URL(url).hostname)).length > 0; } catch { nomesNoDns[fam] = false; }
+    }
+}
+const nomesConferidos = conferirNomes();
+setInterval(conferirNomes, 10 * 60_000).unref();
+
 function baseUrl(family, req) {
     const fixed = family === 'IPv6' ? config.ipv6Base : config.ipv4Base;
-    if (fixed) return fixed.replace(/\/$/, '');
-    const addr = family === 'IPv6' ? config.publicIPv6 : config.publicIPv4;
-    if (!addr) return null;
-    const proto = req && isHttps(req) ? 'https' : 'http';
-    const porta = proto === 'https' ? (config.publicPort === 443 ? '' : ':' + config.publicPort)
-        : (config.publicPort === 80 ? '' : ':' + config.publicPort);
-    const host = family === 'IPv6' ? `[${addr}]` : addr;
-    return `${proto}://${host}${porta}`;
+    if (fixed && nomesNoDns[family]) return fixed.replace(/\/$/, '');
+    // sem o nome no DNS, só dá em HTTP (em HTTPS o certificado é do domínio)
+    if (req && isHttps(req)) return null;
+    const portaDoPedido = req ? (/:(\d+)$/.exec(String(req.headers.host || '')) || [])[1] : null;
+    const porta = String(portaDoPedido || config.port);
+    const sufixo = porta === '80' ? '' : ':' + porta;
+    if (family === 'IPv4') {
+        const v4 = process.env.PUBLIC_IPV4 || config.localIPv4;
+        return v4 ? `http://${v4}${sufixo}` : null;
+    }
+    const v6 = config.publicIPv6;
+    if (!v6 || isPrivateIp(v6)) return null;
+    // IPv6 por número não entra na política de segurança do navegador (CSP):
+    // usa um nome do sslip.io, que responde só com esse IPv6 (registro AAAA)
+    return `http://${v6.toLowerCase().replace(/:/g, '-').replace(/^-/, '0-').replace(/-$/, '-0')}.sslip.io${sufixo}`;
 }
 
 const originOf = (u) => { try { return new URL(u).origin; } catch { return null; } };
@@ -467,6 +488,7 @@ attachWebSocket(server, { slots, clock, measurements, trustProxy: config.trustPr
 
 await Promise.race([clock.sync().catch(() => {}), new Promise(r => setTimeout(r, 5000))]);
 
+await nomesConferidos;
 server.listen({ port: config.port, host: config.host, ipv6Only: false }, () => {
     log.info(`[audicom-speedtest] ouvindo em ${config.host}:${config.port} (TCP) — UDP ${config.udpPort} para perda de pacotes`);
     log.info(`[audicom-speedtest] teste IPv4 via ${baseUrl('IPv4', null) || '(indisponível)'} · IPv6 via ${baseUrl('IPv6', null) || '(indisponível)'}`);

@@ -127,7 +127,8 @@ export async function executarTeste({ modo = 'rapido', eventos, sinal }) {
             if (modo === 'completo') {
                 cancelou();
                 ev.status('Conferindo IPv4 e IPv6…');
-                reach = await alcanceProtocolos(config);
+                const [alcance, eu] = await Promise.all([alcanceProtocolos(config), M.quemSouEu().catch(() => null)]);
+                reach = alcance;
                 const prot = {};
                 for (const [chave, base, ok] of [['ipv4', config.ipv4Base, reach.v4], ['ipv6', config.ipv6Base, reach.v6]]) {
                     prot[chave] = { alcance: ok === null ? null : !!ok, ip: ok && ok.ip ? ok.ip : null, mbps: null };
@@ -137,6 +138,11 @@ export async function executarTeste({ modo = 'rapido', eventos, sinal }) {
                         const x = await M.download({ base, token: vaga.token, durationMs: 6000, graceMs: 1500, streams: 4, loaded: false }, () => {});
                         prot[chave].mbps = x.mbps;
                     } catch { prot[chave].mbps = null; }
+                }
+                // a versão do protocolo desta conexão já foi medida no teste principal
+                const atual = eu && eu.family === 'IPv6' ? 'ipv6' : eu && eu.family === 'IPv4' ? 'ipv4' : null;
+                if (atual && !(prot[atual].alcance && prot[atual].mbps != null)) {
+                    prot[atual] = { alcance: true, ip: eu.ip || prot[atual].ip, mbps: r.download, principal: true };
                 }
                 ev.diag('protocolos', prot);
                 r.advanced = { ...(r.advanced || {}), protocolos: prot };

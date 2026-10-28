@@ -38,13 +38,16 @@ const DIAG = {
             const linha = (nome, x = {}) => {
                 const estado = x.alcance === null || x.alcance === undefined ? selo('', 'Não verificável') : x.alcance ? selo('ok', 'Funciona')
                     : tom === 'tecnico' ? selo('ruim', 'Sem acesso') : selo('', 'Não utilizado');
-                return `<div class="diag-linha"><strong>${nome} ${estado}</strong><span class="valor">${x.mbps != null ? fmtMbps(x.mbps) + ' <small class="suave">Mbps</small>' : '–'}</span>
-                    ${x.ip ? `<p>Endereço: ${esc(x.ip)}</p>` : ''}</div>`;
+                const valor = x.mbps != null ? fmtMbps(x.mbps) + ' <small class="suave">Mbps</small>'
+                    : x.alcance === null || x.alcance === undefined ? '<small class="suave">não testado</small>' : '–';
+                const nota = [x.ip ? `Endereço: ${esc(x.ip)}` : null, x.principal ? 'a conexão deste teste' : null].filter(Boolean).join(' · ');
+                return `<div class="diag-linha"><strong>${nome} ${estado}</strong><span class="valor">${valor}</span>
+                    ${nota ? `<p>${nota}</p>` : ''}</div>`;
             };
             return `<div class="diag-linhas">${linha('IPv4', d.ipv4)}${linha('IPv6', d.ipv6)}</div>
                 <p class="diag-explica">${d.ipv6 && d.ipv6.alcance ? 'A conexão já usa IPv6, o protocolo novo da internet.'
                     : d.ipv6 && d.ipv6.alcance === false ? (tom === 'tecnico' ? 'Sem IPv6, alguns serviços ficam dependentes de NAT. Não costuma ser um problema no dia a dia.' : 'A conexão está usando o IPv4, que atende normalmente todos os sites e aplicativos.')
-                    : 'Não deu para verificar o IPv6 por este endereço do site.'}</p>`;
+                    : 'O IPv6 não pôde ser testado por este endereço do site.'}</p>`;
         },
     },
     nat: {

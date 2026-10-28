@@ -112,8 +112,13 @@ No DNS do seu domínio:
 | `v6.velocidade` | AAAA | IPv6 público da VM (**sem** A) | diagnóstico IPv6 (opcional) |
 
 Os nomes `v4.` e `v6.` servem só para o diagnóstico completo medir cada versão
-do protocolo separadamente. Sem eles, o site funciona e o diagnóstico mostra
-"não verificável" no IPv6.
+do protocolo separadamente. O servidor confere a cada 10 minutos se eles
+existem no DNS. Enquanto não existem (ou com o site aberto por HTTP, pelo IP),
+o diagnóstico usa o IPv4 da própria máquina e, para o IPv6, um nome automático
+do sslip.io que aponta só para o IPv6 dela (o navegador não aceita IPv6 por
+número). Pelo HTTPS do domínio, sem os nomes, a outra versão aparece como "não
+testado". A versão da conexão do próprio teste sempre aparece, medida no teste
+principal.
 
 **Só crie os AAAA se o IPv6 da VM recebe conexões de fora de verdade.** É comum
 o firewall da borda liberar IPv6 só para alguns servidores. Com o AAAA criado e
