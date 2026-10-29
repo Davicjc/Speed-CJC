@@ -55,41 +55,31 @@ function renderTopo(pagina, sessao) {
             </button>
             <div class="menu-conta" id="menu-conta" role="menu" hidden>
                 <div class="quem"><strong>${esc(nome)}</strong><span>${esc(sessao.user.email)}</span></div>
-                <a role="menuitem" href="/painel">${ICON.history}Meu painel</a>
+                <a role="menuitem" class="so-celular" href="/"${pagina === 'teste' ? ' aria-current="page"' : ''}>${ICON.gauge}Fazer um teste</a>
+                <a role="menuitem" href="/painel"${pagina === 'painel' ? ' aria-current="page"' : ''}>${ICON.history}Meu painel</a>
                 <a role="menuitem" href="/painel#conta">${ICON.user}Meus dados</a>
-                ${tecnico ? `<a role="menuitem" href="/tecnico">${ICON.sliders}Speed teste técnico</a>` : ''}
-                ${admin ? `<a role="menuitem" href="/admin">${ICON.shield}Administração</a>` : ''}
+                <a role="menuitem" class="so-celular" href="/como-medimos"${pagina === 'como' ? ' aria-current="page"' : ''}>${ICON.info}Como medimos</a>
+                ${tecnico ? `<a role="menuitem" href="/tecnico"${pagina === 'tecnico' ? ' aria-current="page"' : ''}>${ICON.sliders}Speed teste técnico</a>` : ''}
+                ${admin ? `<a role="menuitem" href="/admin"${pagina === 'admin' ? ' aria-current="page"' : ''}>${ICON.shield}Administração</a>` : ''}
                 <button role="menuitem" type="button" id="botao-sair">${ICON.logout}Sair</button>
             </div></div>`;
-    } else if (sessao && sessao.contasLigadas === false) {
-        conta = '';
     } else {
-        conta = `<a class="botao botao-secundario botao-pequeno" href="/entrar${pagina === 'teste' ? '' : '?next=' + encodeURIComponent(location.pathname)}">${ICON.login}Entrar</a>`;
+        // sem conta: no computador, o botão Entrar; no celular, um menu no canto com tudo
+        const entrar = `/entrar${pagina === 'teste' ? '' : '?next=' + encodeURIComponent(location.pathname)}`;
+        conta = `${semContas ? '' : `<a class="botao botao-secundario botao-pequeno so-desktop" href="${entrar}">${ICON.login}Entrar</a>`}
+            <div class="menu-wrap so-celular">
+            <button class="conta-botao menu-botao" id="conta-botao" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-conta" aria-label="Menu">${ICON.menu}</button>
+            <div class="menu-conta" id="menu-conta" role="menu" hidden>
+                <a role="menuitem" href="/"${pagina === 'teste' ? ' aria-current="page"' : ''}>${ICON.gauge}Fazer um teste</a>
+                ${semContas ? '' : `<a role="menuitem" href="/entrar?next=%2Fpainel">${ICON.history}Meu histórico</a>`}
+                <a role="menuitem" href="/como-medimos"${pagina === 'como' ? ' aria-current="page"' : ''}>${ICON.info}Como medimos</a>
+                ${semContas ? '' : `<a role="menuitem" href="${entrar}">${ICON.login}Entrar ou criar conta</a>`}
+            </div></div>`;
     }
 
     topo.innerHTML = `<div class="topo-dentro">${marcaHtml(pagina)}<nav class="nav" aria-label="Principal">${nav}</nav><div class="conta-area">${conta}</div></div>`;
 
-    // navegação do celular
-    let cel = $('#nav-celular');
-    if (!cel) {
-        cel = document.createElement('nav');
-        cel.id = 'nav-celular';
-        cel.className = 'nav-celular';
-        cel.setAttribute('aria-label', 'Navegação');
-        document.body.appendChild(cel);
-        document.body.classList.add('com-nav-celular');
-    }
-    const celItens = semContas ? [
-        { id: 'teste', href: '/', rotulo: 'Teste', icone: ICON.gauge },
-        { id: 'como', href: '/como-medimos', rotulo: 'Como medimos', icone: ICON.info },
-    ] : [
-        { id: 'teste', href: '/', rotulo: 'Teste', icone: ICON.gauge },
-        { id: 'painel', href: logado ? '/painel' : '/entrar?next=%2Fpainel', rotulo: 'Histórico', icone: ICON.history },
-        ...(tecnico ? [{ id: 'tecnico', href: '/tecnico', rotulo: 'Técnico', icone: ICON.sliders }] : []),
-        ...(admin ? [{ id: 'admin', href: '/admin', rotulo: 'Admin', icone: ICON.shield }] : []),
-        { id: 'conta', href: logado ? '/painel#conta' : '/entrar', rotulo: logado ? 'Conta' : 'Entrar', icone: ICON.user },
-    ];
-    cel.innerHTML = celItens.map((n) => `<a href="${n.href}"${n.id === pagina ? ' aria-current="page"' : ''}>${n.icone}<span>${n.rotulo}</span></a>`).join('');
+    $('#nav-celular')?.remove(); // barra de baixo antiga (o menu do canto faz o papel dela)
 
     const botao = $('#conta-botao');
     if (botao) {
@@ -104,7 +94,8 @@ function renderTopo(pagina, sessao) {
         });
         document.addEventListener('click', (e) => { if (!menu.contains(e.target)) fechar(); });
         document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !menu.hidden) { fechar(); botao.focus(); } });
-        $('#botao-sair').addEventListener('click', async () => {
+        // sem conta o menu não tem "Sair"
+        $('#botao-sair')?.addEventListener('click', async () => {
             await sair();
             location.href = '/';
         });
