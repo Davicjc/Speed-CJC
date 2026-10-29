@@ -78,7 +78,7 @@
 
     --sombra: 0 24px 60px -28px rgba(0, 4, 20, 0.85);
     --largura: 1200px;
-    --topo-altura: 68px;
+    --topo-altura: 58px;
     color-scheme: dark;
 }
 
@@ -164,22 +164,28 @@ h1[tabindex="-1"]:focus-visible, h2[tabindex="-1"]:focus-visible { outline: none
 .menu-conta a:hover, .menu-conta button:hover { background: rgba(244, 246, 249, 0.06); color: var(--texto); }
 .menu-conta svg { width: 18px; height: 18px; flex-shrink: 0; }
 .menu-wrap { position: relative; }
-.nav-celular { display: none; }
+.so-celular { display: none !important; }
+.menu-conta a[aria-current="page"] { color: var(--texto); background: rgba(244, 246, 249, 0.06); }
+.menu-conta a[aria-current="page"] svg { color: var(--ciano); }
 
 @media (max-width: 760px) {
     .topo-dentro { gap: 12px; }
     .nav { display: none; }
     .conta-area { margin-left: auto; }
     .marca .produto { display: none; }
-    .marca img.palavra { height: 22px; }
+    :root { --topo-altura: 50px; }
+    .marca img.simbolo { width: 22px; }
+    .marca img.palavra { height: 19px; }
+    .avatar { width: 30px; height: 30px; font-size: 0.75rem; }
     .conta-botao .nome-curto { display: none; }
     .conta-botao { padding: 3px; }
-    .nav-celular { display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; background: rgba(8, 21, 53, 0.94); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-top: 1px solid var(--linha); padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); justify-content: space-around; }
-    .nav-celular a { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; color: var(--texto-3); text-decoration: none; font-size: 0.7rem; font-weight: 500; padding: 6px 4px; border-radius: var(--r-md); }
-    .nav-celular a svg { width: 22px; height: 22px; }
-    .nav-celular a[aria-current="page"] { color: var(--texto); }
-    .nav-celular a[aria-current="page"] svg { color: var(--ciano); }
-    body.com-nav-celular { padding-bottom: calc(64px + env(safe-area-inset-bottom)); }
+    .so-celular { display: revert !important; }
+    .menu-conta .so-celular { display: flex !important; }
+    .so-desktop { display: none !important; }
+    .menu-botao { width: 38px; height: 38px; padding: 0; display: grid; place-items: center; }
+    .menu-botao svg { width: 20px; height: 20px; }
+    .menu-conta { position: fixed; right: 12px; left: auto; top: calc(var(--topo-altura) + 6px); width: min(300px, calc(100vw - 24px)); max-height: calc(100dvh - var(--topo-altura) - 24px); overflow-y: auto; }
+    .menu-conta a, .menu-conta button { padding: 13px 14px; font-size: var(--t-md); }
 }
 
 /* ---------- conteúdo ---------- */
