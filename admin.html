@@ -39,6 +39,7 @@
             <hr>
             <button type="button" data-v="auditoria"><span data-i="history"></span>Auditoria</button>
             <button type="button" data-v="zap"><span data-i="whatsapp"></span>WhatsApp</button>
+            <button type="button" data-v="tutoriais"><span data-i="video"></span>Tutoriais</button>
             <button type="button" data-v="sistema"><span data-i="server"></span>Sistema</button>
         </nav>
 
@@ -193,6 +194,31 @@
                 <div id="zap-conteudo"><div class="esqueleto" style="height:160px"></div></div>
             </section>
 
+            <section id="v-tutoriais" aria-labelledby="h-tutoriais" hidden>
+                <div class="admin-titulo"><div><h1 id="h-tutoriais">Tutoriais</h1><p>Vídeos de como usar o sistema. O do cliente também aparece na página do teste.</p></div></div>
+                <div class="tutoriais">
+                    <article class="painel tutorial-card">
+                        <video controls preload="none" playsinline poster="/assets/tutorial/capa-usuario.jpg" src="/assets/tutorial/tutorial-usuario.mp4"></video>
+                        <div class="tutorial-info"><h2>Parte 1 · Para o cliente <span class="selo">3 min</span></h2><p>Fazer o teste, entender o resultado, criar a conta e acompanhar no painel.</p>
+                            <a class="botao botao-secundario botao-pequeno" href="/assets/tutorial/tutorial-usuario.mp4" download><span data-i="fileDown"></span>Baixar</a></div>
+                    </article>
+                    <article class="painel tutorial-card">
+                        <video controls preload="none" playsinline poster="/assets/tutorial/capa-tecnico.jpg" src="/assets/tutorial/tutorial-tecnico.mp4"></video>
+                        <div class="tutorial-info"><h2>Parte 2 · Para o técnico <span class="selo">2 min</span></h2><p>Diagnóstico completo, dados do atendimento, NAT, MTU e MSS, rota e envio para o Zap.</p>
+                            <a class="botao botao-secundario botao-pequeno" href="/assets/tutorial/tutorial-tecnico.mp4" download><span data-i="fileDown"></span>Baixar</a></div>
+                    </article>
+                    <article class="painel tutorial-card">
+                        <video controls preload="none" playsinline poster="/assets/tutorial/capa-admin.jpg" src="/assets/tutorial/tutorial-admin.mp4"></video>
+                        <div class="tutorial-info"><h2>Parte 3 · Para a administração <span class="selo">2 min</span></h2><p>Visão geral, ao vivo, testes, usuários, técnicos, auditoria, WhatsApp e servidor.</p>
+                            <a class="botao botao-secundario botao-pequeno" href="/assets/tutorial/tutorial-admin.mp4" download><span data-i="fileDown"></span>Baixar</a></div>
+                    </article>
+                    <article class="painel tutorial-card">
+                        <video controls preload="none" playsinline poster="/assets/tutorial/capa-completo.jpg" src="/assets/tutorial/tutorial-audicom-completo.mp4"></video>
+                        <div class="tutorial-info"><h2>Tutorial completo <span class="selo">7 min</span></h2><p>As três partes num vídeo só.</p>
+                            <a class="botao botao-secundario botao-pequeno" href="/assets/tutorial/tutorial-audicom-completo.mp4" download><span data-i="fileDown"></span>Baixar</a></div>
+                    </article>
+                </div>
+            </section>
             <section id="v-sistema" aria-labelledby="h-sistema" hidden>
                 <div class="admin-titulo"><div><h1 id="h-sistema">Sistema</h1><p>Estado do servidor de testes, do banco de dados e do envio de e-mail.</p></div>
                     <button type="button" class="botao botao-secundario botao-pequeno" id="sistema-atualizar"></button></div>

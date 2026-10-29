@@ -220,3 +220,11 @@
 .zap-partes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 8px; }
 .zap-partes .marcar { padding: 9px 12px; border: 1px solid var(--linha); border-radius: var(--r-md); margin: 0; }
 .zap-partes .marcar:has(input:not(:checked)) { opacity: .6; }
+
+/* Administração → Tutoriais */
+.tutoriais { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); gap: 16px; }
+.tutorial-card { padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+.tutorial-card video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #000; }
+.tutorial-info { padding: 16px 18px 18px; display: grid; gap: 8px; justify-items: start; }
+.tutorial-info h2 { font-size: var(--t-lg); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.tutorial-info p { color: var(--texto-2); font-size: var(--t-sm); }

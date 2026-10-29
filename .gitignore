@@ -21,3 +21,7 @@ NOTAS-DESTA-MAQUINA.md
 video-tutorial/*.mp4
 video-tutorial/*/renders/
 video-tutorial/*/.hyperframes/
+
+# vídeos tutoriais servidos pelo site (baixe com server/tools/baixar-tutoriais.sh)
+assets/tutorial/*.mp4
+assets/tutorial/*.tmp

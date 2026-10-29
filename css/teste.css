@@ -276,3 +276,11 @@
     .resultado .dicas { order: 7; }
 }
 
+
+/* ---------- tutorial em vídeo ---------- */
+.link-tutorial { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-size: var(--t-sm); font-weight: 600; color: var(--azul-claro); text-decoration: none; }
+.link-tutorial:hover { text-decoration: underline; }
+.link-tutorial svg { width: 16px; height: 16px; }
+.tutorial-video { margin: 28px 0 36px; max-width: 960px; }
+.tutorial-video video { display: block; width: 100%; aspect-ratio: 16 / 9; border-radius: var(--r-lg); border: 1px solid var(--linha-forte); background: #000; box-shadow: var(--sombra); }
+.tutorial-video figcaption { margin-top: 10px; font-size: var(--t-sm); color: var(--texto-2); }
