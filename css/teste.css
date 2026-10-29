@@ -58,35 +58,32 @@
 .velo-concluido small { font-size: var(--t-sm); color: var(--texto-2); line-height: 1.35; }
 @keyframes concluido { from { opacity: 0; transform: scale(.85); } to { opacity: 1; transform: none; } }
 
-/* Iniciar: anel de luz girando (cor da etapa de download do tema) em volta de
-   um centro escuro, com uma onda que pulsa para fora. Azul no cliente, âmbar no técnico. */
-@property --giro { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+/* Iniciar: é o botão principal do site em forma de disco (azul da marca no
+   cliente, laranja no técnico, via --azul) com a mesma "luz de horizonte" do
+   velocímetro contornando a borda de baixo à esquerda. */
 .velo-iniciar {
-    --luz: var(--velo-dl-2, #00D4FF);
-    --luz-2: var(--velo-dl-1, #1B3FD8);
     position: absolute; left: 50%; top: 50%;
     width: 40%; aspect-ratio: 1;
     transform: translate(-50%, -50%);
     border-radius: 50%;
-    border: 3px solid transparent;
-    background:
-        radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--luz) 22%, transparent), transparent 60%) padding-box,
-        radial-gradient(circle, var(--navy-800) 55%, var(--navy-900) 100%) padding-box,
-        conic-gradient(from var(--giro), var(--luz), var(--luz-2) 30%, transparent 52%, transparent 62%, var(--luz)) border-box;
+    border: 0;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0) 55%), var(--azul);
     color: #fff;
-    display: grid; place-items: center; align-content: center; gap: 10px;
-    font-family: var(--fonte-display); font-size: clamp(1rem, 2.4vw, 1.3rem); font-weight: 600; letter-spacing: .2em; text-indent: .2em; text-transform: uppercase;
-    box-shadow: 0 0 46px -8px color-mix(in srgb, var(--luz) 55%, transparent), inset 0 0 34px -6px color-mix(in srgb, var(--luz) 30%, transparent);
-    animation: giro 3.6s linear infinite;
-    transition: transform .25s cubic-bezier(.2, .8, .2, 1), box-shadow .25s ease, opacity .25s ease;
+    font-family: var(--fonte-display); font-size: clamp(1.3rem, 3vw, 1.6rem); font-weight: 600; letter-spacing: -0.01em;
+    box-shadow: 0 0 0 1px rgba(143, 168, 255, 0.3) inset, 0 22px 60px -18px color-mix(in srgb, var(--azul) 90%, #3C6BFF);
+    transition: transform .2s cubic-bezier(.2, .8, .2, 1), background-color .2s ease, opacity .25s ease;
 }
-.velo-iniciar::before { content: ''; width: 20px; height: 22px; margin-left: 5px; background: var(--luz); clip-path: polygon(0 0, 100% 50%, 0 100%); filter: drop-shadow(0 0 8px var(--luz)); transition: transform .25s ease; }
-.velo-iniciar::after { content: ''; position: absolute; inset: -3px; border-radius: 50%; border: 2px solid var(--luz); opacity: 0; pointer-events: none; animation: onda 2.8s cubic-bezier(.2, .6, .3, 1) infinite; }
-.velo-iniciar:hover { transform: translate(-50%, -50%) scale(1.045); box-shadow: 0 0 70px -6px color-mix(in srgb, var(--luz) 70%, transparent), inset 0 0 40px -4px color-mix(in srgb, var(--luz) 40%, transparent); }
-.velo-iniciar:hover::before { transform: scale(1.12); }
-.velo-iniciar:active { transform: translate(-50%, -50%) scale(0.97); }
-@keyframes giro { to { --giro: 360deg; } }
-@keyframes onda { 0% { transform: scale(1); opacity: .5; } 80%, 100% { transform: scale(1.38); opacity: 0; } }
+.velo-iniciar::after {
+    content: ''; position: absolute; inset: -7px; border-radius: 50%; pointer-events: none;
+    border: 2px solid transparent;
+    background: linear-gradient(45deg, rgba(230, 238, 255, 0.95) 8%, rgba(127, 162, 255, 0.45) 38%, transparent 62%) border-box;
+    -webkit-mask: linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+    filter: drop-shadow(0 0 6px rgba(160, 190, 255, 0.7));
+    animation: horizonte 5s ease-in-out infinite;
+}
+.velo-iniciar:hover { background-color: var(--azul-hover); transform: translate(-50%, -50%) scale(1.03); }
+.velo-iniciar:active { transform: translate(-50%, -50%) scale(0.98); }
 .velo-iniciar:focus-visible { outline: 3px solid var(--ciano); outline-offset: 6px; border-radius: 50%; }
 .velo:not([data-modo="ocioso"]) .velo-iniciar { opacity: 0; pointer-events: none; transform: translate(-50%, -50%) scale(.9); }
 
