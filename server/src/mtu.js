@@ -41,10 +41,17 @@ async function lerMss(ip, porta, portasLocais) {
         if (ipRemoto !== ip || !portasLocais.has(portaLocal)) continue;
         const info = linhas[i + 1];
         const n = (k) => { const m = new RegExp(`\\b${k}:(\\d+)`).exec(info); return m ? Number(m[1]) : null; };
-        achadas.push({ exata: portaRemota === porta, mss: n('mss'), pmtu: n('pmtu'), rcvmss: n('rcvmss'), ts: /(^|\s)ts(\s|$)/.test(info) });
+        achadas.push({ exata: portaRemota === porta, mss: n('mss'), pmtu: n('pmtu'), advmss: n('advmss'), rcvmss: n('rcvmss'), ts: /(^|\s)ts(\s|$)/.test(info) });
         i++;
     }
     return achadas.find((a) => a.exata) || achadas[0] || null;
+}
+
+/** MTU que o kernel aprendeu para este destino (aviso "Frag needed" recebido durante o teste), ou null. */
+async function mtuAprendido(ip) {
+    const { saida } = await executar('ip', ['route', 'get', ip], 2000);
+    const m = /\bmtu (\d+)/.exec(saida);
+    return m ? Number(m[1]) : null;
 }
 
 /** Busca binária do maior pacote que passa com "não fragmentar". */
@@ -85,7 +92,11 @@ export function createMtu({ portas, maxConcurrent = 4, log = console }) {
             const tcp = await lerMss(ip, porta, portasLocais).catch(() => null);
             // acima de 9000 (jumbo) só existe na interface interna: teste feito no próprio servidor
             const local = tcp && tcp.mss > 9000;
-            const mssCliente = tcp && tcp.mss && !local ? tcp.mss + (tcp.ts ? TS : 0) : null;
+            // o kernel desconta as opções TCP (timestamp, 12 bytes) do mss e do advmss. Nem todo
+            // ss mostra "ts", então a conta vem do advmss: (pmtu − cabeçalhos) − advmss = opções
+            const opcoes = tcp && tcp.pmtu && tcp.advmss ? tcp.pmtu - (v6 ? 60 : 40) - tcp.advmss : null;
+            const desconto = opcoes != null && opcoes >= 0 && opcoes <= 40 ? opcoes : tcp && tcp.ts ? TS : 0;
+            const mssCliente = tcp && tcp.mss && !local ? tcp.mss + desconto : null;
             let caminho = cache.get(ip);
             if (!caminho || Date.now() - caminho.em > CACHE_MS) {
                 if (rodando >= maxConcurrent) caminho = { r: { mtu: null, motivo: 'servidor ocupado, tente de novo' } };
@@ -97,15 +108,25 @@ export function createMtu({ portas, maxConcurrent = 4, log = console }) {
                 }
             }
             if (cache.size > 2000) cache.clear();
+            // o roteador do cliente não responde ping: vale o MTU que o kernel aprendeu
+            // com o próprio teste (download em pacotes cheios), se algum roteador avisou
+            let r = caminho.r;
+            if (r.mtu == null) {
+                const aprendido = (await mtuAprendido(ip).catch(() => null)) || (tcp && tcp.pmtu && tcp.pmtu < 1500 ? tcp.pmtu : null);
+                if (aprendido) r = { mtu: aprendido, metodo: 'aviso durante o teste' };
+            }
             return {
                 familia: v6 ? 'IPv6' : 'IPv4',
                 mss: mssCliente,
                 mtuPeloMss: mssCliente ? mssCliente + (v6 ? 60 : 40) : null,
+                // o servidor já aprendeu um MTU menor para este cliente: o mss lido é o limite do
+                // servidor, e o do aparelho pode ser maior
+                mssLimitado: !!(mssCliente && tcp.pmtu && tcp.pmtu < 1500 && mssCliente + (v6 ? 60 : 40) === tcp.pmtu),
                 pmtuTcp: tcp ? tcp.pmtu : null,
-                mtuCaminho: caminho.r.mtu,
-                metodo: caminho.r.metodo || null,
-                abaixoDe: caminho.r.abaixoDe || null,
-                motivo: local ? 'teste feito no próprio servidor' : caminho.r.motivo || (tcp ? null : 'conexão TCP não encontrada'),
+                mtuCaminho: r.mtu,
+                metodo: r.metodo || null,
+                abaixoDe: r.abaixoDe || null,
+                motivo: local ? 'teste feito no próprio servidor' : r.motivo || (tcp ? null : 'conexão TCP não encontrada'),
             };
         },
     };

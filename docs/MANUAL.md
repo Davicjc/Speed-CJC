@@ -767,9 +767,35 @@ O navegador não manda pacotes de tamanho escolhido, então o servidor mede:
 |---|---|
 | MTU 1500, MSS 1460 | Padrão, tudo certo |
 | MTU 1492, MSS 1452 | PPPoE com ajuste de MSS, certo |
-| MTU 1492, MSS 1460 | **Problema:** MSS maior que o caminho. Sites, bancos e VPN podem travar no meio. Ative o MSS clamping no roteador ou no concentrador |
+| MTU 1492, MSS 1460, pacotes grandes somem sem aviso | **Problema (buraco negro de MTU):** sites, bancos e VPN travam no meio. Ative o MSS clamping no roteador ou no concentrador |
+| MTU 1492, MSS 1460, um roteador avisa o tamanho | **Atenção:** o TCP se ajusta sozinho, mas o ideal é ativar o MSS clamping |
 | MTU abaixo de 1492 | Atenção: confira túneis, VLAN ou PPPoE no caminho |
+
+Se o roteador do cliente não responde ping, vale o MTU que o servidor aprendeu
+durante o próprio teste (um roteador avisou o tamanho no download). O MSS é lido
+com o desconto das opções TCP calculado pelo `advmss` (nem todo `ss` mostra o
+"ts"). Quando o servidor já se ajustou a um caminho menor, o cartão avisa que o
+MSS do aparelho pode ser maior.
 
 Atrás do Caddy, a conexão do cliente é a do Caddy: o `server/deploy/Caddyfile`
 manda a porta de origem do cliente no cabeçalho `X-Client-Port` para o servidor
 achar a conexão certa (vale depois de rodar o `publicar.sh` de novo).
+
+## 27. NAT e duplo NAT (diagnóstico completo, só técnico)
+
+- **Tipo de NAT:** o navegador pergunta o próprio endereço a dois servidores
+  STUN de provedores diferentes (Google e Cloudflare) pela mesma porta. Porta ou
+  IP diferentes = **estrito (simétrico)**, o NAT tipo 3 dos consoles; iguais =
+  **moderado (cone)**, o tipo 2. Antes de dizer "moderado", confere à parte que
+  os dois servidores respondem (senão fica "não medido").
+- **Duplo NAT:** o servidor compara o TTL dos pacotes do aparelho com o TTL da
+  resposta de ping do roteador do cliente (o IP público). As duas medidas fazem
+  o mesmo caminho, então a diferença é o número de roteadores dentro da casa:
+  **1 é o normal**, **2 ou mais** é roteador atrás de roteador. Se o roteador não
+  responde ping, usa a rota (`mtr`) quando ele aparece nela; se não aparece,
+  estima pelo último salto da operadora e marca como **possível**, para conferir
+  no local.
+- **CGNAT:** IP na faixa 100.64.0.0/10. Quando o aparelho chega ao servidor por
+  dentro da rede (IP da operadora) e a internet vê outro IP, o cartão mostra os
+  dois.
+- Conexão por IPv6: não há NAT ("não se aplica").

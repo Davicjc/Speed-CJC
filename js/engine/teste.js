@@ -218,7 +218,15 @@ async function diagnostico(ev, cancelou) {
             motivo: servidor.reason || servidor.erro || null,
             roteadoresInternos: servidor.innerRouters ?? null,
             ipPrivado: !!servidor.privateIp,
+            metodo: servidor.metodo || null,
+            saltosAteServidor: servidor.routersBetween ?? null,
+            ipServidor: servidor.ip || null,
+            ipStun: mapa.ipv4 || null,
+            ipMuda: !!mapa.ipMuda,
         };
+        // a internet vê outro IP que o servidor: o servidor enxerga o cliente por dentro da
+        // rede (IP da operadora) ou o NAT usa IPs diferentes para cada destino
+        out.nat.ipsDiferentes = !!(out.nat.ipServidor && out.nat.ipStun && !out.nat.ipServidor.includes(':') && out.nat.ipServidor !== out.nat.ipStun);
         ev.diag('nat', out.nat);
         try {
             const t = await M.rota();

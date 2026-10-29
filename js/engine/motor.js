@@ -144,35 +144,51 @@ export async function perdaUdp({ pacotes = 200, intervaloMs = 20, progresso } = 
 }
 
 /**
- * Tipo de NAT pelo STUN: pergunta o endereço visto de fora a dois servidores
- * pela MESMA porta local. Portas diferentes nas respostas = NAT simétrico
- * (quebra jogos, chamadas e acesso remoto; típico de CGNAT/duplo NAT).
+ * Tipo de NAT pelo STUN: pergunta o endereço visto de fora a dois servidores de
+ * provedores diferentes (IPs de destino diferentes) pela MESMA porta local.
+ * Porta ou IP diferentes nas respostas = NAT simétrico (quebra jogos, chamadas
+ * e acesso remoto; típico de CGNAT/duplo NAT). O navegador descarta respostas
+ * repetidas, então confirma à parte que cada servidor responde: sem isso, uma
+ * resposta só poderia ser "um dos dois ficou mudo" e não "NAT normal".
  */
-export async function tipoDeNat({ timeoutMs = 6000 } = {}) {
-    if (!window.RTCPeerConnection) return { ok: false, motivo: 'navegador sem suporte a WebRTC' };
-    const pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] });
-    try {
-        const mapeados = [];
-        let fim;
-        const terminou = new Promise((r) => { fim = r; });
+const STUN_A = 'stun:stun.l.google.com:19302';
+const STUN_B = 'stun:stun.cloudflare.com:3478';
+
+function coletarStun(urls, timeoutMs) {
+    if (!window.RTCPeerConnection) return Promise.resolve(null);
+    const pc = new RTCPeerConnection({ iceServers: urls.map((u) => ({ urls: u })) });
+    const mapeados = [];
+    return new Promise((resolve) => {
+        const fim = () => { try { pc.close(); } catch { /* já fechado */ } resolve(mapeados); };
+        const t = setTimeout(fim, timeoutMs);
         pc.onicecandidate = (e) => {
-            if (!e.candidate) return fim();
+            if (!e.candidate) { clearTimeout(t); return fim(); }
             const c = e.candidate;
-            if (c.type === 'srflx' && c.address) mapeados.push({ address: c.address, port: c.port });
+            if (c.type === 'srflx' && c.address) mapeados.push({ address: c.address.replace(/^\[|\]$/g, ''), port: c.port });
         };
         pc.createDataChannel('nat');
-        await pc.setLocalDescription(await pc.createOffer());
-        await Promise.race([terminou, new Promise((r) => setTimeout(r, timeoutMs))]);
-        if (!mapeados.length) return { ok: false, motivo: 'nenhum servidor STUN respondeu (UDP bloqueado?)' };
-        const v4 = mapeados.filter((m) => !m.address.includes(':'));
-        const v6 = mapeados.filter((m) => m.address.includes(':'));
-        if (!v4.length) return { ok: true, tipo: 'sem NAT (IPv6 direto)', ipv6: v6[0] && v6[0].address };
+        pc.createOffer().then((o) => pc.setLocalDescription(o)).catch(() => { clearTimeout(t); fim(); });
+    });
+}
+
+export async function tipoDeNat({ timeoutMs = 6000 } = {}) {
+    if (!window.RTCPeerConnection) return { ok: false, motivo: 'navegador sem suporte a WebRTC' };
+    try {
+        const [juntos, soA, soB] = await Promise.all([coletarStun([STUN_A, STUN_B], timeoutMs), coletarStun([STUN_A], timeoutMs), coletarStun([STUN_B], timeoutMs)]);
+        const v4 = (juntos || []).filter((m) => !m.address.includes(':'));
+        const v6 = (juntos || []).filter((m) => m.address.includes(':'));
+        if (!v4.length && !v6.length) return { ok: false, motivo: 'nenhum servidor STUN respondeu (UDP bloqueado?)' };
+        if (!v4.length) return { ok: true, tipo: 'sem NAT (IPv6 direto)', ipv6: v6[0].address };
+        const ips = [...new Set(v4.map((m) => m.address))];
         const unicos = [...new Set(v4.map((m) => m.address + ':' + m.port))];
-        return { ok: true, tipo: unicos.length >= 2 ? 'simétrico' : 'normal', ipv4: v4[0].address, ipv6: v6[0] && v6[0].address };
+        const base = { ipv4: v4[0].address, ipsStun: ips, ipv6: v6[0] && v6[0].address };
+        if (unicos.length >= 2) return { ok: true, tipo: 'simétrico', ...base, ipMuda: ips.length >= 2 };
+        const respondeA = (soA || []).some((m) => !m.address.includes(':'));
+        const respondeB = (soB || []).some((m) => !m.address.includes(':'));
+        if (!respondeA || !respondeB) return { ok: false, motivo: 'só um servidor STUN respondeu: não dá para comparar', ...base };
+        return { ok: true, tipo: 'normal', ...base };
     } catch {
         return { ok: false, motivo: 'não foi possível consultar o STUN' };
-    } finally {
-        pc.close();
     }
 }
 

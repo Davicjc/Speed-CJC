@@ -10,12 +10,15 @@ import { isPrivateIp } from './util.js';
 //    tem IP público próprio, está compartilhando o da operadora.
 //
 // 2. TTL: todo roteador no caminho diminui 1 do TTL do pacote. Os sistemas
-//    saem com 64 (Android, iPhone, Linux, Mac) ou 128 (Windows). Sabendo com
-//    quanto chegou aqui, sabemos quantos roteadores o pacote atravessou. Se
-//    esse número for MAIOR que o número de saltos que o `mtr` enxerga até o
-//    IP público do cliente, a diferença são roteadores DENTRO da casa — é
-//    exatamente isso que caracteriza o duplo NAT (roteador do cliente ligado
-//    atrás do roteador da operadora).
+//    saem com 64 (Android, iPhone, Linux, Mac) ou 128 (Windows). Comparamos
+//    DUAS medidas que fazem o mesmo caminho até aqui:
+//      - o TTL dos pacotes do aparelho (tcpdump): roteadores da casa + caminho;
+//      - o TTL da resposta de ping do IP público (o roteador do cliente):
+//        só o caminho.
+//    A diferença é quantos roteadores existem DENTRO da casa: 1 é o normal (o
+//    roteador dele); 2 ou mais é roteador atrás de roteador, o duplo NAT.
+//    Se o roteador não responde ping, usamos o `mtr`, mas só quando o
+//    próprio IP público aparece como último salto (senão a conta não fecha).
 //
 // 3. Saltos privados na rota (10.x, 192.168.x, 100.64.x) indicam NAT no
 //    caminho da operadora.
@@ -61,6 +64,16 @@ function captureTtl(ip) {
     });
 }
 
+/** Maior TTL das respostas de ping do IP público (o roteador do cliente), ou null. */
+function pingTtl(ip) {
+    return new Promise((resolve) => {
+        execFile('ping', [net.isIPv6(ip) ? '-6' : '-4', '-n', '-c', '3', '-i', '0.2', '-W', '1', ip], { timeout: 4000 }, (err, stdout) => {
+            const vals = [...String(stdout || '').matchAll(/ttl=(\d+)/gi)].map((m) => Number(m[1])).filter((n) => n > 0 && n <= 255);
+            resolve(vals.length ? Math.max(...vals) : null);
+        });
+    });
+}
+
 /**
  * @param {string} ip IP público do cliente (o que o servidor enxerga)
  * @param {object|null} trace resultado do mtr (para contar os saltos)
@@ -70,45 +83,70 @@ export async function analyzeNat(ip, trace) {
     const hit = cache.get(ip);
     if (hit && Date.now() - hit.at < CACHE_MS) return hit.data;
 
-    const privateIp = isPrivateIp(ip);
+    const v6 = net.isIPv6(ip);
     const cgnat = isCgnat(ip);
-    const ttl = privateIp ? null : await captureTtl(ip);
+    // 100.64.x também é "privado", mas aqui é o roteador do cliente visto por
+    // dentro da rede da operadora: dá para medir igual
+    const privateIp = isPrivateIp(ip) && !cgnat;
+    const [ttl, ttlRoteador] = await Promise.all([captureTtl(ip), pingTtl(ip)]);
 
-    const hopsFromTrace = trace && Array.isArray(trace.hops) && trace.hops.length ? trace.hops.length : null;
     const start = ttl != null ? initialTtl(ttl) : null;
     const hopsFromClient = start != null ? start - ttl : null;
 
-    // saltos do cliente até aqui MENOS saltos que o mtr vê até o IP público:
-    // sobra = roteadores dentro da casa do cliente. 1 é o normal (o roteador
-    // dele). 2 ou mais = tem outro roteador atrás, ou seja, duplo NAT.
-    const innerRouters = hopsFromClient != null && hopsFromTrace != null ? hopsFromClient - hopsFromTrace : null;
+    // roteadores entre o IP público e este servidor (sem contar o próprio IP público)
+    const hops = trace && Array.isArray(trace.hops) ? trace.hops : [];
+    const ultimo = hops[hops.length - 1];
+    let routersBetween = null;
+    let metodo = null;
+    if (ttlRoteador != null && initialTtl(ttlRoteador) != null) {
+        routersBetween = initialTtl(ttlRoteador) - ttlRoteador;
+        metodo = 'ping';
+    } else if (ultimo && ultimo.host === ip) {
+        routersBetween = ultimo.hop - 1;
+        metodo = 'rota';
+    } else {
+        // o roteador do cliente não responde: estimamos que ele fica logo
+        // depois do último salto da operadora que respondeu
+        const ultimoQueResponde = [...hops].reverse().find((h) => h.host && h.host !== ip);
+        if (ultimoQueResponde) { routersBetween = ultimoQueResponde.hop; metodo = 'rota estimada'; }
+    }
+    const hopsFromTrace = ultimo && ultimo.host === ip ? ultimo.hop : null;
+    const innerRouters = hopsFromClient != null && routersBetween != null ? hopsFromClient - routersBetween : null;
 
-    const privateHops = hopsFromTrace
-        ? trace.hops.filter(h => h.host && (isPrivateIp(h.host) || isCgnat(h.host))).map(h => ({ hop: h.hop, host: h.host }))
-        : [];
+    const privateHops = hops.filter(h => h.host && h.host !== ip && (isPrivateIp(h.host) || isCgnat(h.host))).map(h => ({ hop: h.hop, host: h.host }));
 
     let doubleNat = 'indeterminado';
-    let reason = 'não foi possível medir o TTL dos pacotes deste cliente';
-    if (privateIp) {
-        doubleNat = 'rede local';
-        reason = 'teste feito de dentro da rede, sem passar pela internet';
-    } else if (innerRouters != null) {
+    let reason = ttl == null ? 'o aparelho não mandou pacotes a tempo de medir o TTL'
+        : 'o roteador do cliente não responde ping nem aparece na rota: não dá para contar os roteadores da casa';
+    if (innerRouters != null) {
+        const estimado = metodo === 'rota estimada';
         if (innerRouters >= 2) {
-            doubleNat = 'provável';
-            reason = `${innerRouters} roteadores entre o aparelho e o IP público (o normal é 1)`;
-        } else if (innerRouters >= 0) {
+            // estimado pode errar para mais (um salto da operadora que também não responde): só "possível"
+            doubleNat = estimado ? 'possível' : 'provável';
+            reason = `${innerRouters} roteadores entre o aparelho e o IP público (o normal é 1): tem um roteador ligado atrás de outro${estimado ? '. Estimado, porque o roteador do cliente não responde ping: confira no local' : ''}`;
+        } else if (innerRouters === 1) {
             doubleNat = 'não';
-            reason = innerRouters === 1 ? 'um roteador só entre o aparelho e a internet' : 'aparelho praticamente direto no IP público';
+            reason = `um roteador só entre o aparelho e a internet${metodo === 'rota estimada' ? ' (estimado: o roteador do cliente não responde ping)' : ''}`;
+        } else if (innerRouters === 0 && estimado) {
+            reason = 'o roteador do cliente não responde ping e a estimativa pela rota não fecha';
+        } else if (innerRouters === 0) {
+            doubleNat = 'não';
+            reason = 'o próprio aparelho tem o IP público (roteador em modo bridge ou discagem no aparelho)';
         } else {
-            doubleNat = 'indeterminado';
-            reason = 'ida e volta seguem caminhos diferentes; contagem de saltos não fecha';
+            reason = 'o TTL não fecha: o roteador do cliente usa um TTL fora do padrão';
         }
     }
-    if (cgnat) {
+    if (v6) {
+        doubleNat = 'não se aplica';
+        reason = 'conexão por IPv6, que não usa NAT';
+    } else if (cgnat) {
         // CGNAT é NAT da operadora: somado ao roteador de casa, o cliente já
         // está em duplo NAT mesmo que só exista um roteador na casa dele.
-        doubleNat = doubleNat === 'provável' ? 'provável' : 'sim (CGNAT)';
-        reason = 'IP na faixa de CGNAT (100.64.0.0/10): a operadora compartilha um IP público entre vários clientes';
+        doubleNat = 'sim (CGNAT)';
+        reason = `IP na faixa de CGNAT (100.64.0.0/10): a operadora compartilha um IP público entre vários clientes${innerRouters >= 2 ? `, e há ${innerRouters} roteadores dentro da casa` : ''}`;
+    } else if (privateIp) {
+        doubleNat = 'rede local';
+        reason = 'teste feito por dentro da rede (IP privado), sem passar pela internet';
     }
 
     const data = {
@@ -118,8 +156,11 @@ export async function analyzeNat(ip, trace) {
         cgnat,
         ttl,
         initialTtl: start,
+        ttlRoteador,
         hopsFromClient,
         hopsFromTrace,
+        routersBetween,
+        metodo,
         innerRouters,
         privateHops,
         doubleNat,

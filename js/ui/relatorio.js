@@ -14,7 +14,6 @@ const selo = (nivel, texto) => `<span class="selo ${nivel}">${esc(texto)}</span>
 const nivelMs = (ms) => (ms == null ? null : ms < 50 ? { nivel: 'ok', rotulo: 'Rápido' } : ms < 120 ? { nivel: 'ok', rotulo: 'Bom' } : { nivel: 'atencao', rotulo: 'Lento' });
 // tom do cliente: descreve o tempo sem chamar de lento
 const nivelMsCliente = (ms) => (ms == null ? null : ms < 50 ? { nivel: 'ok', rotulo: 'Rápido' } : ms < 120 ? { nivel: 'ok', rotulo: 'Bom' } : { nivel: '', rotulo: 'Mais demorado' });
-const sim = (v) => /sim|provável/.test(v || '');
 
 function aparelhoTexto(d) {
     if (!d) return null;
@@ -54,14 +53,17 @@ const DIAG = {
         titulo: 'Roteador e NAT',
         descricao: 'NAT é como o roteador divide um endereço da internet entre os aparelhos da casa.',
         corpo(d) {
-            const tipo = d.tipo === 'normal' ? selo('ok', 'Normal') : d.tipo === 'simétrico' ? selo('atencao', 'Simétrico') : d.tipo ? selo('ok', d.tipo) : selo('', 'Não medido');
-            const duplo = sim(d.duploNat) ? selo('atencao', d.duploNat) : d.duploNat === 'não' ? selo('ok', 'Não') : selo('', d.duploNat || 'Não medido');
+            const t = TIPO_NAT[d.tipo];
+            const nivelDuplo = d.duploNat === 'não' ? 'ok' : /^sim|provável|possível/.test(d.duploNat || '') ? 'atencao' : '';
+            const textoDuplo = d.duploNat ? d.duploNat.charAt(0).toUpperCase() + d.duploNat.slice(1) : 'Não medido';
+            const metodo = { ping: 'Contados pelo TTL dos pacotes do aparelho comparado com o ping no roteador do cliente.', rota: 'Contados pelo TTL dos pacotes do aparelho comparado com a rota até o roteador do cliente.', 'rota estimada': 'Estimado pela rota, porque o roteador do cliente não responde ping.' }[d.metodo] || 'Contados pelo caminho dos pacotes até o aparelho.';
             return `<div class="diag-linhas">
-                <div class="diag-linha"><strong>Tipo de NAT</strong><span>${tipo}</span><p>${d.tipo === 'simétrico' ? 'O NAT simétrico atrapalha jogos online, chamadas e acesso remoto a câmeras.' : d.tipo ? 'Jogos, chamadas e acesso remoto funcionam normalmente.' : esc(d.motivoTipo || '')}</p></div>
-                <div class="diag-linha"><strong>Duplo NAT</strong><span>${duplo}</span>${d.motivo ? `<p>${esc(d.motivo)}</p>` : ''}</div>
+                <div class="diag-linha"><strong>Tipo de NAT</strong><span>${t ? selo(t.nivel, t.nome) : selo('', 'Não medido')}</span><p>${t ? esc(t.explica + (d.ipMuda ? ' O IP de saída muda conforme o destino.' : '')) : esc(d.motivoTipo || '')}</p></div>
+                <div class="diag-linha"><strong>Duplo NAT</strong><span>${selo(nivelDuplo, textoDuplo)}</span>${d.motivo ? `<p>${esc(d.motivo)}</p>` : ''}</div>
+                ${d.roteadoresInternos != null && d.roteadoresInternos >= 0 && !d.ipPrivado ? `<div class="diag-linha"><strong>Roteadores dentro da casa</strong><span class="valor">${fmtNum(d.roteadoresInternos, 0)}</span><p>O normal é 1. ${esc(metodo)}</p></div>` : ''}
                 <div class="diag-linha"><strong>IP compartilhado (CGNAT)</strong><span>${d.cgnat ? selo('atencao', 'Sim') : selo('ok', 'Não')}</span></div>
-                ${d.roteadoresInternos != null ? `<div class="diag-linha"><strong>Roteadores dentro da casa</strong><span class="valor">${fmtNum(d.roteadoresInternos, 0)}</span><p>Contados pelo caminho dos pacotes até o aparelho.</p></div>` : ''}
-                ${d.ipPrivado ? '<div class="diag-linha"><strong>Teste pela rede interna</strong><span>' + selo('', 'Rede local') + '</span><p>O aparelho estava na mesma rede do servidor, sem passar pela internet.</p></div>' : ''}
+                ${d.ipsDiferentes ? `<div class="diag-linha"><strong>IP visto pela internet</strong><span class="valor">${esc(d.ipStun)}</span><p>O servidor vê ${esc(d.ipServidor)}: ${d.ipPrivado || d.cgnat ? 'o aparelho chegou por dentro da rede e sai para a internet por outro IP.' : 'o NAT usa IPs diferentes conforme o destino.'}</p></div>` : ''}
+                ${d.ipPrivado ? '<div class="diag-linha"><strong>Teste pela rede interna</strong><span>' + selo('', 'Rede local') + '</span><p>O aparelho chegou ao servidor por um IP privado, sem passar pela internet.</p></div>' : ''}
             </div>`;
         },
     },
@@ -73,9 +75,12 @@ const DIAG = {
             const seloMtu = d.mtuCaminho == null ? selo('', 'Não medido') : d.mtuCaminho === 1500 ? selo('ok', 'Padrão') : d.mtuCaminho === 1492 ? selo('ok', 'PPPoE') : selo('atencao', 'Reduzido');
             return `<div class="diag-linhas">
                 <div class="diag-linha"><strong>MTU do caminho ${seloMtu}</strong><span class="valor">${d.mtuCaminho != null ? fmtNum(d.mtuCaminho, 0) : '–'} <small class="suave">bytes</small></span>
-                    <p>${d.mtuCaminho != null ? `Ping sem fragmentar até o IP do cliente (${esc(d.familia || '')})${d.metodo === 'aviso do roteador' ? ', pelo aviso de um roteador no caminho' : ''}.` : esc(d.motivo || 'Não foi possível medir.')}</p></div>
-                <div class="diag-linha"><strong>MSS anunciado (TCP) ${d.mss == null ? selo('', 'Não medido') : a.nivel === 'ruim' ? selo('ruim', 'Maior que o caminho') : selo('ok', 'Certo')}</strong><span class="valor">${d.mss != null ? fmtNum(d.mss, 0) : '–'} <small class="suave">bytes</small></span>
-                    <p>${d.mss != null ? `Equivale a MTU ${fmtNum(d.mtuPeloMss, 0)} na rede do cliente.` : esc(d.motivo === 'teste feito no próprio servidor' ? 'Teste feito no próprio servidor: não se aplica.' : 'A conexão TCP do cliente não foi encontrada.')}</p></div>
+                    <p>${d.mtuCaminho == null ? esc(d.motivo || 'Não foi possível medir.')
+                        : d.metodo === 'aviso durante o teste' ? 'O roteador do cliente não responde ping: tamanho avisado por um roteador durante o download.'
+                        : `Ping sem fragmentar até o IP do cliente (${esc(d.familia || '')})${d.metodo === 'aviso do roteador' ? ', pelo aviso de um roteador no caminho' : ''}.`}</p></div>
+                <div class="diag-linha"><strong>MSS anunciado (TCP) ${d.mss == null ? selo('', 'Não medido') : a.nivel === 'ruim' || (a.nivel === 'atencao' && d.mtuPeloMss > d.mtuCaminho) ? selo(a.nivel, 'Maior que o caminho') : selo('ok', 'Certo')}</strong><span class="valor">${d.mss != null ? fmtNum(d.mss, 0) : '–'} <small class="suave">bytes</small></span>
+                    <p>${d.mss != null && d.mssLimitado ? `O servidor já se ajustou ao caminho (MTU ${fmtNum(d.mtuPeloMss, 0)}); o MSS do aparelho pode ser maior. Confira o ajuste de MSS no roteador.`
+                        : d.mss != null ? `Equivale a MTU ${fmtNum(d.mtuPeloMss, 0)} na rede do cliente.` : esc(d.motivo === 'teste feito no próprio servidor' ? 'Teste feito no próprio servidor: não se aplica.' : 'A conexão TCP do cliente não foi encontrada.')}</p></div>
                 ${a.texto ? `<p class="diag-explica">${esc(a.texto)}</p>` : ''}
             </div>`;
         },
@@ -109,6 +114,13 @@ const DIAG = {
 };
 
 /** Ordem em que o diagnóstico completo aparece. NAT e rota são só do técnico (o cliente não vê, mas são coletados). */
+/** Tipo de NAT medido pelo STUN, com o equivalente dos consoles (o que o cliente gamer conhece). */
+const TIPO_NAT = {
+    normal: { nivel: 'ok', nome: 'Moderado (cone)', curto: 'moderado (cone)', explica: 'Equivale ao NAT tipo 2 dos consoles: jogos, chamadas e câmeras funcionam. Para abrir de vez, UPnP ou DMZ no roteador.' },
+    'simétrico': { nivel: 'atencao', nome: 'Estrito (simétrico)', curto: 'estrito (simétrico)', explica: 'Equivale ao NAT tipo 3 dos consoles: atrapalha jogos online, chamadas e acesso remoto a câmeras.' },
+    'sem NAT (IPv6 direto)': { nivel: 'ok', nome: 'Sem NAT (IPv6)', curto: 'sem NAT (IPv6)', explica: 'O aparelho fala direto com a internet pelo IPv6.' },
+};
+
 export const PARTES_DIAG = ['protocolos', 'nat', 'mtu', 'servicos', 'streaming', 'iptv', 'bancos', 'relogio', 'rota'];
 const SO_TECNICO = new Set(['nat', 'mtu', 'rota']);
 
@@ -116,7 +128,10 @@ const SO_TECNICO = new Set(['nat', 'mtu', 'rota']);
 export function avaliarMtu(d) {
     if (!d || (d.mss == null && d.mtuCaminho == null)) return { nivel: '', texto: '' };
     if (d.mtuPeloMss != null && d.mtuCaminho != null && d.mtuPeloMss > d.mtuCaminho) {
-        return { nivel: 'ruim', texto: `O MSS anunciado (${d.mss}) passa do que o caminho aguenta (MTU ${d.mtuCaminho}). Ative o ajuste de MSS (MSS clamping) no roteador do cliente ou no concentrador: sem isso, sites, bancos e VPN podem travar no meio.` };
+        // pacotes grandes somem sem aviso (busca por ping) = buraco negro de MTU; com aviso de
+        // um roteador (Frag needed), o TCP se ajusta sozinho e só fica mais lento no começo
+        if (d.metodo === 'ping') return { nivel: 'ruim', texto: `O MSS anunciado (${d.mss}) passa do que o caminho aguenta (MTU ${d.mtuCaminho}) e os pacotes grandes somem sem aviso (buraco negro de MTU). Ative o ajuste de MSS (MSS clamping) no roteador do cliente ou no concentrador: sem isso, sites, bancos e VPN travam no meio.` };
+        return { nivel: 'atencao', texto: `O MSS anunciado (${d.mss}) passa do que o caminho aguenta (MTU ${d.mtuCaminho}). Funciona porque um roteador avisa o tamanho, mas o ideal é ativar o ajuste de MSS (MSS clamping) no roteador do cliente ou no concentrador.` };
     }
     if (d.mtuCaminho != null && d.mtuCaminho < 1492) return { nivel: 'atencao', texto: `MTU ${d.mtuCaminho} é baixo. Confira túneis, VLAN ou PPPoE no caminho.` };
     return { nivel: 'ok', texto: d.mtuCaminho == null ? 'O MTU do caminho não respondeu ao ping; o MSS da conexão está coerente.' : '' };
@@ -255,12 +270,14 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
         }
         if (tecnico && adv.nat && ver('nat')) {
             const n = adv.nat;
-            diag.push(`🔀 NAT: ${n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
-            if (n.roteadoresInternos != null) diag.push(`🏠 Roteadores dentro da casa: ${n.roteadoresInternos}`);
+            diag.push(`🔀 NAT: ${(TIPO_NAT[n.tipo] || {}).curto || n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
+            if (n.roteadoresInternos != null && n.roteadoresInternos >= 0) diag.push(`🏠 Roteadores dentro da casa: ${n.roteadoresInternos}${n.metodo === 'rota estimada' ? ' (estimado)' : ''}`);
+            if (n.ipsDiferentes) diag.push(`🌐 A internet vê o IP ${n.ipStun} (o servidor vê ${n.ipServidor})`);
         }
         if (tecnico && adv.mtu && ver('mtu') && (adv.mtu.mss != null || adv.mtu.mtuCaminho != null)) {
             const a = avaliarMtu(adv.mtu);
-            diag.push(`📏 MTU: ${adv.mtu.mtuCaminho != null ? adv.mtu.mtuCaminho : 'sem resposta ao ping'} · MSS: ${adv.mtu.mss != null ? adv.mtu.mss : '–'} ${a.nivel === 'ruim' ? '❌ MSS maior que o caminho' : a.nivel === 'atencao' ? '⚠️ MTU baixo' : '✅'}`);
+            const mssMaior = adv.mtu.mtuPeloMss != null && adv.mtu.mtuCaminho != null && adv.mtu.mtuPeloMss > adv.mtu.mtuCaminho;
+            diag.push(`📏 MTU: ${adv.mtu.mtuCaminho != null ? adv.mtu.mtuCaminho : 'sem resposta ao ping'} · MSS: ${adv.mtu.mss != null ? adv.mtu.mss : '–'} ${a.nivel === 'ruim' ? '❌ MSS maior que o caminho (buraco negro)' : mssMaior ? '⚠️ MSS maior que o caminho' : a.nivel === 'atencao' ? '⚠️ MTU baixo' : '✅'}`);
         }
         if (adv.relogio && ver('relogio')) diag.push(`🕒 Relógio do aparelho: ${Math.abs(adv.relogio.offsetS) < 2 ? '✅ certo' : `⚠️ ${relogioTexto(adv.relogio)}`}`);
         if (diag.length) L.push('', '🔬 *Diagnóstico*', ...diag);
