@@ -35,6 +35,8 @@ velocidadeteste.audicomtelecom.com.br {
 
 	# o teste precisa dos bytes passando direto, sem compressão nem espera
 	reverse_proxy 127.0.0.1:8080 {
+		# porta de origem do cliente: o teste de MTU/MSS acha a conexão TCP dele por ela
+		header_up X-Client-Port {remote_port}
 		flush_interval -1
 		transport http {
 			versions 1.1
@@ -59,6 +61,8 @@ v4.velocidadeteste.audicomtelecom.com.br, v6.velocidadeteste.audicomtelecom.com.
 		on_demand
 	}
 	reverse_proxy 127.0.0.1:8080 {
+		# porta de origem do cliente: o teste de MTU/MSS acha a conexão TCP dele por ela
+		header_up X-Client-Port {remote_port}
 		flush_interval -1
 	}
 }

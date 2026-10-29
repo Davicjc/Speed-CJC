@@ -244,6 +244,11 @@ async function diagnostico(ev, cancelou) {
         out.bancos = await medir(BANCOS, 'bancos');
     })();
 
-    await Promise.all([tarefaNat, tarefaServicos]);
+    const tarefaMtu = (async () => {
+        try { out.mtu = await M.mtu(); } catch (e) { out.mtu = { motivo: e.message }; }
+        ev.diag('mtu', out.mtu);
+    })();
+
+    await Promise.all([tarefaNat, tarefaServicos, tarefaMtu]);
     return out;
 }

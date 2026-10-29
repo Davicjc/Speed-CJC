@@ -749,3 +749,27 @@ Os endereços ficam em `server/src/platforms.js` e foram escolhidos por
 responderem da borda do CDN (o número é o caminho até a plataforma, não a
 demora interna dela). O servidor confere todos a cada 6 horas e tira do teste o
 que parar de responder. Só entram serviços oficiais.
+
+## 26. MTU e MSS (diagnóstico completo, só técnico)
+
+O navegador não manda pacotes de tamanho escolhido, então o servidor mede:
+
+- **MTU do caminho:** ping com "não fragmentar" até o IP que o servidor vê
+  (igual ao `ping -f -l 1472` feito à mão), em busca binária entre 1200 e 1500
+  bytes. Se um roteador no meio avisa o MTU, o número vem direto. Muitos
+  roteadores de cliente não respondem ping: aí aparece "não respondeu ao ping".
+  Com CGNAT, o ping chega até o equipamento da operadora, não à casa.
+- **MSS anunciado:** lido da própria conexão TCP do cliente (`ss -ti`), já com o
+  ajuste (clamping) do roteador ou do concentrador. MTU equivalente = MSS + 40
+  (IPv4) ou + 60 (IPv6).
+
+| Resultado | Significado |
+|---|---|
+| MTU 1500, MSS 1460 | Padrão, tudo certo |
+| MTU 1492, MSS 1452 | PPPoE com ajuste de MSS, certo |
+| MTU 1492, MSS 1460 | **Problema:** MSS maior que o caminho. Sites, bancos e VPN podem travar no meio. Ative o MSS clamping no roteador ou no concentrador |
+| MTU abaixo de 1492 | Atenção: confira túneis, VLAN ou PPPoE no caminho |
+
+Atrás do Caddy, a conexão do cliente é a do Caddy: o `server/deploy/Caddyfile`
+manda a porta de origem do cliente no cabeçalho `X-Client-Port` para o servidor
+achar a conexão certa (vale depois de rodar o `publicar.sh` de novo).

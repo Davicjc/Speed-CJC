@@ -65,6 +65,21 @@ const DIAG = {
             </div>`;
         },
     },
+    mtu: {
+        titulo: 'MTU e MSS',
+        descricao: 'Tamanho máximo de pacote que passa no caminho até o cliente (MTU) e o que a conexão dele anuncia (MSS).',
+        corpo(d) {
+            const a = avaliarMtu(d);
+            const seloMtu = d.mtuCaminho == null ? selo('', 'Não medido') : d.mtuCaminho === 1500 ? selo('ok', 'Padrão') : d.mtuCaminho === 1492 ? selo('ok', 'PPPoE') : selo('atencao', 'Reduzido');
+            return `<div class="diag-linhas">
+                <div class="diag-linha"><strong>MTU do caminho ${seloMtu}</strong><span class="valor">${d.mtuCaminho != null ? fmtNum(d.mtuCaminho, 0) : '–'} <small class="suave">bytes</small></span>
+                    <p>${d.mtuCaminho != null ? `Ping sem fragmentar até o IP do cliente (${esc(d.familia || '')})${d.metodo === 'aviso do roteador' ? ', pelo aviso de um roteador no caminho' : ''}.` : esc(d.motivo || 'Não foi possível medir.')}</p></div>
+                <div class="diag-linha"><strong>MSS anunciado (TCP) ${d.mss == null ? selo('', 'Não medido') : a.nivel === 'ruim' ? selo('ruim', 'Maior que o caminho') : selo('ok', 'Certo')}</strong><span class="valor">${d.mss != null ? fmtNum(d.mss, 0) : '–'} <small class="suave">bytes</small></span>
+                    <p>${d.mss != null ? `Equivale a MTU ${fmtNum(d.mtuPeloMss, 0)} na rede do cliente.` : esc(d.motivo === 'teste feito no próprio servidor' ? 'Teste feito no próprio servidor: não se aplica.' : 'A conexão TCP do cliente não foi encontrada.')}</p></div>
+                ${a.texto ? `<p class="diag-explica">${esc(a.texto)}</p>` : ''}
+            </div>`;
+        },
+    },
     servicos: { titulo: 'Tempo até os aplicativos', descricao: 'Ida e volta até o servidor mais próximo de cada serviço.', barras: true },
     streaming: { titulo: 'Tempo até os streamings', descricao: 'Filmes, séries, vídeos e música. Quanto menor, mais rápido o vídeo começa.', barras: true },
     iptv: { titulo: 'Tempo até a TV ao vivo (IPTV)', descricao: 'Plataformas oficiais de TV pela internet. Pesa na troca de canal e nos travamentos.', barras: true },
@@ -94,8 +109,18 @@ const DIAG = {
 };
 
 /** Ordem em que o diagnóstico completo aparece. NAT e rota são só do técnico (o cliente não vê, mas são coletados). */
-export const PARTES_DIAG = ['protocolos', 'nat', 'servicos', 'streaming', 'iptv', 'bancos', 'relogio', 'rota'];
-const SO_TECNICO = new Set(['nat', 'rota']);
+export const PARTES_DIAG = ['protocolos', 'nat', 'mtu', 'servicos', 'streaming', 'iptv', 'bancos', 'relogio', 'rota'];
+const SO_TECNICO = new Set(['nat', 'mtu', 'rota']);
+
+/** MSS maior que o caminho = pacotes grandes somem (sites e VPN travando no meio). */
+export function avaliarMtu(d) {
+    if (!d || (d.mss == null && d.mtuCaminho == null)) return { nivel: '', texto: '' };
+    if (d.mtuPeloMss != null && d.mtuCaminho != null && d.mtuPeloMss > d.mtuCaminho) {
+        return { nivel: 'ruim', texto: `O MSS anunciado (${d.mss}) passa do que o caminho aguenta (MTU ${d.mtuCaminho}). Ative o ajuste de MSS (MSS clamping) no roteador do cliente ou no concentrador: sem isso, sites, bancos e VPN podem travar no meio.` };
+    }
+    if (d.mtuCaminho != null && d.mtuCaminho < 1492) return { nivel: 'atencao', texto: `MTU ${d.mtuCaminho} é baixo. Confira túneis, VLAN ou PPPoE no caminho.` };
+    return { nivel: 'ok', texto: d.mtuCaminho == null ? 'O MTU do caminho não respondeu ao ping; o MSS da conexão está coerente.' : '' };
+}
 export const partesDiag = (tom = 'cliente') => (tom === 'tecnico' ? PARTES_DIAG : PARTES_DIAG.filter((k) => !SO_TECNICO.has(k)));
 
 /**
@@ -154,7 +179,7 @@ export const PARTES_MSG = [
     ['quem', 'Quem enviou e conta do teste'], ['atendimento', 'Atendimento (cliente, plano, observação)'],
     ['velocidade', 'Download e upload'], ['plano', 'Porcentagem do plano'], ['latencia', 'Ping, jitter, perda e linha cheia'],
     ['operadora', 'Operadora e IP'], ['local', 'Localização'], ['aparelho', 'Aparelho, tipo de conexão e servidor'],
-    ['protocolos', 'IPv4 e IPv6'], ['nat', 'NAT, CGNAT e roteadores'], ['relogio', 'Relógio do aparelho'],
+    ['protocolos', 'IPv4 e IPv6'], ['nat', 'NAT, CGNAT e roteadores'], ['mtu', 'MTU e MSS'], ['relogio', 'Relógio do aparelho'],
     ['servicos', 'Aplicativos'], ['streaming', 'Streaming'], ['iptv', 'IPTV (TV ao vivo)'], ['bancos', 'Bancos e PIX'],
     ['rota', 'Rota salto a salto'], ['link', 'Link do resultado'],
 ];
@@ -232,6 +257,10 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
             const n = adv.nat;
             diag.push(`🔀 NAT: ${n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
             if (n.roteadoresInternos != null) diag.push(`🏠 Roteadores dentro da casa: ${n.roteadoresInternos}`);
+        }
+        if (tecnico && adv.mtu && ver('mtu') && (adv.mtu.mss != null || adv.mtu.mtuCaminho != null)) {
+            const a = avaliarMtu(adv.mtu);
+            diag.push(`📏 MTU: ${adv.mtu.mtuCaminho != null ? adv.mtu.mtuCaminho : 'sem resposta ao ping'} · MSS: ${adv.mtu.mss != null ? adv.mtu.mss : '–'} ${a.nivel === 'ruim' ? '❌ MSS maior que o caminho' : a.nivel === 'atencao' ? '⚠️ MTU baixo' : '✅'}`);
         }
         if (adv.relogio && ver('relogio')) diag.push(`🕒 Relógio do aparelho: ${Math.abs(adv.relogio.offsetS) < 2 ? '✅ certo' : `⚠️ ${relogioTexto(adv.relogio)}`}`);
         if (diag.length) L.push('', '🔬 *Diagnóstico*', ...diag);

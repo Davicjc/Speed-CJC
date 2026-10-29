@@ -29,6 +29,7 @@ import { createSlotManager } from './slots.js';
 import { PAGES, resolvePublic, serveFile } from './static.js';
 import { createTestsStore } from './tests-store.js';
 import { createTracer } from './trace.js';
+import { createMtu } from './mtu.js';
 import { CORS, handleDownload, handleUpload } from './transfer.js';
 import { createUsers } from './users.js';
 import { clientIp, createRateLimiter, fromLocalProxy, ipFamily, isPrivateIp, readJsonBody, sendJson } from './util.js';
@@ -61,6 +62,7 @@ const clock = createClock(config.ntpServers, log);
 const slots = createSlotManager({ max: config.maxConcurrentTests, ttlMs: config.slotTtlMs, log });
 const rtc = createRtcResponder({ udpPort: config.udpPort, publicIPv4: config.publicIPv4, maxPeers: config.maxPeers, log });
 const tracer = createTracer({ maxConcurrent: config.maxTraces, log });
+const mtu = createMtu({ portas: [config.port, 443], log });
 const measurements = createMeasurementLog();
 const platforms = createPlatformTargets({ log });
 platforms.check().catch((e) => log.warn('[plataformas] checagem inicial falhou:', e.message));
@@ -69,6 +71,7 @@ const limits = {
     results: createRateLimiter({ max: 120, windowMs: 60 * 60_000 }),
     rtc: createRateLimiter({ max: 120, windowMs: 60 * 60_000 }),
     trace: createRateLimiter({ max: 60, windowMs: 60 * 60_000 }),
+    mtu: createRateLimiter({ max: 60, windowMs: 60 * 60_000 }),
     nat: createRateLimiter({ max: 40, windowMs: 60 * 60_000 }),
     signup: createRateLimiter({ max: config.signupPerHour, windowMs: 60 * 60_000 }),
     captcha: createRateLimiter({ max: 40, windowMs: 10 * 60_000 }),
@@ -313,6 +316,13 @@ async function handleApi(req, res, url, ip) {
     if (p === '/api/trace' && m === 'GET') {
         if (!limits.trace.take(ip)) throw err(429, 'muitas tentativas, aguarde um pouco');
         return sendJson(res, 200, await tracer.trace(ip));
+    }
+    if (p === '/api/mtu' && m === 'GET') {
+        if (!limits.mtu.take(ip)) throw err(429, 'muitas tentativas, aguarde um pouco');
+        // atrás do Caddy a conexão TCP do cliente é a do Caddy: ele manda a porta de origem em X-Client-Port
+        const viaProxy = config.trustProxy && fromLocalProxy(req);
+        const porta = viaProxy ? Number(req.headers['x-client-port']) || null : req.socket.remotePort;
+        return sendJson(res, 200, await mtu.medir(ip, porta));
     }
     if (p === '/api/nat' && m === 'GET') {
         if (!limits.nat.take(ip)) throw err(429, 'muitas tentativas, aguarde um pouco');

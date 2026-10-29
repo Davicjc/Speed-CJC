@@ -83,6 +83,7 @@ export const upload = (opts, progresso) => chamar('upload', { base: location.ori
 export const abortar = () => (worker ? chamar('abort').catch(() => {}) : Promise.resolve());
 export const quemSouEu = () => getJson('/api/whoami');
 export const rota = () => getJson('/api/trace');
+export const mtu = () => getJson('/api/mtu');
 export const plataformas = () => getJson('/api/platforms');
 
 function esperarIce(pc, ms) {
