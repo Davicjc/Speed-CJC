@@ -47,12 +47,6 @@ body.tema-tecnico .fundo {
 }
 
 /* botão de iniciar e brilhos */
-.tema-tecnico .velo-iniciar {
-    border-color: rgba(255, 192, 120, 0.55);
-    background: radial-gradient(circle at 50% 30%, #F97316 0%, #C2410C 62%, #7C2D12 100%);
-    box-shadow: 0 0 0 10px rgba(194, 65, 12, 0.16), 0 0 0 22px rgba(194, 65, 12, 0.07), 0 18px 70px -10px rgba(255, 120, 20, 0.6);
-}
-.tema-tecnico .velo-iniciar:hover { box-shadow: 0 0 0 12px rgba(194, 65, 12, 0.24), 0 0 0 28px rgba(194, 65, 12, 0.1), 0 18px 80px -8px rgba(255, 140, 30, 0.72); }
 .tema-tecnico .etapas li.ativa::before { box-shadow: 0 0 10px rgba(255, 176, 32, 0.7); }
 .tema-tecnico .leitura.ativa::before { box-shadow: 0 0 12px rgba(255, 176, 32, 0.8); }
 .tema-tecnico .segmento { background: rgba(7, 9, 13, 0.6); }
