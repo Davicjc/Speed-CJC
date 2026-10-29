@@ -9,7 +9,7 @@ const mbps = (v) => (v == null ? '–' : v >= 100 ? nf(0).format(v) : v >= 10 ? 
 const ms = (v) => (v == null ? '–' : v >= 100 ? nf(0).format(v) : nf(1).format(v));
 const pct = (v) => (v == null ? '–' : v === 0 ? '0' : v < 1 ? nf(2).format(v) : nf(1).format(v));
 const MODO = { rapido: 'Teste rápido', completo: 'Diagnóstico completo' };
-const FOOTER = '<script src="https://recursos.cjc.pics/projetos/footer-terceiros/paulog&davi.js" defer></script>';
+const FOOTER = '<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>';
 
 function cabeca({ title, desc, url, origin }) {
     return `<!doctype html>
