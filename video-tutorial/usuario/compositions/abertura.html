@@ -1,0 +1,51 @@
+<template>
+  <style>
+    @font-face { font-family: 'Space Grotesk'; src: url('assets/fonts/spacegrotesk-latin.woff2') format('woff2'); font-weight: 300 700; }
+    
+    #root { position: absolute; inset: 0; overflow: hidden; font-family: Inter, sans-serif; color: #F4F6F9; }
+    .fundo { position: absolute; inset: 0; }
+    .grade { position: absolute; inset: 0; opacity: .5; background-image: linear-gradient(rgba(244,246,249,.035) 1px, transparent 1px), linear-gradient(90deg, rgba(244,246,249,.035) 1px, transparent 1px); background-size: 60px 60px; }
+    .topo { position: absolute; left: 300px; right: 300px; top: 30px; height: 60px; display: flex; align-items: center; justify-content: space-between; }
+    .passo { display: flex; align-items: center; gap: 16px; }
+    .passo .num { min-width: 46px; height: 46px; padding: 0 12px; border-radius: 12px; background: var(--cor); color: #061130; font: 700 26px/46px 'Space Grotesk', sans-serif; text-align: center; }
+    .passo .tit { font: 600 34px/1.1 'Space Grotesk', sans-serif; letter-spacing: -0.01em; color: #F4F6F9; white-space: nowrap; }
+    .marca { display: flex; align-items: center; gap: 14px; font: 500 18px/1 Inter, sans-serif; color: #A9B3C4; }
+    .marca img { height: 28px; width: auto; }
+    .janela { position: absolute; left: 300px; top: 112px; width: 1320px; height: 779px; border-radius: 14px; overflow: hidden; background: #050b1f; border: 1px solid rgba(244,246,249,.14); box-shadow: 0 30px 80px -20px rgba(0,0,0,.75), 0 0 0 1px rgba(0,0,0,.4); }
+    .barra { position: absolute; left: 0; right: 0; top: 0; height: 36px; background: #0d1733; border-bottom: 1px solid rgba(244,246,249,.08); display: flex; align-items: center; gap: 8px; padding-left: 16px; }
+    .barra i { width: 12px; height: 12px; border-radius: 50%; background: #2a3654; display: block; }
+    .barra .url { margin-left: 18px; height: 24px; padding: 0 16px; border-radius: 12px; background: #071029; font: 500 14px/24px Inter, sans-serif; color: #8F99A8; }
+    .barra .url b { color: #C9D2E3; font-weight: 500; }
+    .tela { position: absolute; left: 0; top: 36px; width: 1320px; height: 743px; overflow: hidden; }
+    .zoom { position: absolute; inset: 0; }
+    .zoom video { position: absolute; left: 0; top: 0; width: 1320px; height: 743px; object-fit: cover; }
+
+    #root { --cor: #00D4FF; }
+    .bloco { position: absolute; left: 300px; right: 300px; top: 330px; }
+    .bloco img { height: 52px; width: auto; }
+    .sobre { margin-top: 56px; font: 600 24px/1 Inter, sans-serif; letter-spacing: .14em; text-transform: uppercase; color: var(--cor); }
+    .titulo { margin-top: 22px; font: 700 96px/1.02 'Space Grotesk', sans-serif; letter-spacing: -0.035em; color: #F4F6F9; }
+    .sub { margin-top: 26px; font: 400 34px/1.35 Inter, sans-serif; color: #A9B3C4; max-width: 1200px; }
+    .risco { margin-top: 40px; width: 180px; height: 6px; border-radius: 3px; background: var(--cor); transform-origin: 0 50%; }
+  </style>
+  <div id="root" data-composition-id="abertura" data-width="1920" data-height="1080">
+    <div class="fundo" style="background: radial-gradient(1200px 700px at 78% 0%, #00D4FF22, transparent 60%), radial-gradient(900px 600px at 0% 100%, #1B3FD822, transparent 60%), linear-gradient(180deg, #071233, #040a1f);"></div><div class="grade"></div>
+    <div class="bloco">
+      <img id="ab-logo" src="assets/logo.webp" alt="Audicom Telecom" />
+      <div id="ab-sobre" class="sobre">Tutorial do teste de velocidade</div>
+      <div id="ab-titulo" class="titulo">Parte 1 · Para o cliente</div>
+      <div id="ab-sub" class="sub">Fazer o teste, entender o resultado e acompanhar no painel</div>
+      <div id="ab-risco" class="risco"></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo('#ab-logo', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 0.15);
+    tl.fromTo('#ab-sobre', { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 0.5, ease: 'power3.out' }, 0.35);
+    tl.fromTo('#ab-titulo', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power4.out' }, 0.5);
+    tl.fromTo('#ab-sub', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power3.out' }, 0.9);
+    tl.fromTo('#ab-risco', { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: 'power3.inOut' }, 1.1);
+    tl.to({}, { duration: 6.697 }, 0);
+    window.__timelines["abertura"] = tl;
+  </script>
+</template>
