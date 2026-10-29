@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vídeo tutorial · Speed CJC</title>
+<meta name="description" content="Tutorial em vídeo do Speed CJC: o teste de velocidade para o cliente, o diagnóstico para o técnico e a administração.">
+<meta name="theme-color" content="#090C10">
+<link rel="icon" href="simbolo.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="estilo.css">
+<script src="player.js" defer></script>
+</head>
+<body>
+<header class="topo">
+    <a class="marca" href="https://github.com/Davicjc/Speed-CJC">
+        <img src="simbolo.svg" alt="" width="30" height="28">
+        <span>Speed <b>CJC</b></span>
+    </a>
+    <a class="topo-link" href="https://github.com/Davicjc/Speed-CJC">Ver no GitHub</a>
+</header>
+
+<main>
+    <p class="sobretitulo">Tutorial do teste de velocidade</p>
+    <h1>Veja o Speed CJC funcionando</h1>
+    <p class="sub">O sistema inteiro em 8 minutos, com narração e legendas em português. Gravado com dados fictícios.</p>
+
+    <div class="tela">
+        <video id="video" controls playsinline preload="metadata" poster="capa.webp"
+            src="https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-speedcjc-completo.mp4">
+            Seu navegador não toca vídeos aqui.
+            <a href="https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-speedcjc-v1">Baixe o vídeo</a>.
+        </video>
+    </div>
+
+    <h2>Partes</h2>
+    <ol class="partes">
+        <li>
+            <button type="button" class="parte" data-parte="parte1" data-t="0">
+                <img src="usuario.webp" alt="" width="320" height="180" loading="lazy">
+                <span class="parte-texto">
+                    <span class="parte-nome"><span class="ponto"></span>Parte 1 · Para o cliente</span>
+                    <span class="parte-desc">Fazer o teste, entender o resultado e acompanhar no painel</span>
+                    <span class="parte-tempo">começa em 0:00 · 3 min 31 s</span>
+                </span>
+            </button>
+        </li>
+        <li>
+            <button type="button" class="parte" data-parte="parte2" data-t="211">
+                <img src="tecnico.webp" alt="" width="320" height="180" loading="lazy">
+                <span class="parte-texto">
+                    <span class="parte-nome"><span class="ponto"></span>Parte 2 · Para o técnico</span>
+                    <span class="parte-desc">Diagnóstico completo, atendimento e envio para o Zap</span>
+                    <span class="parte-tempo">começa em 3:31 · 2 min 14 s</span>
+                </span>
+            </button>
+        </li>
+        <li>
+            <button type="button" class="parte" data-parte="parte3" data-t="344.6">
+                <img src="admin.webp" alt="" width="320" height="180" loading="lazy">
+                <span class="parte-texto">
+                    <span class="parte-nome"><span class="ponto"></span>Parte 3 · Para a administração</span>
+                    <span class="parte-desc">Usuários, testes, técnicos, WhatsApp e o servidor</span>
+                    <span class="parte-tempo">começa em 5:45 · 2 min 14 s</span>
+                </span>
+            </button>
+        </li>
+    </ol>
+
+    <p class="baixar">
+        Prefere baixar? Os arquivos MP4 (o completo e cada parte) estão no
+        <a href="https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-speedcjc-v1">release do vídeo tutorial</a>.
+    </p>
+</main>
+
+<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>
+</body>
+</html>

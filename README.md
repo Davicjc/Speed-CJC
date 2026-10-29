@@ -21,19 +21,19 @@ teste próprio, com a própria marca, medindo até o próprio servidor.
 
 ## Vídeo tutorial
 
-[![Assistir o vídeo tutorial](docs/img/tutorial-capa.webp)](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-speedcjc-completo.mp4)
+[![Assistir o vídeo tutorial](docs/img/tutorial-capa.webp)](https://davicjc.github.io/Speed-CJC/tutorial/)
 
 O sistema inteiro em **7 min 59 s**, com narração e legendas em português
-(1080p, dados fictícios). Clique na imagem para baixar e assistir o vídeo
-completo, ou veja cada parte:
+(1080p, dados fictícios). Clique na imagem para assistir no navegador o vídeo
+completo, ou vá direto para uma parte:
 
 | Parte | Duração |
 |---|---|
-| [Parte 1 · Para o cliente](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-usuario.mp4): fazer o teste, entender o resultado e acompanhar no painel | 3 min 31 s |
-| [Parte 2 · Para o técnico](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-tecnico.mp4): diagnóstico completo, atendimento e envio para o Zap | 2 min 14 s |
-| [Parte 3 · Para a administração](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-admin.mp4): usuários, testes, técnicos, WhatsApp e o servidor | 2 min 14 s |
+| [Parte 1 · Para o cliente](https://davicjc.github.io/Speed-CJC/tutorial/#parte1): fazer o teste, entender o resultado e acompanhar no painel | 3 min 31 s |
+| [Parte 2 · Para o técnico](https://davicjc.github.io/Speed-CJC/tutorial/#parte2): diagnóstico completo, atendimento e envio para o Zap | 2 min 14 s |
+| [Parte 3 · Para a administração](https://davicjc.github.io/Speed-CJC/tutorial/#parte3): usuários, testes, técnicos, WhatsApp e o servidor | 2 min 14 s |
 
-Todos os arquivos estão no
+Para baixar os MP4, use o
 [release do vídeo tutorial](https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-speedcjc-v1).
 Para gravar e gerar o vídeo de novo, veja [video-tutorial/README.md](video-tutorial/README.md).
 

@@ -7,15 +7,20 @@ ferramentas que o tutorial da versão da Audicom (ramo `audicom-telecom`) foi fe
 
 ## Assistir
 
-O vídeo pronto está no
-[release `tutorial-speedcjc-v1`](https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-speedcjc-v1):
+O vídeo toca direto no navegador, na
+[página do tutorial](https://davicjc.github.io/Speed-CJC/tutorial/):
 
-[![Assistir o vídeo tutorial](../docs/img/tutorial-capa.webp)](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-speedcjc-completo.mp4)
+[![Assistir o vídeo tutorial](../docs/img/tutorial-capa.webp)](https://davicjc.github.io/Speed-CJC/tutorial/)
 
-- [Vídeo completo](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-speedcjc-completo.mp4): 7 min 59 s
-- [Parte 1 · Cliente](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-usuario.mp4): 3 min 31 s
-- [Parte 2 · Técnico](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-tecnico.mp4): 2 min 14 s
-- [Parte 3 · Administração](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-admin.mp4): 2 min 14 s
+- [Vídeo completo](https://davicjc.github.io/Speed-CJC/tutorial/): 7 min 59 s
+- [Parte 1 · Cliente](https://davicjc.github.io/Speed-CJC/tutorial/#parte1): 3 min 31 s
+- [Parte 2 · Técnico](https://davicjc.github.io/Speed-CJC/tutorial/#parte2): 2 min 14 s
+- [Parte 3 · Administração](https://davicjc.github.io/Speed-CJC/tutorial/#parte3): 2 min 14 s
+
+Os MP4 para baixar ficam no
+[release `tutorial-speedcjc-v1`](https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-speedcjc-v1).
+A página (`docs/tutorial/`, publicada pelo GitHub Pages) toca o vídeo direto
+desse release.
 
 ## Gerar de novo
 
