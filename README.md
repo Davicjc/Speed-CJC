@@ -15,6 +15,27 @@ SQLite local. Sem Firebase, sem nuvem de terceiros, sem banco para instalar.
 
 ---
 
+## Vídeo tutorial
+
+[![Assistir o vídeo tutorial](docs/img/tutorial-capa.jpg)](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-audicom-completo.mp4)
+
+O sistema inteiro em **7 min 26 s**, com narração e legendas em português
+(1080p, dados fictícios). Clique na imagem para baixar e assistir o vídeo
+completo, ou veja cada parte separada:
+
+| Parte | Duração |
+|---|---|
+| [Parte 1 · Para o cliente](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-usuario.mp4): fazer o teste, resultado, conta e painel | 3 min 14 s |
+| [Parte 2 · Para o técnico](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-tecnico.mp4): diagnóstico, NAT, MTU, rota e envio para o Zap | 2 min 7 s |
+| [Parte 3 · Para a administração](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-admin.mp4): usuários, testes, técnicos, WhatsApp e servidor | 2 min 5 s |
+
+Todos os arquivos estão na página do
+[release do vídeo tutorial](https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-v1).
+Para gerar o vídeo de novo a partir do código, veja
+[video-tutorial/README.md](video-tutorial/README.md).
+
+---
+
 ## Instalar em um comando
 
 Numa VM **Debian 12** ou **Ubuntu 22.04/24.04** crua, como root:

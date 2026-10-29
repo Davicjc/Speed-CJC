@@ -14,6 +14,21 @@ As telas foram gravadas numa cópia do sistema com **dados fictícios** (Clara
 Souza, Roberto Lima, Marcos Andrade…, IPs de documentação 203.0.113.x): nenhum
 dado de cliente real aparece.
 
+## Assistir
+
+O vídeo já renderizado está no
+[release `tutorial-v1`](https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-v1):
+
+[![Assistir o vídeo tutorial](../docs/img/tutorial-capa.jpg)](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-audicom-completo.mp4)
+
+- [Vídeo completo](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-audicom-completo.mp4): 7 min 26 s, 84 MB
+- [Parte 1 · Cliente](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-usuario.mp4): 37 MB
+- [Parte 2 · Técnico](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-tecnico.mp4): 25 MB
+- [Parte 3 · Administração](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-v1/tutorial-admin.mp4): 23 MB
+
+Os MP4 ficam só no release, não no repositório (o `.gitignore` ignora os
+arquivos gerados aqui).
+
 ## Renderizar no seu computador
 
 Precisa do **Node.js 22** ou mais novo ([nodejs.org](https://nodejs.org)). O

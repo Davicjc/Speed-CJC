@@ -16,3 +16,8 @@ server/.env
 
 # notas com IPs e dados desta instalação (só nesta máquina)
 NOTAS-DESTA-MAQUINA.md
+
+# vídeos renderizados (vão para o release tutorial-v1) e cache do HyperFrames
+video-tutorial/*.mp4
+video-tutorial/*/renders/
+video-tutorial/*/.hyperframes/
