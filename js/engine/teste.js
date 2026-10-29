@@ -8,13 +8,30 @@ const pausa = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const SERVICOS = [
     { key: 'google', label: 'Google' },
-    { key: 'youtube', label: 'YouTube' },
     { key: 'whatsapp', label: 'WhatsApp' },
     { key: 'instagram', label: 'Instagram' },
     { key: 'facebook', label: 'Facebook' },
-    { key: 'netflix', label: 'Netflix' },
+    { key: 'tiktok', label: 'TikTok' },
     { key: 'govbr', label: 'gov.br' },
     { key: 'cloudflare', label: 'Cloudflare' },
+];
+const STREAMING = [
+    { key: 'youtube', label: 'YouTube' },
+    { key: 'netflix', label: 'Netflix' },
+    { key: 'globoplay', label: 'Globoplay' },
+    { key: 'primevideo', label: 'Prime Video' },
+    { key: 'disney', label: 'Disney+' },
+    { key: 'max', label: 'HBO Max' },
+    { key: 'spotify', label: 'Spotify' },
+    { key: 'twitch', label: 'Twitch' },
+];
+const IPTV = [
+    { key: 'clarotv', label: 'Claro TV+' },
+    { key: 'skymais', label: 'SKY+' },
+    { key: 'watch', label: 'Watch Brasil' },
+    { key: 'zapping', label: 'Zapping' },
+    { key: 'pluto', label: 'Pluto TV' },
+    { key: 'samsungtv', label: 'Samsung TV Plus' },
 ];
 const BANCOS = [
     { key: 'pix', label: 'PIX (Banco Central)' },
@@ -222,6 +239,8 @@ async function diagnostico(ev, cancelou) {
             }), 3, () => ev.diag(chave, res.slice())).then(() => res);
         };
         out.servicos = await medir(SERVICOS, 'servicos');
+        out.streaming = await medir(STREAMING, 'streaming');
+        out.iptv = await medir(IPTV, 'iptv');
         out.bancos = await medir(BANCOS, 'bancos');
     })();
 

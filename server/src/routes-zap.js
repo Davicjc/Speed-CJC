@@ -33,10 +33,8 @@ function base64(valor, max) {
 export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, createRateLimiter, log = console }) {
     const envios = createRateLimiter({ max: 30, windowMs: 60 * 60_000 });
     let relatorio = null;
-    const textoDoTeste = async (t, opts) => {
-        relatorio = relatorio || await import(pathToFileURL(path.join(config.staticDir, 'js/ui/relatorio.js')).href);
-        return relatorio.textoCompleto(t, opts);
-    };
+    const modulo = async () => (relatorio = relatorio || await import(pathToFileURL(path.join(config.staticDir, 'js/ui/relatorio.js')).href));
+    const textoDoTeste = async (t, opts) => (await modulo()).textoCompleto(t, opts);
     const quem = (p) => ({ uid: p.id, email: p.email, name: p.name });
 
     return async function handleZap(req, res, url, ip) {
@@ -46,7 +44,15 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
         // ---------- administração ----------
         if (p === '/api/admin/zap' || p.startsWith('/api/admin/zap/')) {
             const { sess, profile } = authn.requireAdmin(req, ip);
-            if (p === '/api/admin/zap' && m === 'GET') return sendJson(res, 200, { ...zap.estado(), ...zap.destinos() }), true;
+            if (p === '/api/admin/zap' && m === 'GET') return sendJson(res, 200, { ...zap.estado(), ...zap.destinos(), ocultar: zap.ocultar(), partes: (await modulo()).PARTES_MSG }), true;
+            if (p === '/api/admin/zap/mensagem' && m === 'POST') {
+                const body = await readJsonBody(req, 4 * 1024);
+                const validas = new Set((await modulo()).PARTES_MSG.map(([k]) => k));
+                const ocultar = [...new Set((Array.isArray(body.ocultar) ? body.ocultar : []).filter((k) => validas.has(k)))];
+                zap.salvarOcultar(ocultar);
+                users.audit({ actor: quem(profile), action: 'alterou o que vai na mensagem do WhatsApp', detail: { ocultar }, ip });
+                return sendJson(res, 200, { ocultar }), true;
+            }
             if (p === '/api/admin/zap/conectar' && m === 'POST') {
                 authn.requireRecentLogin(sess);
                 zap.conectar();
@@ -123,6 +129,7 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
             const temAt = at.cliente || at.plano || at.obs;
             if (temAt && JSON.stringify(at) !== JSON.stringify(t.atendimento || null)) store.setAtendimento(t.id, at);
             t.atendimento = temAt ? at : null;
+            const ocultar = zap.ocultar();
             const imagens = fotos.map((f, i) => {
                 const imagem = base64(f && f.imagem, MAX_FOTO);
                 if (!imagem) throw err(400, `A foto ${i + 1} não é uma imagem JPEG válida (ou passa de 3 MB).`);
@@ -130,14 +137,14 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
                 return {
                     imagem: imagem.toString('base64'),
                     miniatura: mini ? mini.toString('base64') : null,
-                    legenda: `📸 Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente ? ` · ${at.cliente}` : ''}`,
+                    legenda: `📸 Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente && !ocultar.includes('atendimento') ? ` · ${at.cliente}` : ''}`,
                 };
             });
             const link = `${siteOrigin(req)}/r/${t.id}`;
-            const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || 'Audicom Telecom', tom: 'tecnico' });
+            const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || 'Audicom Telecom', tom: 'tecnico', ocultar });
             const linhas = [
-                `👷 *Enviado por:* ${profile.name} (${profile.email})`,
-                t.user ? `👤 *Conta do teste:* ${t.user.name || '–'} (${t.user.email || '–'})` : '👤 *Conta do teste:* feito sem conta',
+                ocultar.includes('quem') ? null : `👷 *Enviado por:* ${profile.name} (${profile.email})`,
+                ocultar.includes('quem') ? null : t.user ? `👤 *Conta do teste:* ${t.user.name || '–'} (${t.user.email || '–'})` : '👤 *Conta do teste:* feito sem conta',
                 imagens.length ? `📸 ${imagens.length === 1 ? '1 foto logo abaixo' : `${imagens.length} fotos logo abaixo`}` : null,
                 '━━━━━━━━━━━━━━━',
                 relat,

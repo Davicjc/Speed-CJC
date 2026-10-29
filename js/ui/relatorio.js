@@ -66,6 +66,8 @@ const DIAG = {
         },
     },
     servicos: { titulo: 'Tempo até os aplicativos', descricao: 'Ida e volta até o servidor mais próximo de cada serviço.', barras: true },
+    streaming: { titulo: 'Tempo até os streamings', descricao: 'Filmes, séries, vídeos e música. Quanto menor, mais rápido o vídeo começa.', barras: true },
+    iptv: { titulo: 'Tempo até a TV ao vivo (IPTV)', descricao: 'Plataformas oficiais de TV pela internet. Pesa na troca de canal e nos travamentos.', barras: true },
     bancos: { titulo: 'Tempo até bancos e PIX', descricao: 'Ida e volta até os servidores de cada banco. É o que pesa quando o app do banco demora a abrir.', barras: true },
     relogio: {
         titulo: 'Relógio do aparelho',
@@ -92,7 +94,7 @@ const DIAG = {
 };
 
 /** Ordem em que o diagnóstico completo aparece. NAT e rota são só do técnico (o cliente não vê, mas são coletados). */
-export const PARTES_DIAG = ['protocolos', 'nat', 'servicos', 'bancos', 'relogio', 'rota'];
+export const PARTES_DIAG = ['protocolos', 'nat', 'servicos', 'streaming', 'iptv', 'bancos', 'relogio', 'rota'];
 const SO_TECNICO = new Set(['nat', 'rota']);
 export const partesDiag = (tom = 'cliente') => (tom === 'tecnico' ? PARTES_DIAG : PARTES_DIAG.filter((k) => !SO_TECNICO.has(k)));
 
@@ -147,8 +149,19 @@ function bolinha(tipo, valor, tom) {
  * e o NAT só para o técnico), menos as coordenadas do aparelho: o local vai
  * pelo nome do bairro e da cidade.
  */
-export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom = 'cliente' } = {}) {
+/** Partes da mensagem que a administração pode tirar do envio pelo WhatsApp (Administração → WhatsApp). */
+export const PARTES_MSG = [
+    ['quem', 'Quem enviou e conta do teste'], ['atendimento', 'Atendimento (cliente, plano, observação)'],
+    ['velocidade', 'Download e upload'], ['plano', 'Porcentagem do plano'], ['latencia', 'Ping, jitter, perda e linha cheia'],
+    ['operadora', 'Operadora e IP'], ['local', 'Localização'], ['aparelho', 'Aparelho, tipo de conexão e servidor'],
+    ['protocolos', 'IPv4 e IPv6'], ['nat', 'NAT, CGNAT e roteadores'], ['relogio', 'Relógio do aparelho'],
+    ['servicos', 'Aplicativos'], ['streaming', 'Streaming'], ['iptv', 'IPTV (TV ao vivo)'], ['bancos', 'Bancos e PIX'],
+    ['rota', 'Rota salto a salto'], ['link', 'Link do resultado'],
+];
+
+export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom = 'cliente', ocultar = [] } = {}) {
     const L = [];
+    const ver = (k) => !ocultar.includes(k);
     const tecnico = tom === 'tecnico';
     const v = veredito(t, { tom });
     const adv = t.advanced || {};
@@ -162,19 +175,22 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
     L.push(`${icone} ${NOME_MODO[t.mode] || 'Teste'}: *${v.titulo}*`);
     if (tecnico && t.verified === false) L.push('⚠️ Não conferido pelo servidor');
 
-    if (tecnico && (at.cliente || at.plano || at.obs)) {
+    if (tecnico && ver('atendimento') && (at.cliente || at.plano || at.obs)) {
         L.push('', '🏠 *Atendimento*');
         if (at.cliente) L.push(`• Cliente: ${at.cliente}`);
         if (at.plano) L.push(`• Plano: ${at.plano} Mbps`);
         if (at.obs) L.push(`• Obs.: ${at.obs}`);
     }
 
-    L.push('', '🚀 *Velocidade*');
-    L.push(`⬇️ Download: *${mbps(t.download)}*${bolinha('download', t.download, tom)}`);
-    L.push(`⬆️ Upload: *${mbps(t.upload)}*${bolinha('upload', t.upload, tom)}`);
     const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
-    if (pct != null) L.push(`📦 Plano de ${plano} Mbps: ${pct}% no download`);
+    if (ver('velocidade') || (ver('plano') && pct != null)) L.push('', '🚀 *Velocidade*');
+    if (ver('velocidade')) {
+        L.push(`⬇️ Download: *${mbps(t.download)}*${bolinha('download', t.download, tom)}`);
+        L.push(`⬆️ Upload: *${mbps(t.upload)}*${bolinha('upload', t.upload, tom)}`);
+    }
+    if (ver('plano') && pct != null) L.push(`📦 Plano de ${plano} Mbps: ${pct}% no download`);
 
+    if (ver('latencia')) {
     L.push('', '⏱️ *Latência e estabilidade*');
     L.push(`🏓 Ping: ${ms(t.ping)}${t.pingMin != null && t.pingMax != null ? ` (mín. ${fmtMs(t.pingMin)} · máx. ${fmtMs(t.pingMax)})` : ''}${bolinha('ping', t.ping, tom)}`);
     L.push(`〰️ Jitter: ${ms(t.jitter)}${bolinha('jitter', t.jitter, tom)}`);
@@ -183,38 +199,47 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
         const det = [ll.download != null ? `${fmtMs(ll.download)} ms no download` : null, ll.upload != null ? `${fmtMs(ll.upload)} ms no upload` : null].filter(Boolean).join(' · ');
         L.push(`🚦 Ping com a linha cheia: +${fmtMs(t.bufferbloat)} ms${det ? ` (${det})` : ''}${bolinha('bufferbloat', t.bufferbloat, tom)}`);
     }
+    }
 
-    L.push('', '🌐 *Conexão*');
-    L.push(`🏢 Operadora: ${t.isp || 'não identificada'}`);
-    if (t.ip) L.push(`🔢 IP: ${t.ip}${t.ipFamily ? ` (${t.ipFamily})` : ''}`);
-    if (t.place && t.place.label) L.push(`📍 Local: ${t.place.label}${t.place.source === 'aparelho' ? ' (GPS do aparelho)' : ' (aproximado pelo IP)'}`);
-    else L.push('📍 Local: sem localização');
-    const ap = aparelhoTexto(t.device);
-    if (ap) L.push(`📱 Aparelho: ${ap}`);
-    if (t.connection && t.connection.type) L.push(`📡 Conexão do aparelho: ${NOMES_CONEXAO[t.connection.type] || t.connection.type}`);
-    if (t.server && t.server.name) L.push(`🖥️ Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
+    const con = [];
+    if (ver('operadora')) {
+        con.push(`🏢 Operadora: ${t.isp || 'não identificada'}`);
+        if (t.ip) con.push(`🔢 IP: ${t.ip}${t.ipFamily ? ` (${t.ipFamily})` : ''}`);
+    }
+    if (ver('local')) {
+        if (t.place && t.place.label) con.push(`📍 Local: ${t.place.label}${t.place.source === 'aparelho' ? ' (GPS do aparelho)' : ' (aproximado pelo IP)'}`);
+        else con.push('📍 Local: sem localização');
+    }
+    if (ver('aparelho')) {
+        const ap = aparelhoTexto(t.device);
+        if (ap) con.push(`📱 Aparelho: ${ap}`);
+        if (t.connection && t.connection.type) con.push(`📡 Conexão do aparelho: ${NOMES_CONEXAO[t.connection.type] || t.connection.type}`);
+        if (t.server && t.server.name) con.push(`🖥️ Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
+    }
+    if (con.length) L.push('', '🌐 *Conexão*', ...con);
 
     if (t.mode === 'completo') {
         const diag = [];
         const pr = adv.protocolos;
-        if (pr) {
+        if (pr && ver('protocolos')) {
             for (const [nome, x] of [['IPv4', pr.ipv4], ['IPv6', pr.ipv6]]) {
                 if (!x) continue;
                 const est = x.alcance == null ? '➖ não testado' : x.alcance ? `✅ funciona${x.mbps != null ? ` · ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? '❌ sem acesso' : '➖ não utilizado';
                 diag.push(`🌍 ${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}`);
             }
         }
-        if (tecnico && adv.nat) {
+        if (tecnico && adv.nat && ver('nat')) {
             const n = adv.nat;
             diag.push(`🔀 NAT: ${n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
             if (n.roteadoresInternos != null) diag.push(`🏠 Roteadores dentro da casa: ${n.roteadoresInternos}`);
         }
-        if (adv.relogio) diag.push(`🕒 Relógio do aparelho: ${Math.abs(adv.relogio.offsetS) < 2 ? '✅ certo' : `⚠️ ${relogioTexto(adv.relogio)}`}`);
+        if (adv.relogio && ver('relogio')) diag.push(`🕒 Relógio do aparelho: ${Math.abs(adv.relogio.offsetS) < 2 ? '✅ certo' : `⚠️ ${relogioTexto(adv.relogio)}`}`);
         if (diag.length) L.push('', '🔬 *Diagnóstico*', ...diag);
         const linha = (arr) => arr.map((s) => `${s.label} ${s.ms != null ? s.ms : s.indisponivel ? 'n/d' : '–'}`).join(' · ');
-        if (adv.servicos && adv.servicos.length) L.push('', '📲 *Aplicativos* (ms)', linha(adv.servicos));
-        if (adv.bancos && adv.bancos.length) L.push('', '🏦 *Bancos e PIX* (ms)', linha(adv.bancos));
-        if (tecnico && adv.rota && adv.rota.length) {
+        for (const [k, titulo] of [['servicos', '📲 *Aplicativos*'], ['streaming', '🎬 *Streaming*'], ['iptv', '📺 *IPTV (TV ao vivo)*'], ['bancos', '🏦 *Bancos e PIX*']]) {
+            if (ver(k) && adv[k] && adv[k].length) L.push('', `${titulo} (ms)`, linha(adv[k]));
+        }
+        if (tecnico && !ver('rota')) { /* rota fora da mensagem */ } else if (tecnico && adv.rota && adv.rota.length) {
             L.push('', `🛣️ *Rota até a conexão* (${adv.rota.length} saltos)`);
             for (const h of adv.rota) {
                 const extra = [h.media != null ? `${fmtMs(h.media)} ms` : null, h.perda ? `${fmtPct(h.perda)}% perda` : null].filter(Boolean).join(' · ');
@@ -223,6 +248,6 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
         } else if (tecnico && adv.rotaErro) L.push('', `🛣️ Rota: não respondeu (${adv.rotaErro})`);
     }
 
-    if (link) L.push('', `🔗 ${link}`);
+    if (link && ver('link')) L.push('', `🔗 ${link}`);
     return L.join('\n');
 }

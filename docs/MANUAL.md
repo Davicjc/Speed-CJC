@@ -667,6 +667,11 @@ vê esse botão.
    ou adicione contatos pelo número. Marque o destino **padrão** e clique em
    **Salvar destinos**.
 5. **Enviar mensagem de teste** confere se chegou.
+6. Em **O que vai na mensagem**, desmarque o que não deve ir para o WhatsApp
+   (quem enviou, atendimento, velocidade, plano, latência, operadora e IP,
+   localização, aparelho, IPv4/IPv6, NAT, relógio, aplicativos, streaming, IPTV,
+   bancos, rota, link) e clique em **Salvar mensagem**. Vale para todos os
+   envios; o teste guardado continua completo.
 
 ### Enviar (técnico)
 
@@ -729,3 +734,18 @@ O `/tecnico` instala como **Audicom Técnico** e abre direto no diagnóstico.
 O botão **Instalar** só existe com **HTTPS** (no endereço `http://IP:8080`, o
 Android cai no passo a passo e cria um atalho). O `sw.js` não tem cache nem
 intercepta nada: o teste de velocidade mede a rede direto.
+
+## 25. Aplicativos, streaming e IPTV no diagnóstico
+
+O diagnóstico completo mede o tempo de ida e volta até o servidor mais próximo
+de cada plataforma, em quatro grupos (no teste, na gaveta e na mensagem do zap):
+
+- **Aplicativos:** Google, WhatsApp, Instagram, Facebook, TikTok, gov.br, Cloudflare.
+- **Streaming:** YouTube, Netflix, Globoplay, Prime Video, Disney+, HBO Max, Spotify, Twitch.
+- **IPTV (TV ao vivo):** Claro TV+, SKY+, Watch Brasil, Zapping, Pluto TV, Samsung TV Plus.
+- **Bancos e PIX.**
+
+Os endereços ficam em `server/src/platforms.js` e foram escolhidos por
+responderem da borda do CDN (o número é o caminho até a plataforma, não a
+demora interna dela). O servidor confere todos a cada 6 horas e tira do teste o
+que parar de responder. Só entram serviços oficiais.

@@ -40,10 +40,10 @@ let quem = {}; // IP, operadora e cidade, como o servidor vê
 // ---------- opções ----------
 const AJUDA_MODO = TECNICO ? {
     rapido: 'Velocidade, latência, linha cheia e perda por UDP, em cerca de 30 segundos.',
-    completo: 'Tudo: IPv4 e IPv6, NAT e CGNAT, rota salto a salto, aplicativos, bancos e relógio. Cerca de 1 minuto.',
+    completo: 'Tudo: IPv4 e IPv6, NAT e CGNAT, rota salto a salto, aplicativos, streaming, IPTV, bancos e relógio. Cerca de 1 minuto.',
 } : {
     rapido: 'Velocidade, latência e estabilidade, em cerca de 30 segundos.',
-    completo: 'Inclui IPv4 e IPv6, o tempo até bancos e aplicativos e o relógio do aparelho. Cerca de 1 minuto.',
+    completo: 'Inclui IPv4 e IPv6, o tempo até bancos, aplicativos, streaming e TV ao vivo e o relógio do aparelho. Cerca de 1 minuto.',
 };
 $$('#modos button').forEach((b) => b.addEventListener('click', () => escolherModo(b.dataset.modo)));
 $('#modos').addEventListener('keydown', (e) => {
@@ -151,7 +151,7 @@ function limpar() {
     const bz = $('#zap-enviar-teste');
     if (bz) bz.remove();
     $('#detalhes').hidden = true;
-    ['protocolos', 'nat', 'servicos', 'bancos', 'relogio', 'rota', 'medidas'].forEach((k) => { const p = $(`#d-${k}`); if (p) { p.hidden = true; p.innerHTML = ''; } });
+    ['protocolos', 'nat', 'servicos', 'streaming', 'iptv', 'bancos', 'relogio', 'rota', 'medidas'].forEach((k) => { const p = $(`#d-${k}`); if (p) { p.hidden = true; p.innerHTML = ''; } });
     $('#curva').innerHTML = '';
     velo.reiniciarEscala();
 }

@@ -24,6 +24,24 @@ const FIXED = {
     netflix: 'https://assets.nflxext.com/favicon.ico',
     govbr: 'https://www.gov.br/favicon.ico',
     cloudflare: 'https://www.cloudflare.com/cdn-cgi/trace',
+    tiktok: 'https://www.tiktok.com/favicon.ico',
+
+    // Streaming. Prime Video: o favicon do primevideo.com vem da origem (~170 ms);
+    // o mesmo ícone no CDN de mídia da Amazon responde da borda.
+    globoplay: 'https://globoplay.globo.com/favicon.ico',
+    primevideo: 'https://m.media-amazon.com/images/G/01/digital/video/DVUI/favicons/favicon.ico',
+    disney: 'https://www.disneyplus.com/favicon.ico',
+    max: 'https://play.hbomax.com/favicon.ico',
+    spotify: 'https://www.scdn.co/i/_global/favicon.png',
+    twitch: 'https://www.twitch.tv/favicon.ico',
+
+    // IPTV (TV ao vivo pela internet), só serviços oficiais
+    clarotv: 'https://www.clarotvmais.com.br/favicon.ico',
+    skymais: 'https://www.skymais.com.br/favicon.ico',
+    watch: 'https://www.watch.tv.br/favicon.ico',
+    zapping: 'https://app.zapping.com.br/favicon.ico',
+    pluto: 'https://pluto.tv/favicon.ico',
+    samsungtv: 'https://www.samsungtvplus.com/favicon.ico',
 
     // Bancos e PIX — a reclamação mais comum do suporte. Endereços escolhidos
     // por responderem da borda no Brasil (medidos: 11–45 ms daqui), não do

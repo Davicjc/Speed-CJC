@@ -20,15 +20,24 @@ let padrao = null;
 let grupos = null;
 let timer = null;
 let alterado = false;
+let partes = [];        // [chave, rótulo] das partes da mensagem
+let ocultar = [];       // partes que NÃO vão no WhatsApp
+let msgAlterada = false;
 
 let ligado = false;
 export function iniciarZapAdmin() {
-    if (ligado) { alterado = false; return atualizar(); }
+    if (ligado) { alterado = false; msgAlterada = false; return atualizar(); }
     ligado = true;
     const el = $('#zap-conteudo');
     el.addEventListener('click', aoClicar);
     el.addEventListener('change', (e) => {
         if (e.target.name === 'zap-padrao') { padrao = e.target.value; alterado = true; desenhar(); }
+        const k = e.target.dataset.parte;
+        if (k) {
+            ocultar = e.target.checked ? ocultar.filter((x) => x !== k) : [...ocultar, k];
+            msgAlterada = true;
+            el.querySelectorAll('[data-zap="salvar-msg"], [data-zap="descartar-msg"]').forEach((b) => { b.disabled = false; });
+        }
     });
     atualizar();
 }
@@ -39,6 +48,8 @@ async function atualizar() {
         const r = await api('/api/admin/zap');
         estado = r;
         if (!alterado) { destinos = r.destinos || []; padrao = r.padrao; }
+        if (!msgAlterada) ocultar = r.ocultar || [];
+        partes = r.partes || [];
         desenhar();
     } catch (e) {
         $('#zap-conteudo').innerHTML = `<div class="aviso ruim">${ICON.alert}<div>${esc(e.message)}</div></div>`;
@@ -92,7 +103,13 @@ function desenhar() {
                 : grupos.length ? `<ul class="zap-grupos">${grupos.map((g) => `<li><span><strong>${esc(g.nome)}</strong><small>${g.participantes} participantes</small></span>
                     ${destinos.some((d) => d.jid === g.jid) ? '<span class="selo ok">Adicionado</span>' : `<button type="button" class="botao botao-secundario botao-pequeno" data-zap="add-grupo" data-jid="${esc(g.jid)}" data-nome="${esc(g.nome)}">Adicionar</button>`}</li>`).join('')}</ul>`
                 : '<p class="suave" style="font-size:var(--t-sm)">Este WhatsApp não participa de nenhum grupo.</p>'}</div>
-        </div></div>` : ''}`;
+        </div></div>` : ''}
+    ${partes.length ? `<div class="painel" style="margin-top:16px">
+        <div class="painel-cabeca"><div><h2>O que vai na mensagem</h2><p>Desmarque o que não deve ir para o WhatsApp. Vale para todos os envios dos técnicos; o teste guardado continua completo.</p></div></div>
+        <div class="zap-partes">${partes.map(([k, rotulo]) => `<label class="marcar"><input type="checkbox" data-parte="${esc(k)}" ${ocultar.includes(k) ? '' : 'checked'}><span>${esc(rotulo)}</span></label>`).join('')}</div>
+        <div class="det-acoes" style="margin-top:12px"><button type="button" class="botao botao-primario botao-pequeno" data-zap="salvar-msg" ${msgAlterada ? '' : 'disabled'}>Salvar mensagem</button>
+            <button type="button" class="botao botao-fantasma botao-pequeno" data-zap="descartar-msg" ${msgAlterada ? '' : 'disabled'}>Descartar</button></div>
+    </div>` : ''}`;
     const form = document.querySelector('[data-form="contato"]');
     if (form) form.addEventListener('submit', adicionarContato);
 }
@@ -122,6 +139,12 @@ async function aoClicar(e) {
         if (acao === 'add-grupo') { destinos.push({ jid: b.dataset.jid, nome: b.dataset.nome, tipo: 'grupo' }); if (!padrao) padrao = b.dataset.jid; alterado = true; }
         if (acao === 'remover') { destinos = destinos.filter((d) => d.jid !== b.dataset.jid); if (padrao === b.dataset.jid) padrao = destinos[0] ? destinos[0].jid : null; alterado = true; }
         if (acao === 'descartar') { alterado = false; return atualizar(); }
+        if (acao === 'descartar-msg') { msgAlterada = false; return atualizar(); }
+        if (acao === 'salvar-msg') {
+            ocultar = (await api('/api/admin/zap/mensagem', { method: 'POST', body: { ocultar } })).ocultar;
+            msgAlterada = false;
+            toast('Mensagem salva. Os próximos envios já saem assim.');
+        }
         if (acao === 'salvar') {
             const r = await api('/api/admin/zap/destinos', { method: 'POST', body: { destinos, padrao } });
             destinos = r.destinos; padrao = r.padrao; alterado = false;
