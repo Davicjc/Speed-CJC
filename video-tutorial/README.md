@@ -5,19 +5,32 @@ três partes, para o cliente, para o técnico e para a administração, gravadas
 tela de verdade, com narração em português e legendas. Foi com estas mesmas
 ferramentas que o tutorial da versão da Audicom (ramo `audicom-telecom`) foi feito.
 
+## Assistir
+
+O vídeo pronto está no
+[release `tutorial-speedcjc-v1`](https://github.com/Davicjc/Speed-CJC/releases/tag/tutorial-speedcjc-v1):
+
+[![Assistir o vídeo tutorial](../docs/img/tutorial-capa.webp)](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-speedcjc-completo.mp4)
+
+- [Vídeo completo](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-speedcjc-completo.mp4): 7 min 59 s
+- [Parte 1 · Cliente](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-usuario.mp4): 3 min 31 s
+- [Parte 2 · Técnico](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-tecnico.mp4): 2 min 14 s
+- [Parte 3 · Administração](https://github.com/Davicjc/Speed-CJC/releases/download/tutorial-speedcjc-v1/tutorial-admin.mp4): 2 min 14 s
+
+## Gerar de novo
+
 > **Faça tudo no seu PC.** Gravar e renderizar pesa; o servidor de produção não
-> tem placa de vídeo e é compartilhado com o site. Linux ou macOS (no Windows,
-> use o WSL).
+> tem placa de vídeo e é compartilhado com o site. Funciona no Linux, no macOS e
+> no Windows (no Git Bash; veja a nota no fim).
 
 ## O que precisa
 
 - **Node.js 22** ou mais novo, **ffmpeg** e **Python 3**.
 - **Chrome ou Chromium** (caminho na variável `CHROME`, padrão `/usr/bin/chromium`).
-- Para a voz: um Python com `kokoro-onnx` e `soundfile`:
+- Para a voz: o `edge-tts` (voz neural da Microsoft, precisa de internet):
 
   ```bash
-  python3 -m venv ~/.venv-voz && ~/.venv-voz/bin/pip install kokoro-onnx soundfile
-  export HYPERFRAMES_PYTHON=~/.venv-voz/bin/python
+  pip install edge-tts
   ```
 
 ## Passo a passo
@@ -62,8 +75,12 @@ node semear.mjs ../trabalho/demo-data/speedcjc.db   # um mês de testes, outros 
 ### 4. Narração
 
 ```bash
-node vozes.mjs              # uma fala por cena, voz pf_dora, volume igualado
+node vozes.mjs              # uma fala por cena, voz Thalita (pt-BR), volume igualado
 ```
+
+Para trocar a voz, apague `trabalho/voz-cenas` e rode de novo com, por exemplo,
+`TUT_VOZ=pt-BR-FranciscaNeural` ou `TUT_VOZ=pt-BR-AntonioNeural`. As gravações
+seguem o tempo de cada fala, então grave as telas depois de gerar as vozes.
 
 O texto de cada cena está em `roteiro.json` (`legenda` aparece na tela; `fala`,
 quando existe, é a versão escrita do jeito que a voz pronuncia, ex.: "I P v 4").
@@ -75,6 +92,10 @@ node rec-usuario.mjs        # Parte 1 (22 cenas)
 node rec-tecnico.mjs        # Parte 2 (14 cenas)
 node rec-admin.mjs          # Parte 3 (15 cenas; a cena do terminal é desenhada na montagem)
 ```
+
+A cena t13 anexa duas fotos do atendimento: antes da Parte 2, coloque duas
+fotos fictícias (sem marcas, pessoas ou endereços) em `trabalho/fotos/foto1.jpg`
+e `trabalho/fotos/foto2.jpg`.
 
 Cada cena é gravada no ritmo da sua fala, com um cursor animado e um destaque
 amarelo no que está sendo explicado. Para regravar só algumas cenas:
@@ -103,13 +124,13 @@ Um vídeo só, com as três partes:
 
 ```bash
 cd .. && printf "file 'tutorial-usuario.mp4'\nfile 'tutorial-tecnico.mp4'\nfile 'tutorial-admin.mp4'\n" > lista.txt
-ffmpeg -f concat -safe 0 -i lista.txt -c copy tutorial-completo.mp4
+ffmpeg -f concat -safe 0 -i lista.txt -c copy tutorial-speedcjc-completo.mp4
 ```
 
 ### 8. Publicar
 
-Os MP4 não vão para o git: crie um release no GitHub (ex.: `tutorial-v1`) com
-eles. Para o site mostrar os vídeos (página do teste e Administração →
+Os MP4 não vão para o git: crie um release no GitHub com eles (o desta versão é
+`tutorial-speedcjc-v1`; o `tutorial-v1` é o da versão da Audicom). Para o site mostrar os vídeos (página do teste e Administração →
 Tutoriais), baixe-os para `assets/tutorial/` no servidor.
 
 ## Variáveis
@@ -122,4 +143,17 @@ Tutoriais), baixe-os para `assets/tutorial/` no servidor.
 | `TUT_DB` | banco de demonstração (para achar o atendimento de exemplo) | `trabalho/demo-data/speedcjc.db` |
 | `TUT_DOMINIO` | endereço mostrado na barra da janela | `teste.minhaempresa.com.br` |
 | `CHROME` | caminho do Chrome/Chromium | `/usr/bin/chromium` |
-| `HYPERFRAMES_PYTHON` | Python com o kokoro-onnx (voz) | — |
+| `TUT_VOZ` | voz do edge-tts | `pt-BR-ThalitaMultilingualNeural` |
+| `TUT_PYTHON` | Python com o edge-tts | `python3` (`python` no Windows) |
+
+## No Windows
+
+Use o Git Bash e aponte para o Chrome instalado:
+
+```bash
+export CHROME="/c/Program Files/Google/Chrome/Application/chrome.exe"
+```
+
+Troque `python3` por `python` nos comandos. Parar o servidor com Ctrl+C às
+vezes deixa o `node` vivo: confira se a porta 8098 ficou livre antes de rodar o
+`semear.mjs`.

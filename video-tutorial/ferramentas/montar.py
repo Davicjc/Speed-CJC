@@ -7,7 +7,7 @@ REPO = os.path.abspath(os.path.join(AQUI, '..', '..'))
 RAIZ = os.path.join(REPO, 'video-tutorial')          # os projetos saem em video-tutorial/usuario, tecnico, admin
 W = os.environ.get('TUT_DIR', os.path.join(RAIZ, 'trabalho'))
 DOMINIO = os.environ.get('TUT_DOMINIO', 'teste.minhaempresa.com.br')
-roteiro = json.load(open(f'{W}/roteiro.json'))
+roteiro = json.load(open(os.path.join(AQUI, 'roteiro.json'), encoding='utf-8'))
 PARTES = ['usuario', 'tecnico', 'admin']
 COR = {'usuario': '#46E08C', 'tecnico': '#F2B23F', 'admin': '#7AA2F7'}
 ROTULO = {'usuario': 'Parte 1 · Cliente', 'tecnico': 'Parte 2 · Técnico', 'admin': 'Parte 3 · Administração'}
@@ -251,7 +251,7 @@ def montar(parte):
     fala_ab = dur(f'{W}/voz-norm/i-{parte}.wav')
     d_ab = round(fala_ab + 1.2, 3)
     shutil.copy(f'{W}/voz-norm/i-{parte}.wav', f'{proj}/assets/voz/i-{parte}.wav')
-    open(f'{proj}/compositions/abertura.html', 'w').write(abertura_html(parte, d_ab))
+    open(f'{proj}/compositions/abertura.html', 'w', encoding='utf-8').write(abertura_html(parte, d_ab))
     hosts.append(f'<div id="abertura" data-composition-id="abertura" data-composition-src="compositions/abertura.html" data-start="0" data-duration="{d_ab:.3f}" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>')
     audios.append(f'<audio id="voz-abertura" class="clip" data-start="0.6" data-duration="{fala_ab:.3f}" data-track-index="3" data-volume="1" src="assets/voz/i-{parte}.wav"></audio>')
     t = d_ab
@@ -269,10 +269,10 @@ def montar(parte):
             d = rec / rate - 0.05
             d = max(d, fala + 0.45)
             shutil.copy(rec_arq, f'{proj}/assets/rec/{sid}.mp4')
-            open(f'{proj}/compositions/{sid}.html', 'w').write(cena_html(parte, c, n, d, rate, meta))
+            open(f'{proj}/compositions/{sid}.html', 'w', encoding='utf-8').write(cena_html(parte, c, n, d, rate, meta))
         else:
             d = fala + 1.4
-            open(f'{proj}/compositions/{sid}.html', 'w').write(terminal_html(parte, c, n, d))
+            open(f'{proj}/compositions/{sid}.html', 'w', encoding='utf-8').write(terminal_html(parte, c, n, d))
         d = round(d, 3)
         hosts.append(f'<div id="{sid}" data-composition-id="{sid}" data-composition-src="compositions/{sid}.html" data-start="{t:.3f}" data-duration="{d:.3f}" data-track-index="1" data-track-kind="graphics" data-width="1920" data-height="1080"></div>')
         v0 = t + 0.15
@@ -294,7 +294,7 @@ def montar(parte):
         prox = legs[i + 1][0] if i + 1 < len(legs) else total
         legs[i][1] = min(prox - 0.02, legs[i][1] + 0.5) if prox - legs[i][1] < 0.6 else legs[i][1] + 0.25
         legs[i][0] = max(0.1, legs[i][0] - 0.05)
-    open(f'{proj}/compositions/legendas.html', 'w').write(legendas_html(legs, total))
+    open(f'{proj}/compositions/legendas.html', 'w', encoding='utf-8').write(legendas_html(legs, total))
     hosts.append(f'<div id="legendas" data-composition-id="legendas" data-composition-src="compositions/legendas.html" data-start="0" data-duration="{total:.3f}" data-track-index="2" data-track-kind="captions" data-width="1920" data-height="1080"></div>')
     index = f"""<!doctype html>
 <html lang="pt-BR" data-resolution="landscape">
@@ -319,7 +319,7 @@ def montar(parte):
   </body>
 </html>
 """
-    open(f'{proj}/index.html', 'w').write(index)
+    open(f'{proj}/index.html', 'w', encoding='utf-8').write(index)
     print(f'{parte}: {len(cenas)} cenas, {total:.1f} s ({total / 60:.1f} min), {len(legs)} legendas')
 
 for parte in PARTES:
