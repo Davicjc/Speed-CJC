@@ -20,7 +20,7 @@
 .medidas { margin: 8px 0 0; display: grid; gap: 0; }
 .medida { display: grid; grid-template-columns: 44px 1fr; gap: 4px 16px; padding: 18px 0; border-top: 1px solid var(--linha); }
 .medida:first-child { border-top: 0; }
-.medida .icone { grid-row: span 2; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(61, 107, 255, 0.14); color: var(--azul-claro); }
+.medida .icone { grid-row: span 2; width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: rgba(70, 224, 140, 0.14); color: var(--azul-claro); }
 .medida .icone svg { width: 22px; height: 22px; }
 .medida dt { font-family: var(--fonte-display); font-weight: 600; font-size: var(--t-lg); color: var(--texto); }
 .medida dd { margin: 0; color: var(--texto-2); line-height: 1.7; }
@@ -29,7 +29,7 @@
 .tabela-texto th { color: var(--texto-3); font-weight: 500; font-size: var(--t-xs); }
 .texto-cta { margin-top: 48px; display: flex; gap: 10px; flex-wrap: wrap; }
 .erro-404 { padding: clamp(48px, 12vh, 120px) 0; display: grid; gap: 16px; justify-items: start; max-width: 46ch; }
-.erro-404 .codigo { font-family: var(--fonte-display); font-size: clamp(5rem, 16vw, 9rem); font-weight: 600; line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 1.5px rgba(143, 168, 255, 0.6); }
+.erro-404 .codigo { font-family: var(--fonte-display); font-size: clamp(5rem, 16vw, 9rem); font-weight: 600; line-height: 0.9; letter-spacing: -0.06em; color: transparent; -webkit-text-stroke: 1.5px rgba(70, 224, 140, 0.6); }
 .erro-404 h1 { font-size: var(--t-2xl); }
 .erro-404 p { color: var(--texto-2); }
 @media (max-width: 900px) {

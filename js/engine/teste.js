@@ -96,7 +96,7 @@ export async function executarTeste({ modo = 'rapido', eventos, sinal }) {
     if (sinal) sinal.addEventListener('abort', ouvirCancelamento, { once: true });
 
     try {
-        ev.status('Conectando ao servidor da Audicom…');
+        ev.status('Conectando ao servidor…');
         const { config } = await M.preparar();
         cancelou();
 

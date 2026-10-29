@@ -11,6 +11,8 @@ const pct = (v) => (v == null ? '–' : v === 0 ? '0' : v < 1 ? nf(2).format(v) 
 const MODO = { rapido: 'Teste rápido', completo: 'Diagnóstico completo' };
 const FOOTER = '<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>';
 
+let M = 'Speed CJC'; // nome do site (SITE_NAME), definido a cada página
+
 function cabeca({ title, desc, url, origin }) {
     return `<!doctype html>
 <html lang="pt-BR">
@@ -22,7 +24,7 @@ function cabeca({ title, desc, url, origin }) {
 <meta name="theme-color" content="#081535">
 <meta name="robots" content="noindex">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="Audicom Telecom">
+<meta property="og:site_name" content="${esc(M)}">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(desc)}">
 ${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
@@ -36,18 +38,19 @@ ${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
 
 function topo() {
     return `<header class="topo"><div class="topo-dentro">
-<a class="marca" href="/" aria-label="Audicom Telecom, teste de velocidade — início">
+<a class="marca" href="/" aria-label="${esc(M)}, teste de velocidade — início">
 <img class="simbolo" src="/assets/simbolo.webp" alt="" width="27" height="25">
-<img class="palavra" src="/assets/logotipo.webp" alt="Audicom Telecom" width="86" height="25">
+<img class="palavra" src="/assets/logotipo.webp" alt="${esc(M)}" width="129" height="25">
 <span class="produto">Teste de<br>velocidade</span></a>
 <nav class="nav" aria-label="Principal"><a href="/">Fazer um teste</a><a href="/como-medimos">Como medimos</a></nav>
 </div></header>`;
 }
 
-export function renderResultPage(r, origin) {
+export function renderResultPage(r, origin, marca = 'Speed CJC') {
+    M = marca;
     const fundo = '<div class="fundo" aria-hidden="true"></div>';
     if (!r) {
-        return `${cabeca({ title: 'Resultado não encontrado | Audicom', desc: 'Este resultado não existe mais.', origin })}
+        return `${cabeca({ title: `Resultado não encontrado | ${M}`, desc: 'Este resultado não existe mais.', origin })}
 <body>${fundo}${topo()}<main class="miolo publico">
 <div class="publico-vazio"><h1>Resultado não encontrado</h1>
 <p>O link está incompleto ou o teste foi apagado por quem fez.</p>
@@ -56,7 +59,7 @@ export function renderResultPage(r, origin) {
     const quando = new Date(r.createdAt);
     const data = quando.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo', day: 'numeric', month: 'long', year: 'numeric' });
     const hora = quando.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo', hour: '2-digit', minute: '2-digit' });
-    const title = `${mbps(r.download)} Mbps de download e ${mbps(r.upload)} Mbps de upload | Teste Audicom`;
+    const title = `${mbps(r.download)} Mbps de download e ${mbps(r.upload)} Mbps de upload | ${M}`;
     const desc = `Ping ${ms(r.ping)} ms, jitter ${ms(r.jitter)} ms${r.loss != null ? `, perda de pacotes ${pct(r.loss)}%` : ''}. Medido em ${data} às ${hora}${r.city ? `, em ${r.city}` : ''}.`;
     const itens = [
         ['Ping', ms(r.ping), 'ms'],
@@ -77,9 +80,9 @@ export function renderResultPage(r, origin) {
     </dl>
     <dl class="publico-info">
         <div><dt>Operadora</dt><dd>${esc(r.isp || 'Não identificada')}</dd></div>
-        <div><dt>Servidor</dt><dd>${esc(r.server ? `${r.server.name}, ${r.server.location}` : 'Audicom Telecom')}</dd></div>
+        <div><dt>Servidor</dt><dd>${esc(r.server ? `${r.server.name}, ${r.server.location}` : M)}</dd></div>
         <div><dt>Protocolo</dt><dd class="mono-copy">${esc(r.protocol)}</dd></div>
-        <div><dt>Conferência</dt><dd>${r.verified ? 'Medidas conferidas pelo servidor da Audicom' : 'Não conferido pelo servidor'}</dd></div>
+        <div><dt>Conferência</dt><dd>${r.verified ? 'Medidas conferidas pelo servidor' : 'Não conferido pelo servidor'}</dd></div>
     </dl>
     <div class="publico-acoes">
         <a class="botao botao-primario" href="/">Testar a minha internet</a>

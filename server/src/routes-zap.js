@@ -93,7 +93,7 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
             if (p === '/api/admin/zap/teste' && m === 'POST') {
                 const { padrao, destinos } = zap.destinos();
                 if (!padrao) throw err(400, 'Escolha um destino padrão primeiro.');
-                await zap.enviar(padrao, `✅ Speed Teste Audicom conectado. Mensagem de teste enviada por ${profile.name}.`);
+                await zap.enviar(padrao, `✅ ${config.siteName} conectado. Mensagem de teste enviada por ${profile.name}.`);
                 users.audit({ actor: quem(profile), action: 'enviou mensagem de teste no WhatsApp', detail: { destino: (destinos.find((d) => d.jid === padrao) || {}).nome }, ip });
                 return sendJson(res, 200, { ok: true }), true;
             }
@@ -141,7 +141,7 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
                 };
             });
             const link = `${siteOrigin(req)}/r/${t.id}`;
-            const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || 'Audicom Telecom', tom: 'tecnico', ocultar });
+            const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || config.siteName, tom: 'tecnico', ocultar });
             const linhas = [
                 ocultar.includes('quem') ? null : `👷 *Enviado por:* ${profile.name} (${profile.email})`,
                 ocultar.includes('quem') ? null : t.user ? `👤 *Conta do teste:* ${t.user.name || '–'} (${t.user.email || '–'})` : '👤 *Conta do teste:* feito sem conta',

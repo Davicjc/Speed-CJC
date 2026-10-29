@@ -1,3 +1,4 @@
+import { MARCA } from '../core/marca.js';
 import { ApiError, cadastrar, conferirLinkSenha, confirmarEmail, entrar, novaSenhaComCodigo, redefinirSenha, sair } from '../core/auth.js';
 import { ICON } from '../core/icons.js';
 import { reivindicarPendentes } from '../core/pendentes.js';
@@ -54,7 +55,7 @@ function aba(qual) {
     const busca = new URLSearchParams(location.search);
     for (const k of ['confirmar', 'nova-senha']) busca.delete(k);
     history.replaceState(null, '', (criar ? '/cadastro' : '/entrar') + (busca.toString() ? '?' + busca : ''));
-    document.title = (criar ? 'Criar conta' : 'Entrar') + ' | Teste de velocidade Audicom';
+    document.title = (criar ? 'Criar conta' : 'Entrar') + ` | ${MARCA}`;
     if (criar) prepararCaptcha();
 }
 $('#aba-entrar').addEventListener('click', () => aba('entrar'));
@@ -70,7 +71,7 @@ $('#ir-esqueci').addEventListener('click', () => {
     if (!cfg.mail) {
         mensagem({
             titulo: 'Esqueceu a senha?',
-            texto: 'Fale com o suporte da Audicom pelo WhatsApp: eles conferem que a conta é sua e mandam um link para você criar uma senha nova.',
+            texto: 'Fale com o suporte pelo WhatsApp: eles conferem que a conta é sua e mandam um link para você criar uma senha nova.',
             icone: ICON.support,
             acoes: [...(whatsapp ? [{ rotulo: 'Falar no WhatsApp', primario: true, href: whatsapp, novaAba: true }] : []), { rotulo: 'Voltar para entrar', acao: () => aba('entrar') }],
         });

@@ -1,5 +1,5 @@
 // Busca de testes, usada pela administração e pelo /tecnico: por protocolo
-// AUD-…, pelo id, ou pelo nome/e-mail de quem fez, com filtros de modo,
+// SPD-…, pelo id, ou pelo nome/e-mail de quem fez, com filtros de modo,
 // origem (página do cliente ou técnica), período e paginação.
 
 import { isId } from './ids.js';
@@ -16,7 +16,8 @@ export function buscarTestes({ store, users, url }) {
     if (uid === 'anon') uid = null;
     let matchedUsers = null;
     if (q) {
-        if (/^AUD-/i.test(q)) {
+        // protocolo: PREFIXO-AAMMDD-HHMM-XXXX (qualquer prefixo, inclusive o de antes de trocar)
+        if (/^[A-Z0-9]{2,6}-\d{6}-\d{4}-/i.test(q)) {
             const t = store.findByProtocol(q);
             return { items: t ? [store.summary(t)] : [], next: null };
         }

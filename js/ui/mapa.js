@@ -1,12 +1,12 @@
 // Mapa (Leaflet servido localmente + mapa base configurável no servidor).
 import * as L from '/vendor/leaflet.js';
 
-const UBERLANDIA = [-18.9186, -48.2772];
+const CENTRO = [-14.235, -51.925]; // centro do Brasil, até os testes aparecerem
 
 export function criarMapa(el, cfg, { zoom = 11, rolagem = false } = {}) {
     const m = (cfg && cfg.map) || {};
     if (m.escuro !== false) el.classList.add('mapa-escuro');
-    const mapa = L.map(el, { zoomControl: true, scrollWheelZoom: rolagem, worldCopyJump: true, attributionControl: true }).setView(UBERLANDIA, zoom);
+    const mapa = L.map(el, { zoomControl: true, scrollWheelZoom: rolagem, worldCopyJump: true, attributionControl: true }).setView(CENTRO, 4);
     mapa.attributionControl.setPrefix('');
     L.tileLayer(m.tiles || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         subdomains: m.subdomains || 'abc',
@@ -22,12 +22,12 @@ export function criarMapa(el, cfg, { zoom = 11, rolagem = false } = {}) {
     return {
         mapa,
         /** pontos: [{ lat, lng, ... }]; popup(p) devolve HTML já escapado. */
-        pontos(lista, { popup, cor = () => '#00A3D1', raio = () => 7, aoClicar } = {}) {
+        pontos(lista, { popup, cor = () => '#46E08C', raio = () => 7, aoClicar } = {}) {
             camada.clearLayers();
             const limites = [];
             for (const p of lista) {
                 if (!Number.isFinite(p.lat) || !Number.isFinite(p.lng)) continue;
-                const mk = L.circleMarker([p.lat, p.lng], { radius: raio(p), color: '#081535', weight: 2, fillColor: cor(p), fillOpacity: 0.95 });
+                const mk = L.circleMarker([p.lat, p.lng], { radius: raio(p), color: '#090C10', weight: 2, fillColor: cor(p), fillOpacity: 0.95 });
                 if (popup) mk.bindPopup(popup(p), { maxWidth: 260 });
                 if (aoClicar) mk.on('click', () => aoClicar(p));
                 mk.addTo(camada);
@@ -38,7 +38,7 @@ export function criarMapa(el, cfg, { zoom = 11, rolagem = false } = {}) {
             return limites.length;
         },
         circulo(lat, lng, metros) {
-            if (Number.isFinite(metros) && metros > 0) L.circle([lat, lng], { radius: metros, color: '#00A3D1', weight: 1, fillOpacity: 0.08 }).addTo(camada);
+            if (Number.isFinite(metros) && metros > 0) L.circle([lat, lng], { radius: metros, color: '#46E08C', weight: 1, fillOpacity: 0.08 }).addTo(camada);
         },
         destruir() { ro.disconnect(); mapa.remove(); },
     };

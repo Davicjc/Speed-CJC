@@ -2,6 +2,7 @@
 // na gaveta do painel/administração, e o texto completo que vai para o
 // WhatsApp ou para a área de transferência.
 
+import { MARCA } from '../core/marca.js';
 import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { esc, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct } from '../core/util.js';
@@ -199,7 +200,7 @@ export const PARTES_MSG = [
     ['rota', 'Rota salto a salto'], ['link', 'Link do resultado'],
 ];
 
-export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom = 'cliente', ocultar = [] } = {}) {
+export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente', ocultar = [] } = {}) {
     const L = [];
     const ver = (k) => !ocultar.includes(k);
     const tecnico = tom === 'tecnico';

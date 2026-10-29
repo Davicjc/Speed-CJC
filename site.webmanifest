@@ -1,13 +1,13 @@
 {
-  "name": "Teste de velocidade Audicom",
-  "short_name": "Audicom Teste",
-  "description": "Teste de velocidade da internet grátis da Audicom Telecom: download, upload, ping, jitter e perda de pacotes.",
+  "name": "{{MARCA}}",
+  "short_name": "{{MARCA}}",
+  "description": "Teste de velocidade da internet: download, upload, ping, jitter, perda de pacotes e diagnóstico completo.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#081535",
-  "theme_color": "#081535",
+  "background_color": "#090C10",
+  "theme_color": "#090C10",
   "lang": "pt-BR",
   "icons": [
     { "src": "/assets/icone-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

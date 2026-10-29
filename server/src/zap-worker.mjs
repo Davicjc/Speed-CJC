@@ -30,7 +30,7 @@ async function iniciar() {
     try { version = (await fetchLatestBaileysVersion()).version; } catch { version = undefined; }
     sock = makeWASocket({
         auth: state, version, logger: pino({ level: 'silent' }), printQRInTerminal: false,
-        browser: ['Audicom Speed Test', 'Chrome', '1.0'], markOnlineOnConnect: false, syncFullHistory: false,
+        browser: [process.env.SITE_NAME || 'Speed CJC', 'Chrome', '1.0'], markOnlineOnConnect: false, syncFullHistory: false,
         generateHighQualityLinkPreview: false,
     });
     sock.ev.on('creds.update', saveCreds);

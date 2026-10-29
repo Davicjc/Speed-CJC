@@ -5,7 +5,7 @@ HTTPS, configuração, e-mail, captcha, administração, banco e cópias de
 segurança, segurança, LGPD e solução de problemas.
 
 > Ainda não instalou? Comece pelo **[INSTALAR.md](INSTALAR.md)** (da VM crua ao
-> site no ar). Os exemplos aqui usam a pasta `/opt/audicom-speedtest` e o domínio
+> site no ar). Os exemplos aqui usam a pasta `/opt/speed-cjc` e o domínio
 > `velocidade.seuprovedor.com.br`: troque pelos seus.
 
 ---
@@ -47,14 +47,14 @@ segurança, segurança, LGPD e solução de problemas.
                          (WebSocket,    · mede ping, download, upload, perda
                           HTTP, UDP)    · confere o resultado
  Entrar / criar conta ── cookie ─────▶  · contas, sessões, senhas (scrypt)
- Meu painel / Admin  ── de sessão ───▶  · banco SQLite: server/data/audicom.db
+ Meu painel / Admin  ── de sessão ───▶  · banco SQLite: server/data/speedcjc.db
                                         · cópia de segurança diária
                                         · e-mail pelo seu SMTP (opcional)
 ```
 
-- **Um processo só** (`audicom-speedtest`, porta 8080) serve o site, mede,
+- **Um processo só** (`speed-cjc`, porta 8080) serve o site, mede,
   guarda contas e testes e responde à administração.
-- **Banco de dados:** um arquivo SQLite, `server/data/audicom.db`. Não precisa
+- **Banco de dados:** um arquivo SQLite, `server/data/speedcjc.db`. Não precisa
   instalar nada: o SQLite vem dentro do Node.
 - **Senhas:** guardadas com scrypt (embaralhamento de mão única, resistente a
   força bruta). Ninguém, nem o administrador, consegue ler uma senha.
@@ -87,7 +87,7 @@ O **dono** é o administrador principal. Ele:
 Criar o dono:
 
 ```bash
-cd /opt/audicom-speedtest/server
+cd /opt/speed-cjc/server
 npm run admin -- dono voce@email.com "Seu Nome"
 ```
 
@@ -150,8 +150,8 @@ O `publicar.sh` instala e configura o Caddy. Para fazer à mão:
 
 ```bash
 apt install caddy        # se não houver no apt, veja https://caddyserver.com/docs/install
-sed "s/velocidadeteste\.audicomtelecom\.com\.br/velocidade.seuprovedor.com.br/g" \
-    /opt/audicom-speedtest/server/deploy/Caddyfile > /etc/caddy/Caddyfile
+sed "s/teste\.exemplo\.com\.br/velocidade.seuprovedor.com.br/g" \
+    /opt/speed-cjc/server/deploy/Caddyfile > /etc/caddy/Caddyfile
 systemctl reload caddy
 ```
 
@@ -186,7 +186,7 @@ própria máquina: quem acessar a porta 8080 direto não consegue fingir outro I
 ## 6. Configuração do servidor (.env)
 
 Tudo fica em `server/.env` (modelo comentado: `server/.env.example`). Depois de
-mudar: `systemctl restart audicom-speedtest`.
+mudar: `systemctl restart speed-cjc`.
 
 | Variável | Padrão | Para quê |
 |---|---|---|
@@ -243,7 +243,7 @@ Valores comuns:
 | Google Workspace / Gmail | `smtp.gmail.com` | 465 | 1 | use uma **senha de app** (Conta Google → Segurança → Senhas de app) |
 | Microsoft 365 | `smtp.office365.com` | 587 | 0 | a conta precisa ter "SMTP autenticado" liberado |
 
-Reinicie e confira: `journalctl -u audicom-speedtest -n 20` e *Administração →
+Reinicie e confira: `journalctl -u speed-cjc -n 20` e *Administração →
 Sistema → E-mail (SMTP)* devem mostrar "Funcionando". Para testar de verdade,
 use "Esqueci minha senha" com a sua conta.
 
@@ -274,7 +274,7 @@ sofisticados. Para ligar:
 3. Copie a **chave do site** e a **chave secreta** para o `.env`
    (`TURNSTILE_SITE_KEY` e `TURNSTILE_SECRET`), ou rode o `publicar.sh` com
    `--turnstile-site` e `--turnstile-secret`.
-4. `systemctl restart audicom-speedtest`.
+4. `systemctl restart speed-cjc`.
 
 ---
 
@@ -327,7 +327,7 @@ Ações sensíveis pedem a **sua senha de novo** se você não a digitou nos úl
 ## 11. Comandos do terminal (`npm run admin`)
 
 ```bash
-cd /opt/audicom-speedtest/server
+cd /opt/speed-cjc/server
 npm run admin -- dono email@dominio "Nome"   # cria ou promove um dono
 npm run admin -- link email@dominio          # link para a pessoa criar nova senha (24 h)
 npm run admin -- listar                      # donos e administradores
@@ -345,28 +345,28 @@ voce@email.com`.
 
 ## 12. Banco de dados e cópias de segurança
 
-- **Banco:** `server/data/audicom.db` (com os arquivos `-wal` e `-shm` ao lado).
+- **Banco:** `server/data/speedcjc.db` (com os arquivos `-wal` e `-shm` ao lado).
   Permissão 600: só o root lê.
 - **Cópia de segurança automática:** uma por dia em `server/data/backups/`
-  (`audicom-AAAA-MM-DD.db`), guardadas por 14 dias (`BACKUP_DAYS`). A cópia é
+  (`speedcjc-AAAA-MM-DD.db`), guardadas por 14 dias (`BACKUP_DAYS`). A cópia é
   feita com o site no ar, de forma consistente.
 - **Recomendado:** copie a pasta `server/data/backups/` para **outra máquina**
   todo dia (se este disco morrer, as cópias locais vão junto). Exemplo, rodando
   em outro servidor:
 
   ```bash
-  rsync -az root@IP-DO-SERVIDOR:/opt/audicom-speedtest/server/data/backups/ /backup/speedtest/
+  rsync -az root@IP-DO-SERVIDOR:/opt/speed-cjc/server/data/backups/ /backup/speedtest/
   ```
 
 **Restaurar uma cópia:**
 
 ```bash
-systemctl stop audicom-speedtest
-cd /opt/audicom-speedtest/server/data
-mkdir -p antes-da-restauracao && mv audicom.db* antes-da-restauracao/
-cp backups/audicom-2026-10-21.db audicom.db
-chmod 600 audicom.db
-systemctl start audicom-speedtest
+systemctl stop speed-cjc
+cd /opt/speed-cjc/server/data
+mkdir -p antes-da-restauracao && mv speedcjc.db* antes-da-restauracao/
+cp backups/speedcjc-2026-10-21.db speedcjc.db
+chmod 600 speedcjc.db
+systemctl start speed-cjc
 ```
 
 Também guarde uma cópia de `server/data/captcha.key` e do `server/.env`
@@ -420,23 +420,23 @@ Também guarde uma cópia de `server/data/captcha.key` e do `server/.env`
 ## 15. Atualizar, reiniciar e ver os logs
 
 ```bash
-systemctl restart audicom-speedtest          # reiniciar
-systemctl status audicom-speedtest           # está no ar?
-journalctl -u audicom-speedtest -f           # logs ao vivo
+systemctl restart speed-cjc          # reiniciar
+systemctl status speed-cjc           # está no ar?
+journalctl -u speed-cjc -f           # logs ao vivo
 curl -s http://127.0.0.1:8080/api/health     # saúde
 ```
 
-O serviço sobe sozinho com a máquina (`systemctl enable audicom-speedtest`).
+O serviço sobe sozinho com a máquina (`systemctl enable speed-cjc`).
 
 Atualizar o mapa (Leaflet) para uma versão nova:
-`cd /opt/audicom-speedtest/server && npm install && npm run build:vendor`.
+`cd /opt/speed-cjc/server && npm install && npm run build:vendor`.
 
 ---
 
 ## 16. Testes automatizados
 
 ```bash
-cd /opt/audicom-speedtest/server && npm test
+cd /opt/speed-cjc/server && npm test
 ```
 
 Sobem um servidor de teste com banco temporário (nada toca no banco real) e
@@ -493,19 +493,27 @@ Com o site no domínio:
 
 ## 19. Personalizar para o seu provedor
 
-O projeto vem com a identidade da Audicom Telecom. Para usar em outro provedor:
+O Speed CJC vem com um visual neutro (as cores de davicjc.com) e o nome
+"Speed CJC". Para colocar a sua marca:
 
 | O quê | Onde |
 |---|---|
-| Nome e cidade do servidor, WhatsApp, telefone, e-mail, site e central do assinante | `server/.env`: `SERVER_NAME`, `SERVER_LOCATION`, `SUPPORT_WHATSAPP`, `SUPPORT_PHONE`, `SUPPORT_EMAIL`, `SUPPORT_SITE`, `SUPPORT_CENTRAL` |
-| Logotipos, ícones e imagem de prévia do WhatsApp | `assets/` (mesmos nomes de arquivo) |
-| Cores e fontes | `css/base.css` (variáveis no início do arquivo) |
-| Rodapé (endereço) e menu | `js/core/shell.js` |
-| Textos das páginas | `index.html`, `como-medimos.html`, `privacidade.html`, `termos.html` |
+| Nome do site (título, menu, app instalável, e-mails, WhatsApp) | `server/.env`: `SITE_NAME` |
+| Empresa que opera o servidor (rodapé, privacidade, termos, relatórios) | `server/.env`: `SERVER_NAME` |
+| Cidade do servidor e foro dos termos | `server/.env`: `SERVER_LOCATION`, `LEGAL_FORO` |
+| WhatsApp, telefone, e-mail, site, central do assinante e endereço do rodapé | `server/.env`: `SUPPORT_WHATSAPP`, `SUPPORT_PHONE`, `SUPPORT_EMAIL`, `SUPPORT_SITE`, `SUPPORT_CENTRAL`, `SUPPORT_ADDRESS` (o que ficar vazio não aparece) |
+| Prefixo do protocolo dos testes (`SPD-…`) | `server/.env`: `PROTOCOL_PREFIX` |
+| Logo, símbolo, ícones, favicon e imagem de prévia | `assets/logotipo.webp`, `assets/simbolo.webp`, `assets/icone-192.png`, `assets/icone-512.png`, `favicon.ico`, `assets/og.png` (mesmos nomes) |
+| Cores e fontes | `css/base.css`: os tokens no início do arquivo (o tema técnico fica em `css/tecnico.css`) |
 | Domínio do HTTPS | `--dominio` do `publicar.sh` (ele ajusta o Caddyfile) |
 
-Os textos de privacidade e termos citam a Audicom: troque pelos do seu provedor
-e passe pelo seu jurídico.
+As páginas usam marcações que o servidor troca na hora de entregar:
+`{{MARCA}}` (SITE_NAME), `{{EMPRESA}}` (SERVER_NAME), `{{EM_CIDADE}}`,
+`{{COM_ENDERECO}}`, `{{CONTATO_HTML}}` e `{{FORO}}`. Depois de mudar o `.env`:
+`systemctl restart speed-cjc`.
+
+Privacidade e termos já saem com a sua empresa e os seus contatos, mas são um
+modelo: leia e passe pelo seu jurídico antes de publicar.
 
 ---
 
@@ -546,7 +554,7 @@ que pode importar direto do Search Console.
 
 1. No `server/.env`: `GA_MEASUREMENT_ID=G-XXXXXXXXXX` (no GA: *Administrador →
    Fluxos de dados → o fluxo do site → ID da métrica*).
-2. `systemctl restart audicom-speedtest`.
+2. `systemctl restart speed-cjc`.
 
 Como funciona:
 
@@ -577,7 +585,7 @@ Para ver `download_mbps` e os outros números em relatórios, cadastre-os em
 | | Teste do cliente (`/`) | Speed Teste Técnico (`/tecnico`) |
 |---|---|---|
 | Quem usa | qualquer pessoa | técnicos e administradores, **com login** |
-| Visual | azul da Audicom | grafite e âmbar, selo **TÉCNICO** no topo |
+| Visual | verde (cores do tema) | grafite e âmbar, selo **TÉCNICO** no topo |
 | Medição | a mesma (rápido ou completo) | a mesma; abre no diagnóstico completo |
 | O que coleta | **tudo**: velocidade, latência, perda, IPv4/IPv6, NAT, CGNAT, rota, aplicativos, bancos, relógio | tudo, mais os dados do atendimento |
 | O que mostra | resultado honesto e sem alarme (abaixo) | tudo, sem filtro: Regular/Ruim, NAT, CGNAT, rota, conferência, medidas detalhadas |
@@ -719,7 +727,7 @@ IP, apagados em até 2 dias.
 Alguns segundos depois de abrir o teste (`/`) ou o `/tecnico`, aparece um convite
 para instalar o teste como aplicativo. Ele não aparece durante um teste, nem para
 quem já abriu como app; quem toca em **Agora não** só vê de novo depois de 5 dias.
-O `/tecnico` instala como **Audicom Técnico** e abre direto no diagnóstico.
+O `/tecnico` instala como **"<SITE_NAME> Técnico"** e abre direto no diagnóstico.
 
 | Aparelho e navegador | O que o convite faz |
 |---|---|

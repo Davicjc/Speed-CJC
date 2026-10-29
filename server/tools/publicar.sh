@@ -4,8 +4,8 @@
 #   o dono do sistema (administrador principal).
 #
 # Uso (como root):
-#   bash /root/speedtest/server/tools/publicar.sh \
-#        --dominio velocidadeteste.audicomtelecom.com.br \
+#   bash /opt/speed-cjc/server/tools/publicar.sh \
+#        --dominio teste.minhaempresa.com.br \
 #        [--ip <IP público>]  (IPv4 público que o roteador encaminha para cá; sem ele, vale o do DNS do domínio)
 #        [--dono seu@email --dono-nome "Seu Nome"]   (cria o administrador principal e mostra o link da senha)
 #        [--turnstile-site <chave do site> --turnstile-secret <chave secreta>] \
@@ -41,7 +41,7 @@ vermelho() { printf '\033[31m%s\033[0m\n' "$*"; }
 passo() { printf '\n\033[1m%s\033[0m\n' "$*"; }
 faz() { if [ "$SIMULAR" = 1 ]; then echo "  [simulação] $*"; else "$@"; fi; }
 
-[ -n "$DOM" ] || { vermelho "Informe o domínio: --dominio velocidadeteste.audicomtelecom.com.br"; exit 1; }
+[ -n "$DOM" ] || { vermelho "Informe o domínio: --dominio teste.minhaempresa.com.br"; exit 1; }
 [[ "$DOM" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?\.[a-z]{2,}$ ]] || { vermelho "Domínio inválido: $DOM"; exit 1; }
 [ -z "$IP" ] || [[ "$IP" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}$ ]] || { vermelho "IP inválido (use o IPv4 público): $IP"; exit 1; }
 if [ "$SIMULAR" != 1 ] && [ "$(id -u)" != 0 ]; then vermelho "Rode como root."; exit 1; fi
@@ -132,7 +132,7 @@ if ! command -v caddy >/dev/null 2>&1; then
     fi
 fi
 CADDY_TMP="$(mktemp)"
-sed "s/velocidadeteste\.audicomtelecom\.com\.br/$DOM/g" "$DIR/deploy/Caddyfile" > "$CADDY_TMP"
+sed "s/teste\.exemplo\.com\.br/$DOM/g" "$DIR/deploy/Caddyfile" > "$CADDY_TMP"
 [ "$SEM_V6" = 1 ] && sed -i "s/^v4\.$DOM, v6\.$DOM {/v4.$DOM {/" "$CADDY_TMP"
 # "interval" e "burst" do sob-demanda: obrigatórios no Caddy 2.6, descontinuados do 2.8 em diante
 CADDY_VER=$(caddy version 2>/dev/null | sed -n 's/^v\{0,1\}\([0-9]*\)\.\([0-9]*\).*/\1 \2/p' || true)

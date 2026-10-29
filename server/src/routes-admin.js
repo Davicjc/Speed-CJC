@@ -159,7 +159,7 @@ export function createAdminRoutes(ctx) {
             users.audit({ actor: actorInfo, action: 'exportou testes (planilha)', detail: { linhas: rows.length }, ip });
             res.writeHead(200, {
                 'Content-Type': 'text/csv; charset=utf-8',
-                'Content-Disposition': `attachment; filename="testes-audicom-${new Date().toISOString().slice(0, 10)}.csv"`,
+                'Content-Disposition': `attachment; filename="testes-${new Date().toISOString().slice(0, 10)}.csv"`,
                 'Cache-Control': 'no-store',
             });
             res.end('﻿' + csv); // BOM: o Excel abre com acento certo

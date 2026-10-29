@@ -11,8 +11,8 @@
 import { ICON } from '../core/icons.js';
 import { storage, store, toast } from '../core/util.js';
 
-const CHAVE = 'audicom.local';            // 'sim' | 'nao' | 'bloqueado'
-const QUANDO = 'audicom.local-perguntado'; // última vez que perguntamos (ms)
+const CHAVE = 'speedcjc.local';            // 'sim' | 'nao' | 'bloqueado'
+const QUANDO = 'speedcjc.local-perguntado'; // última vez que perguntamos (ms)
 const INTERVALO_MS = 4 * 24 * 3600_000;
 const CHANCE = 0.35;
 
@@ -47,7 +47,7 @@ export async function iniciarLocalizacao({ chave, rotulo, ajuda, ocupado = () =>
         return;
     }
     // quem já tinha ligado a chave antes desta versão continua com ela ligada
-    if (storage(CHAVE, null) == null && storage('audicom.usar-local', false) === true) store(CHAVE, 'sim');
+    if (storage(CHAVE, null) == null && storage('speedcjc.usar-local', false) === true) store(CHAVE, 'sim');
 
     const estadoNavegador = await permissao();
     if (estadoNavegador === 'denied') store(CHAVE, 'bloqueado');
@@ -97,7 +97,7 @@ export async function iniciarLocalizacao({ chave, rotulo, ajuda, ocupado = () =>
         faixa.setAttribute('aria-label', 'Localização nos testes');
         faixa.innerHTML = `<span class="faixa-local-icone" aria-hidden="true">${ICON.pin}</span>
             <div class="faixa-local-texto"><strong>Marcar seus testes no mapa?</strong>
-            <p>Com a localização, cada teste fica com o bairro no seu histórico, e a Audicom entende melhor a rede da sua região. Dá para desligar quando quiser.</p></div>
+            <p>Com a localização, cada teste fica com o bairro no seu histórico, e o provedor entende melhor a rede da sua região. Dá para desligar quando quiser.</p></div>
             <div class="faixa-local-acoes">
                 <button type="button" class="botao botao-fantasma botao-pequeno" data-local="nao">Agora não</button>
                 <button type="button" class="botao botao-primario botao-pequeno" data-local="sim">Ativar localização</button>

@@ -1,7 +1,7 @@
-# Servidor do teste de velocidade Audicom
+# Servidor do Speed CJC
 
 Um processo Node só: serve o site, faz as medições e guarda contas, sessões e
-testes num banco SQLite (`data/audicom.db`, com o `node:sqlite` embutido no
+testes num banco SQLite (`data/speedcjc.db`, com o `node:sqlite` embutido no
 Node). Nada de Firebase ou outro serviço obrigatório. Configuração em
 `server/.env` (modelo: `.env.example`). Guia de implantação:
 [../docs/INSTALAR.md](../docs/INSTALAR.md) (do zero, numa VM crua) e [../docs/MANUAL.md](../docs/MANUAL.md) (operação).
@@ -59,7 +59,7 @@ npm run admin -- dono seu@email "Seu nome"
 | `npm run admin -- tecnico email` / `sem-tecnico email` | dá ou tira o acesso ao /tecnico |
 | `bash tools/instalar.sh [--dominio …] [--dono …]` | VM crua → site no ar: pacotes, Node 22, projeto, dependências, serviço (e publicação, com `--dominio`) |
 | `bash tools/publicar.sh --dominio … [--ip …] [--dono …]` | publica: `.env`, NTP, Caddy, firewall, serviço e dono (`--simular` só mostra) |
-| `bash tools/servico.sh` | instala/atualiza e liga o serviço do systemd a partir do modelo `deploy/audicom-speedtest.service` |
+| `bash tools/servico.sh` | instala/atualiza e liga o serviço do systemd a partir do modelo `deploy/speed-cjc.service` |
 | `npm run build:vendor` | empacota o Leaflet em `../vendor/` |
 
 ## Banco de dados
@@ -107,7 +107,7 @@ Atrás do Caddy, só a UDP precisa ser exposta direto (`ufw allow 8080/udp`).
 ## API (resumo)
 
 Toda chamada que muda algo (POST, PATCH, DELETE) precisa vir do próprio site:
-cabeçalho `X-Audicom: 1`, ou `Sec-Fetch-Site: same-origin`, ou `Origin` igual ao
+cabeçalho `X-Speed: 1`, ou `Sec-Fetch-Site: same-origin`, ou `Origin` igual ao
 host. As exceções são `/api/upload` e `/api/rtc/offer` (medição).
 
 Páginas: todo HTML passa pelo servidor, que troca `{{ORIGEM}}` pelo endereço do

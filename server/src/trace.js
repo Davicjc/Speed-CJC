@@ -3,7 +3,7 @@ import net from 'node:net';
 
 // "Rota até você": o servidor dispara um mtr até o IP que ele vê do cliente e
 // devolve cada salto com latência e perda. É a visão do caminho que o suporte
-// usa pra saber se o problema está na casa do cliente, na rede da Audicom ou
+// usa pra saber se o problema está na casa do cliente, na rede da operadora ou
 // pra fora dela. Sempre execFile com argumentos fixos + IP validado — nada de
 // shell, nada de string montada com entrada do usuário.
 

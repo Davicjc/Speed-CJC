@@ -27,7 +27,7 @@ export function createSessions({ db, sessionDays = 30, log = console }) {
     limpeza.unref();
 
     // ---------- cookie ----------
-    const nomeCookie = (seguro) => (seguro ? '__Host-audicom' : 'audicom_sessao');
+    const nomeCookie = (seguro) => (seguro ? '__Host-speedcjc' : 'speedcjc_sessao');
     function lerToken(req) {
         const c = req.headers.cookie;
         if (!c) return null;
@@ -35,7 +35,7 @@ export function createSessions({ db, sessionDays = 30, log = console }) {
             const i = parte.indexOf('=');
             if (i < 0) continue;
             const k = parte.slice(0, i).trim();
-            if (k === '__Host-audicom' || k === 'audicom_sessao') {
+            if (k === '__Host-speedcjc' || k === 'speedcjc_sessao') {
                 const v = parte.slice(i + 1).trim();
                 if (/^[A-Za-z0-9_-]{40,60}$/.test(v)) return v;
             }

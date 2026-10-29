@@ -68,10 +68,10 @@ export const relogio = () => chamar('clock');
 /** Id aleatório deste navegador, só para a cota diária de testes sem login (não identifica a pessoa). */
 function idDoAparelho() {
     try {
-        let id = localStorage.getItem('audicom.aparelho');
+        let id = localStorage.getItem('speedcjc.aparelho');
         if (!id || !/^[A-Za-z0-9_-]{16,64}$/.test(id)) {
             id = Array.from(crypto.getRandomValues(new Uint8Array(18)), (b) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_'[b & 63]).join('');
-            localStorage.setItem('audicom.aparelho', id);
+            localStorage.setItem('speedcjc.aparelho', id);
         }
         return id;
     } catch { return null; }
@@ -245,7 +245,7 @@ export async function salvarResultado(payload) {
     const res = await fetch('/api/results', {
         method: 'POST',
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', 'X-Audicom': '1' },
+        headers: { 'Content-Type': 'application/json', 'X-Speed': '1' },
         body: JSON.stringify({ ...payload, connId: c && c.connId }),
     });
     const data = await res.json().catch(() => ({}));

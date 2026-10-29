@@ -68,13 +68,16 @@ export const config = {
     publicIPv6: str('PUBLIC_IPV6', detectAddress('IPv6')),
     // endereço IPv4 da própria máquina (o diagnóstico usa quando o nome só-IPv4 não existe no DNS)
     localIPv4: detectAddress('IPv4'),
-    // URLs completas pros testes separados de IPv4/IPv6 (ex.: https://v4.velocidadeteste.audicomtelecom.com.br).
+    // URLs completas pros testes separados de IPv4/IPv6 (ex.: https://v4.teste.minhaempresa.com.br).
     ipv4Base: str('IPV4_BASE_URL', null),
     ipv6Base: str('IPV6_BASE_URL', null),
     // Endereço público do site (links de compartilhamento e prévia no WhatsApp).
     publicUrl: str('PUBLIC_URL', null),
-    serverName: str('SERVER_NAME', 'Audicom Telecom'),
-    serverLocation: str('SERVER_LOCATION', 'Uberlândia, MG'),
+    // marca: nome do site (aparece no título, no menu e nas mensagens) e da empresa que opera o servidor
+    siteName: str('SITE_NAME', 'Speed CJC'),
+    serverName: str('SERVER_NAME', 'Speed CJC'),
+    serverLocation: str('SERVER_LOCATION', ''),
+    legalForo: str('LEGAL_FORO', null), // cidade do foro nos termos de uso (ex.: "Uberlândia, MG")
     staticDir: path.resolve(str('STATIC_DIR', path.join(here, '..', '..'))),
     dataDir,
     trustProxy: bool('TRUST_PROXY', false),
@@ -87,7 +90,7 @@ export const config = {
         .split(',').map(s => s.trim()).filter(Boolean),
 
     // Banco de dados (SQLite, um arquivo só): contas, sessões e testes.
-    dbFile: path.resolve(str('DB_FILE', path.join(dataDir, 'audicom.db'))),
+    dbFile: path.resolve(str('DB_FILE', path.join(dataDir, 'speedcjc.db'))),
     // Cópia de segurança diária do banco, guardada por N dias em data/backups.
     backupDays: int('BACKUP_DAYS', 14),
 
@@ -104,7 +107,7 @@ export const config = {
         secure: bool('SMTP_SECURE', false),   // true para a porta 465
         user: str('SMTP_USER', null),
         pass: str('SMTP_PASS', null),
-        from: str('MAIL_FROM', null),         // ex.: "Audicom Telecom <naoresponda@audicomtelecom.com.br>"
+        from: str('MAIL_FROM', null),         // ex.: "Minha Empresa <naoresponda@minhaempresa.com.br>"
     },
 
     captcha: {
@@ -145,10 +148,12 @@ export const config = {
     gaId: /^G-[A-Z0-9]{4,20}$/.test(str('GA_MEASUREMENT_ID', '')) ? str('GA_MEASUREMENT_ID', '') : null,
 
     support: {
-        whatsapp: str('SUPPORT_WHATSAPP', '553491339002'),
-        phone: str('SUPPORT_PHONE', '(34) 3222-6800'),
-        email: str('SUPPORT_EMAIL', 'contato@audicomtelecom.com.br'),
-        site: str('SUPPORT_SITE', 'https://audicomtelecom.com.br'),
-        central: str('SUPPORT_CENTRAL', 'https://central.audicom.hubsoft.com.br/'),
+        // contatos que aparecem no rodapé; o que ficar vazio não aparece
+        whatsapp: str('SUPPORT_WHATSAPP', null),
+        phone: str('SUPPORT_PHONE', null),
+        email: str('SUPPORT_EMAIL', null),
+        site: str('SUPPORT_SITE', null),
+        central: str('SUPPORT_CENTRAL', null),
+        address: str('SUPPORT_ADDRESS', null),
     },
 };

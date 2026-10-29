@@ -11,7 +11,7 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export async function subirServidor(envExtra = {}) {
     if (process.env.BASE) return { base: process.env.BASE.replace(/\/$/, ''), dataDir: process.env.DATA_DIR || null, parar() {} };
-    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'audicom-teste-'));
+    const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'speedcjc-teste-'));
     const porta = 20000 + Math.floor(Math.random() * 20000);
     const env = { ...process.env, PORT: String(porta), DATA_DIR: dataDir, GEOCODER: 'off', SIGNUP_LIMIT_PER_HOUR: '1000', ANON_TESTS_PER_DAY: '1000', ANON_TESTS_PER_IP_DAY: '1000', SMTP_HOST: '', NTP_SERVERS: 'a.st1.ntp.br', ...envExtra };
     const proc = spawn(process.execPath, ['--disable-warning=ExperimentalWarning', 'src/server.js'], { cwd: raiz, env, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -40,7 +40,7 @@ export async function subirServidor(envExtra = {}) {
 export function navegador(base) {
     let cookie = null;
     async function pedido(metodo, caminho, corpo, extras = {}) {
-        const headers = { 'X-Audicom': '1', ...extras };
+        const headers = { 'X-Speed': '1', ...extras };
         if (corpo !== undefined) headers['Content-Type'] = 'application/json';
         if (cookie) headers.Cookie = cookie;
         const r = await fetch(base + caminho, { method: metodo, headers, body: corpo === undefined ? undefined : JSON.stringify(corpo), redirect: 'manual' });

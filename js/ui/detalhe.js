@@ -2,6 +2,7 @@
 // tudo o que a página do teste mostrou na hora, inclusive o diagnóstico completo
 // e a rota salto a salto.
 
+import { MARCA } from '../core/marca.js';
 import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { confirmar, copiar, esc, evento, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, raw, setHtml, toast } from '../core/util.js';
@@ -55,7 +56,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, tom = ad
     const dev = t.device || {};
     const con = t.connection || {};
     const curva = t.curve && ((t.curve.download || []).length || (t.curve.upload || []).length) ? t.curve : null;
-    const texto = textoCompleto(t, { link, plano, empresa: cfg.serverName || 'Audicom Telecom', tom });
+    const texto = textoCompleto(t, { link, plano, empresa: cfg.serverName || MARCA, tom });
 
     const blocos = [];
     blocos.push(html`<div class="det-cabeca">

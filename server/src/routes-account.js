@@ -109,7 +109,7 @@ export async function handleAccount(ctx, req, res, url, ip) {
             log.warn(`[login] senha errada para ${email} (${ip})`);
             throw err(401, 'E-mail ou senha incorretos.', 'credenciais');
         }
-        if (u.disabled) throw err(403, 'Esta conta está desativada. Fale com o suporte da Audicom.', 'disabled');
+        if (u.disabled) throw err(403, 'Esta conta está desativada. Fale com o suporte.', 'disabled');
         errosPorEmail.delete(email);
         await entrarNaConta(u, { lembrar: !!body.lembrar });
         return sendJson(res, 200, me(users.get(u.id))), true;
@@ -143,7 +143,7 @@ export async function handleAccount(ctx, req, res, url, ip) {
 
     // ---------- esqueci minha senha / nova senha ----------
     if (p === '/api/auth/forgot' && m === 'POST') {
-        if (!mailer.enabled) throw err(400, 'Para criar uma nova senha, fale com o suporte da Audicom: eles enviam um link para você.', 'mail_off');
+        if (!mailer.enabled) throw err(400, 'Para criar uma nova senha, fale com o suporte: eles enviam um link para você.', 'mail_off');
         if (!limits.esqueci.take(ip)) throw err(429, 'Muitos pedidos a partir da sua rede. Espere alguns minutos.');
         const body = await readJsonBody(req, 2 * 1024);
         const email = validateEmail(body.email);
@@ -298,7 +298,7 @@ export async function handleAccount(ctx, req, res, url, ip) {
         };
         res.writeHead(200, {
             'Content-Type': 'application/json; charset=utf-8',
-            'Content-Disposition': `attachment; filename="meus-dados-audicom-${new Date().toISOString().slice(0, 10)}.json"`,
+            'Content-Disposition': `attachment; filename="meus-dados-${new Date().toISOString().slice(0, 10)}.json"`,
             'Cache-Control': 'no-store',
         });
         res.end(JSON.stringify(data, null, 2));

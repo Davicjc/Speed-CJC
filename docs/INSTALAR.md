@@ -9,7 +9,7 @@ administração ficam na própria VM.
 >
 > ```bash
 > apt-get update && apt-get install -y curl     # o Debian mínimo não vem com curl
-> curl -fsSL https://raw.githubusercontent.com/davicjc/audicom-speedtest/main/server/tools/instalar.sh | bash
+> curl -fsSL https://raw.githubusercontent.com/Davicjc/Speed-CJC/main/server/tools/instalar.sh | bash
 > ```
 >
 > Abra `http://IP-DA-VM:8080`. Pronto. O resto deste guia explica cada passo,
@@ -78,25 +78,25 @@ apt-get update && apt-get install -y curl
 Rode o instalador:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/davicjc/audicom-speedtest/main/server/tools/instalar.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Davicjc/Speed-CJC/main/server/tools/instalar.sh | bash
 ```
 
 > Prefere ler antes de rodar? Baixe, leia e só depois execute:
 > ```bash
-> curl -fsSLO https://raw.githubusercontent.com/davicjc/audicom-speedtest/main/server/tools/instalar.sh
+> curl -fsSLO https://raw.githubusercontent.com/Davicjc/Speed-CJC/main/server/tools/instalar.sh
 > less instalar.sh
 > bash instalar.sh
 > ```
 
 O que ele faz, na ordem:
 
-1. instala `git`, `curl`, `iproute2`, `mtr-tiny` (rota até o cliente) e
-   `tcpdump` (diagnóstico de NAT);
+1. instala `git`, `curl`, `iproute2`, `iputils-ping` (MTU e duplo NAT),
+   `mtr-tiny` (rota até o cliente) e `tcpdump` (diagnóstico de NAT);
 2. instala o **Node.js 22** pelo repositório oficial da NodeSource, se a VM não
    tiver um Node 22.13 ou mais novo;
-3. baixa o projeto em `/opt/audicom-speedtest` (`git clone`);
+3. baixa o projeto em `/opt/speed-cjc` (`git clone`);
 4. instala as dependências do servidor (`npm ci`);
-5. cria o serviço `audicom-speedtest` no systemd, que sobe sozinho com a VM;
+5. cria o serviço `speed-cjc` no systemd, que sobe sozinho com a VM;
 6. se o firewall `ufw` estiver ligado, libera TCP e UDP 8080.
 
 No fim ele mostra o endereço. Abra no navegador:
@@ -112,7 +112,7 @@ Opções úteis do instalador:
 
 | Opção | O que faz |
 |---|---|
-| `--pasta /srv/speedtest` | instala em outra pasta (padrão `/opt/audicom-speedtest`) |
+| `--pasta /srv/speedtest` | instala em outra pasta (padrão `/opt/speed-cjc`) |
 | `--dono voce@email --dono-nome "Seu Nome"` | já cria o administrador principal (seção 3) |
 | `--dominio ...` | já publica com HTTPS (seção 4) |
 | `--so-preparar` | só instala dependências e o projeto, sem ligar nada |
@@ -121,7 +121,7 @@ Opções úteis do instalador:
 Para passar opções pelo comando de uma linha, use `bash -s --`:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/davicjc/audicom-speedtest/main/server/tools/instalar.sh \
+curl -fsSL https://raw.githubusercontent.com/Davicjc/Speed-CJC/main/server/tools/instalar.sh \
   | bash -s -- --dono voce@email.com --dono-nome "Seu Nome"
 ```
 
@@ -134,7 +134,7 @@ administradores. O primeiro, chamado **dono**, é criado pelo terminal da VM, de
 propósito: ninguém consegue virar dono pela internet.
 
 ```bash
-cd /opt/audicom-speedtest/server
+cd /opt/speed-cjc/server
 npm run admin -- dono voce@email.com "Seu Nome"
 ```
 
@@ -185,7 +185,7 @@ Sem IPv6 público, não crie os AAAA e use `--sem-ipv6` no passo seguinte.
 ### 4.2 Publicar
 
 ```bash
-bash /opt/audicom-speedtest/server/tools/publicar.sh \
+bash /opt/speed-cjc/server/tools/publicar.sh \
      --dominio velocidade.seuprovedor.com.br \
      --dono voce@email.com --dono-nome "Seu Nome"
 ```
@@ -211,7 +211,7 @@ Com o site no ar pelo domínio, feche a porta antiga para o acesso ser só por
 HTTPS:
 
 ```bash
-bash /opt/audicom-speedtest/server/tools/publicar.sh --dominio velocidade.seuprovedor.com.br --fechar-8080
+bash /opt/speed-cjc/server/tools/publicar.sh --dominio velocidade.seuprovedor.com.br --fechar-8080
 ```
 
 Outras opções do `publicar.sh`:
@@ -236,7 +236,7 @@ adaptar.
 
 ```bash
 apt-get update
-apt-get install -y ca-certificates curl git gnupg iproute2 mtr-tiny tcpdump
+apt-get install -y ca-certificates curl git gnupg iproute2 iputils-ping mtr-tiny tcpdump
 ```
 
 ### 5.2 Node.js 22 (repositório oficial da NodeSource)
@@ -258,8 +258,8 @@ Node (`node:sqlite`). Não é preciso instalar banco nenhum.
 ### 5.3 O projeto
 
 ```bash
-git clone https://github.com/davicjc/audicom-speedtest.git /opt/audicom-speedtest
-cd /opt/audicom-speedtest/server
+git clone https://github.com/Davicjc/Speed-CJC.git /opt/speed-cjc
+cd /opt/speed-cjc/server
 npm ci --omit=dev
 ```
 
@@ -289,7 +289,7 @@ Como serviço, que sobe sozinho com a VM:
 bash tools/servico.sh
 ```
 
-O `servico.sh` preenche o modelo `deploy/audicom-speedtest.service` com a pasta
+O `servico.sh` preenche o modelo `deploy/speed-cjc.service` com a pasta
 e o Node desta máquina, instala no systemd e confere se o site respondeu.
 
 ### 5.6 Firewall
@@ -306,9 +306,9 @@ Daqui em diante, siga a seção 3 (administrador) e, para o público, a seção 
 ## 6. Conferir se está tudo certo
 
 ```bash
-systemctl status audicom-speedtest          # "active (running)"
+systemctl status speed-cjc          # "active (running)"
 curl -s http://127.0.0.1:8080/api/health    # "ok":true
-cd /opt/audicom-speedtest/server && npm test # testes automáticos (não tocam no banco real)
+cd /opt/speed-cjc/server && npm test # testes automáticos (não tocam no banco real)
 ```
 
 No navegador:
@@ -329,16 +329,16 @@ O jeito mais simples é rodar o instalador de novo: ele faz `git pull`,
 reinstala as dependências e reinicia o serviço, sem mexer no banco nem no `.env`.
 
 ```bash
-bash /opt/audicom-speedtest/server/tools/instalar.sh
+bash /opt/speed-cjc/server/tools/instalar.sh
 ```
 
 À mão:
 
 ```bash
-cd /opt/audicom-speedtest
+cd /opt/speed-cjc
 git pull
 cd server && npm ci --omit=dev
-systemctl restart audicom-speedtest
+systemctl restart speed-cjc
 ```
 
 O banco de dados se atualiza sozinho ao subir, quando a versão nova precisar.
@@ -350,12 +350,12 @@ Antes de uma atualização grande, guarde uma cópia de `server/data/` (veja a s
 ## 8. Desinstalar
 
 ```bash
-systemctl disable --now audicom-speedtest
-rm /etc/systemd/system/audicom-speedtest.service
+systemctl disable --now speed-cjc
+rm /etc/systemd/system/speed-cjc.service
 systemctl daemon-reload
 # guarde server/data/ se quiser manter contas e testes:
-cp -a /opt/audicom-speedtest/server/data ~/audicom-speedtest-dados
-rm -rf /opt/audicom-speedtest
+cp -a /opt/speed-cjc/server/data ~/speed-cjc-dados
+rm -rf /opt/speed-cjc
 # se usou o publicar.sh:
 apt-get remove caddy
 ```
@@ -373,7 +373,7 @@ apt-get remove caddy
 | O site não abre de outro computador | firewall | `ufw allow 8080/tcp` e `ufw allow 8080/udp`; confira também o firewall do hipervisor |
 | Perda de pacotes: "UDP bloqueado" | UDP 8080 fechado no caminho | libere UDP 8080 até a VM; atrás de NAT, encaminhe também |
 | `systemctl` não existe | container sem systemd | rode com `npm start`, ou use uma VM de verdade |
-| O serviço não sobe | erro no `.env` ou porta ocupada | `journalctl -u audicom-speedtest -n 50` |
+| O serviço não sobe | erro no `.env` ou porta ocupada | `journalctl -u speed-cjc -n 50` |
 
 Problemas depois de instalado (e-mail, certificado, login, mapa): seção 17 do
 [MANUAL.md](MANUAL.md#17-solução-de-problemas).

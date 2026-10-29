@@ -51,7 +51,7 @@ function provaDeTrabalho(alvo) {
     alvo.innerHTML = `<button type="button" class="captcha-pow" data-estado="novo" aria-describedby="captcha-texto">
         <span class="caixa">${ICON.check}</span>
         <span class="textos"><strong id="captcha-titulo">Não sou um robô</strong><small id="captcha-texto">Clique para confirmar. Leva alguns segundos.</small></span>
-        <span class="selo-captcha">${ICON.shield}<span>verificação<br>Audicom</span></span>
+        <span class="selo-captcha">${ICON.shield}<span>verificação<br>segura</span></span>
         <span class="barra" aria-hidden="true"></span></button>`;
     const botao = alvo.querySelector('button');
     const titulo = alvo.querySelector('#captcha-titulo');

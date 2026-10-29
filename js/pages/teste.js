@@ -1,3 +1,4 @@
+import { MARCA } from '../core/marca.js';
 import { coletarAparelho, conexaoDoNavegador, NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { guardarPendente } from '../core/pendentes.js';
@@ -23,7 +24,7 @@ const cfg = sessao.cfg || {};
 if (TECNICO && !(sessao.me && sessao.me.isTecnico)) {
     setHtml($('#conteudo'), html`<section class="miolo sem-acesso">${{ __raw: ICON.lock }}
         <h1>Speed teste técnico</h1>
-        <p>Esta área é só para técnicos e administradores da Audicom. Se você é técnico, peça o acesso a um administrador.</p>
+        <p>Esta área é só para técnicos e administradores. Se você é técnico, peça o acesso a um administrador.</p>
         <a class="botao botao-primario" href="/">Ir para o teste de velocidade</a></section>`);
     await new Promise(() => {}); // para aqui: sem acesso, nada mais carrega
 }
@@ -128,7 +129,7 @@ async function pedirLocal() {
     if (r.codigo === 1) {
         toast('Localização não autorizada. O teste segue usando a cidade do seu IP.', 'info');
         chaveLocal.checked = false;
-        store('audicom.local', 'bloqueado');
+        store('speedcjc.local', 'bloqueado');
     }
     return null;
 }
@@ -437,7 +438,7 @@ function comoRelatorio(r, res, aparelho) {
 }
 
 function habilitarCompartilhar(link, r, res, aparelho) {
-    const texto = textoCompleto(comoRelatorio(r, res, aparelho), { link, plano: planoAtual(), empresa: cfg.serverName || 'Audicom Telecom', tom: TOM });
+    const texto = textoCompleto(comoRelatorio(r, res, aparelho), { link, plano: planoAtual(), empresa: cfg.serverName || MARCA, tom: TOM });
     const bc = $('#copiar');
     bc.innerHTML = ICON.copy + 'Copiar resultado';
     bc.hidden = false;

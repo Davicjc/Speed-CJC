@@ -5,7 +5,7 @@
 import { api } from './auth.js';
 import { storage, store, toast } from './util.js';
 
-const CHAVE = 'audicom.testes-pendentes';
+const CHAVE = 'speedcjc.testes-pendentes';
 const PRAZO = 24 * 60 * 60_000;
 
 const lista = () => (storage(CHAVE, []) || []).filter((p) => p && p.id && p.token && Date.now() - p.at < PRAZO);

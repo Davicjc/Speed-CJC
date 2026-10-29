@@ -10,9 +10,10 @@
 // - Já aberto como app, ou navegador de computador sem suporte: não aparece.
 // Pergunta uma vez; quem responde "Agora não" só vê de novo depois de 5 dias.
 
+import { MARCA } from '../core/marca.js';
 import { esc, evento, storage, store } from '../core/util.js';
 
-const CHAVE = 'audicom.app';
+const CHAVE = 'speedcjc.app';
 const ESPERA_DIAS = 5;
 
 const svg = (d) => `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
@@ -93,7 +94,7 @@ function abrir(tecnico) {
     const d = document.createElement('dialog');
     d.className = 'modal app-convite';
     d.setAttribute('aria-labelledby', 'app-convite-titulo');
-    const nome = tecnico ? 'Speed Teste Técnico' : 'Teste Audicom';
+    const nome = tecnico ? `${MARCA} Técnico` : MARCA;
     const frase = tecnico
         ? 'Abre direto no diagnóstico, em tela cheia, pronto para o próximo atendimento.'
         : 'Testa a sua internet com um toque, em tela cheia, como um aplicativo. Não ocupa espaço.';

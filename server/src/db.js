@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 
-// Banco de dados do site: um arquivo SQLite (data/audicom.db), no próprio
+// Banco de dados do site: um arquivo SQLite (data/speedcjc.db), no próprio
 // servidor. Guarda contas, sessões de login, links de e-mail (confirmação e
 // nova senha), testes e o registro de auditoria.
 //
@@ -171,7 +171,7 @@ export function openDatabase(file, log = console) {
 
 /**
  * Cópia de segurança diária (VACUUM INTO gera um arquivo consistente mesmo com
- * o site rodando). Fica em data/backups/audicom-AAAA-MM-DD.db; as mais antigas
+ * o site rodando). Fica em data/backups/speedcjc-AAAA-MM-DD.db; as mais antigas
  * que `dias` são apagadas.
  */
 export function createBackups({ db, dataDir, dias = 14, log = console }) {
@@ -180,7 +180,7 @@ export function createBackups({ db, dataDir, dias = 14, log = console }) {
         try {
             fs.mkdirSync(pasta, { recursive: true, mode: 0o700 });
             const hoje = new Date().toISOString().slice(0, 10);
-            const destino = path.join(pasta, `audicom-${hoje}.db`);
+            const destino = path.join(pasta, `speedcjc-${hoje}.db`);
             if (!fs.existsSync(destino)) {
                 db.raw.exec(`VACUUM INTO '${destino.replace(/'/g, "''")}'`);
                 fs.chmodSync(destino, 0o600);
@@ -188,7 +188,7 @@ export function createBackups({ db, dataDir, dias = 14, log = console }) {
             }
             const limite = Date.now() - dias * 24 * 60 * 60_000;
             for (const f of fs.readdirSync(pasta)) {
-                const m = /^audicom-(\d{4}-\d{2}-\d{2})\.db$/.exec(f);
+                const m = /^speedcjc-(\d{4}-\d{2}-\d{2})\.db$/.exec(f);
                 if (m && Date.parse(m[1]) < limite) fs.unlinkSync(path.join(pasta, f));
             }
         } catch (e) {

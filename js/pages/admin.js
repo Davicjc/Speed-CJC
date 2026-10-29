@@ -1,3 +1,4 @@
+import { MARCA } from '../core/marca.js';
 import { api } from '../core/auth.js';
 import { ICON } from '../core/icons.js';
 import { iniciarPagina } from '../core/shell.js';
@@ -20,7 +21,7 @@ if (!sessao.me || !sessao.me.isAdmin) {
     $('#negado-titulo').textContent = semConfirmar ? 'Confirme seu e-mail para entrar' : 'Sua conta não tem acesso à administração';
     $('#negado-texto').textContent = semConfirmar
         ? `Enviamos um link de confirmação para ${sessao.user.email}. Depois de confirmar, saia e entre de novo.`
-        : 'Peça a um administrador da Audicom para liberar o seu acesso.';
+        : 'Peça a um administrador para liberar o seu acesso.';
     $('#negado').hidden = false;
     throw new Error('sem acesso');
 }
@@ -319,7 +320,7 @@ $('#testes-csv').addEventListener('click', (e) => comCarga(e.currentTarget, asyn
         const q = filtrosTestes();
         q.delete('q');
         const res = await api('/api/admin/tests.csv?' + q, { bruto: true });
-        baixarArquivo(`testes-audicom-${new Date().toISOString().slice(0, 10)}.csv`, await res.blob());
+        baixarArquivo(`testes-${new Date().toISOString().slice(0, 10)}.csv`, await res.blob());
     } catch (err) { toast(err.message, 'ruim'); }
 }));
 
@@ -513,7 +514,7 @@ function mostrarLink({ titulo, link, para, enviado = false, telefone = null }) {
     const d = document.createElement('dialog');
     d.className = 'modal';
     const fone = telefone ? String(telefone).replace(/\D/g, '') : '';
-    const texto = `Olá, ${para.name}! Para criar a sua senha no teste de velocidade da Audicom, abra este link (vale 3 dias e funciona uma vez): ${link}`;
+    const texto = `Olá, ${para.name}! Para criar a sua senha no teste de velocidade ${MARCA}, abra este link (vale 3 dias e funciona uma vez): ${link}`;
     setHtml(d, html`<div class="modal-corpo">
         <h2>${titulo}</h2>
         <p>${enviado ? `Enviamos o link por e-mail para ${para.email}. Se preferir, mande também pelo WhatsApp.` : `Mande este link para ${para.name} (${para.email}). Ele vale 3 dias e só funciona uma vez.`}</p>

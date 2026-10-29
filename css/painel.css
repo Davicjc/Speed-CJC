@@ -5,7 +5,7 @@
 .painel-topo h1 { font-size: clamp(1.8rem, 3.2vw, 2.45rem); letter-spacing: -0.03em; margin-top: 4px; }
 .painel-topo .resumo { color: var(--texto-2); margin-top: 6px; }
 .barra-abas { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-.periodos { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-full); border: 1px solid var(--linha); background: rgba(4, 11, 33, 0.45); }
+.periodos { display: inline-flex; gap: 2px; padding: 3px; border-radius: var(--r-full); border: 1px solid var(--linha); background: rgba(5, 6, 8, 0.45); }
 .periodos button { border: 0; background: none; color: var(--texto-3); font-size: var(--t-xs); font-weight: 600; padding: 6px 12px; border-radius: var(--r-full); }
 .periodos button:hover { color: var(--texto); }
 .periodos button[aria-pressed="true"] { background: rgba(244, 246, 249, 0.1); color: var(--texto); }
@@ -83,7 +83,7 @@
 .admin-nav button { display: flex; align-items: center; gap: 10px; background: none; border: 0; color: var(--texto-2); font-size: var(--t-sm); font-weight: 500; padding: 10px 12px; border-radius: var(--r-md); text-align: left; }
 .admin-nav button svg { width: 18px; height: 18px; color: var(--texto-3); }
 .admin-nav button:hover { background: rgba(244, 246, 249, 0.05); color: var(--texto); }
-.admin-nav button[aria-current="page"] { background: rgba(61, 107, 255, 0.16); color: var(--texto); }
+.admin-nav button[aria-current="page"] { background: rgba(70, 224, 140, 0.16); color: var(--texto); }
 .admin-nav button[aria-current="page"] svg { color: var(--azul-claro); }
 .admin-nav .contador { margin-left: auto; font-size: var(--t-xs); font-family: var(--fonte-display); background: rgba(244, 246, 249, 0.1); padding: 1px 8px; border-radius: var(--r-full); color: var(--texto-2); }
 .admin-nav .contador.vivo { background: var(--ok-fundo); color: #9BF0C4; }
@@ -98,7 +98,7 @@
 .feed li { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid var(--linha); }
 .feed li:first-child { border-top: 0; }
 .feed li.novo { animation: linha-nova 2.4s ease-out; }
-.feed .icone { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(61, 107, 255, 0.14); color: var(--azul-claro); }
+.feed .icone { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; background: rgba(70, 224, 140, 0.14); color: var(--azul-claro); }
 .feed .icone svg { width: 18px; height: 18px; }
 .feed .icone.ok { background: var(--ok-fundo); color: var(--ok); }
 .feed strong { font-size: var(--t-sm); font-weight: 500; display: block; }
@@ -106,7 +106,7 @@
 .feed time { font-size: var(--t-xs); color: var(--texto-3); white-space: nowrap; }
 
 .online-lista { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
-.online-cartao { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 14px; border-radius: var(--r-md); border: 1px solid var(--linha); background: rgba(4, 11, 33, 0.35); }
+.online-cartao { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; padding: 14px; border-radius: var(--r-md); border: 1px solid var(--linha); background: rgba(5, 6, 8, 0.35); }
 .online-cartao .avatar { grid-row: span 2; }
 .online-cartao strong { font-size: var(--t-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .online-cartao .email { font-size: var(--t-xs); color: var(--texto-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -114,12 +114,12 @@
 .online-cartao .meta .selo { font-weight: 500; }
 
 .estado-sistema { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
-.estado-item { padding: 14px; border: 1px solid var(--linha); border-radius: var(--r-md); background: rgba(4, 11, 33, 0.35); display: grid; gap: 4px; }
+.estado-item { padding: 14px; border: 1px solid var(--linha); border-radius: var(--r-md); background: rgba(5, 6, 8, 0.35); display: grid; gap: 4px; }
 .estado-item span { font-size: var(--t-xs); color: var(--texto-3); }
 .estado-item strong { font-size: var(--t-sm); font-weight: 600; display: flex; align-items: center; gap: 8px; word-break: break-word; }
 
 .horas { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; }
-.horas div { height: 34px; border-radius: 3px; background: rgba(61, 107, 255, var(--a, 0.06)); position: relative; }
+.horas div { height: 34px; border-radius: 3px; background: rgba(70, 224, 140, var(--a, 0.06)); position: relative; }
 .horas-rotulos { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); font-size: 10px; color: var(--texto-4); margin-top: 4px; }
 .horas-rotulos span:nth-child(odd) { visibility: hidden; }
 
@@ -131,7 +131,7 @@
 .lista-sessoes li:first-child { border-top: 0; padding-top: 0; }
 .lista-sessoes strong { font-size: var(--t-sm); font-weight: 500; }
 .lista-sessoes span:not(.selo):not(.sessao-icone) { display: block; font-size: var(--t-xs); color: var(--texto-3); }
-.sessao-icone { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(61, 107, 255, 0.14); color: var(--azul-claro); }
+.sessao-icone { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: rgba(70, 224, 140, 0.14); color: var(--azul-claro); }
 .sessao-icone svg { width: 18px; height: 18px; }
 .link-gerado { display: grid; gap: 8px; padding: 12px; border-radius: var(--r-md); border: 1px solid rgba(61, 214, 140, 0.3); background: var(--ok-fundo); font-size: var(--t-sm); }
 .link-gerado code { word-break: break-all; font-size: var(--t-xs); color: var(--texto); }
@@ -197,7 +197,7 @@
 .zap-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin-top: 8px; }
 .zap-fotos figure { margin: 0; position: relative; aspect-ratio: 1; border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--linha-forte); }
 .zap-fotos img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.zap-fotos button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(4, 11, 33, 0.8); color: #fff; cursor: pointer; display: grid; place-items: center; }
+.zap-fotos button { position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; border-radius: 50%; border: 0; background: rgba(5, 6, 8, 0.8); color: #fff; cursor: pointer; display: grid; place-items: center; }
 .zap-fotos button svg { width: 14px; height: 14px; }
 .zap-escolher { display: inline-flex; align-items: center; gap: 8px; }
 .zap-escolher input { position: absolute; width: 1px; height: 1px; opacity: 0; }

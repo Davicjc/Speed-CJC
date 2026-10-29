@@ -47,7 +47,7 @@ const FOOTER_ORIGIN = 'https://recursos.cjc.pics';
 // ---------- serviços ----------
 const db = openDatabase(config.dbFile, log);
 const backups = createBackups({ db, dataDir: config.dataDir, dias: config.backupDays, log });
-const mailer = createMailer(config.mail, { log });
+const mailer = createMailer(config.mail, { log, marca: config.siteName });
 if (mailer.enabled) mailer.verificar();
 const users = createUsers({ db, mailEnabled: mailer.enabled, log });
 const sessions = createSessions({ db, sessionDays: config.sessionDays, log });
@@ -55,7 +55,7 @@ const store = createTestsStore({ db, log });
 const cotas = createCotas({ db, dataDir: config.dataDir, porAparelho: config.anonTestsPerDay, porIp: config.anonTestsPerIpDay, log });
 const authn = createAuthn({ sessions, users, log });
 const captcha = createCaptcha({ dataDir: config.dataDir, turnstileSiteKey: config.captcha.turnstileSiteKey, turnstileSecret: config.captcha.turnstileSecret, powMax: config.captcha.powMax, log });
-const geo = createGeocoder({ provider: config.geocoder, url: config.nominatimUrl, userAgent: `audicom-speedtest/2.0 (${config.publicUrl || config.support.site}; ${config.support.email})`, log });
+const geo = createGeocoder({ provider: config.geocoder, url: config.nominatimUrl, userAgent: `speed-cjc/2.0 (${config.publicUrl || config.support.site || 'https://github.com/Davicjc/Speed-CJC'}${config.support.email ? `; ${config.support.email}` : ''})`, log });
 const hub = createEventHub({ log });
 const presence = createPresence({ onChange: (items) => hub.publish('presence', { items }) });
 const clock = createClock(config.ntpServers, log);
@@ -167,6 +167,15 @@ function tagsEstatistica(page) {
  * Guardada em memória já comprimida.
  */
 const paginasProntas = new Map();
+const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+/** E-mail e telefone de contato (privacidade e termos), só o que estiver configurado. */
+function contatoHtml() {
+    const { email, phone } = config.support;
+    const partes = [email ? `<a href="mailto:${escHtml(email)}">${escHtml(email)}</a>` : null, phone ? escHtml(phone) : null].filter(Boolean);
+    return partes.length ? partes.join(' ou ') : 'os contatos no rodapé do site';
+}
+
 async function paginaPronta(arquivo, page, req) {
     const abs = path.join(config.staticDir, arquivo);
     const st = await fsp.stat(abs);
@@ -176,6 +185,12 @@ async function paginaPronta(arquivo, page, req) {
     if (!p) {
         const html = (await fsp.readFile(abs, 'utf8'))
             .replaceAll('{{ORIGEM}}', origem)
+            .replaceAll('{{MARCA}}', escHtml(config.siteName))
+            .replaceAll('{{EMPRESA}}', escHtml(config.serverName))
+            .replaceAll('{{EM_CIDADE}}', config.serverLocation ? ` em ${escHtml(config.serverLocation)}` : '')
+            .replaceAll('{{COM_ENDERECO}}', config.support.address ? `, com endereço em ${escHtml(config.support.address)},` : '')
+            .replaceAll('{{CONTATO_HTML}}', contatoHtml())
+            .replaceAll('{{FORO}}', config.legalForo ? `da comarca de ${escHtml(config.legalForo)}` : 'do domicílio do consumidor')
             .replace('content="/assets/og.png"', `content="${origem}/assets/og.png"`)
             .replace('</head>', `${tagsEstatistica(page)}</head>`);
         p = { html: Buffer.from(html), gz: zlib.gzipSync(html, { level: 9 }) };
@@ -286,6 +301,7 @@ async function handleApi(req, res, url, ip) {
 
     if (p === '/api/config' && m === 'GET') {
         return sendJson(res, 200, {
+            siteName: config.siteName,
             serverName: config.serverName,
             serverLocation: config.serverLocation,
             ipv4Base: baseUrl('IPv4', req),
@@ -425,7 +441,7 @@ function publicResult(t) {
 // os pedidos da medição (o upload vai também para os nomes v4./v6.).
 const SEM_CONFERENCIA_ORIGEM = new Set(['/api/upload', '/api/rtc/offer']);
 function mesmaOrigem(req) {
-    if (req.headers['x-audicom'] === '1') return true;
+    if (req.headers['x-speed'] === '1') return true;
     const sfs = req.headers['sec-fetch-site'];
     if (sfs) return sfs === 'same-origin' || sfs === 'none';
     const o = req.headers.origin;
@@ -457,7 +473,7 @@ async function handle(req, res) {
         const rp = /^\/r\/([0-9A-Za-z]{15})$/.exec(url.pathname);
         if (rp) {
             const t = store.get(rp[1]);
-            const html = renderResultPage(t ? publicResult(t) : null, siteOrigin(req)).replace('</head>', `${tagsEstatistica('resultado')}</head>`);
+            const html = renderResultPage(t ? publicResult(t) : null, siteOrigin(req), config.siteName).replace('</head>', `${tagsEstatistica('resultado')}</head>`);
             res.writeHead(t ? 200 : 404, { ...securityHeaders(req, 'resultado'), 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-cache' });
             return res.end(req.method === 'HEAD' ? undefined : html);
         }
@@ -478,6 +494,12 @@ async function handle(req, res) {
             return enviarPagina(req, res, await paginaPronta(page, name, req), securityHeaders(req, name));
         }
 
+        // manifestos do app instalável: o nome vem do SITE_NAME
+        if (url.pathname === '/site.webmanifest' || url.pathname === '/tecnico.webmanifest') {
+            const texto = (await fsp.readFile(path.join(config.staticDir, url.pathname.slice(1)), 'utf8')).replaceAll('{{MARCA}}', JSON.stringify(config.siteName).slice(1, -1));
+            res.writeHead(200, { 'Content-Type': 'application/manifest+json; charset=utf-8', 'Cache-Control': 'no-cache', 'X-Content-Type-Options': 'nosniff' });
+            return res.end(req.method === 'HEAD' ? undefined : texto);
+        }
         const abs = resolvePublic(config.staticDir, url.pathname);
         if (abs && await serveFile(req, res, abs, { headers: { 'X-Content-Type-Options': 'nosniff' } })) return;
 
@@ -507,11 +529,11 @@ await Promise.race([clock.sync().catch(() => {}), new Promise(r => setTimeout(r,
 
 await nomesConferidos;
 server.listen({ port: config.port, host: config.host, ipv6Only: false }, () => {
-    log.info(`[audicom-speedtest] ouvindo em ${config.host}:${config.port} (TCP) — UDP ${config.udpPort} para perda de pacotes`);
-    log.info(`[audicom-speedtest] teste IPv4 via ${baseUrl('IPv4', null) || '(indisponível)'} · IPv6 via ${baseUrl('IPv6', null) || '(indisponível)'}`);
+    log.info(`[speed-cjc] ouvindo em ${config.host}:${config.port} (TCP) — UDP ${config.udpPort} para perda de pacotes`);
+    log.info(`[speed-cjc] teste IPv4 via ${baseUrl('IPv4', null) || '(indisponível)'} · IPv6 via ${baseUrl('IPv6', null) || '(indisponível)'}`);
     const donos = db.all("SELECT email FROM users WHERE role = 'owner'").map((r) => r.email);
-    log.info(`[audicom-speedtest] banco: ${config.dbFile} · e-mail: ${mailer.enabled ? 'ligado' : 'desligado (links de senha pelo painel)'} · captcha: ${captcha.provider}`);
-    log.info(`[audicom-speedtest] donos: ${donos.join(', ') || 'nenhum ainda — crie com: cd server && npm run admin -- dono SEU@EMAIL'}`);
+    log.info(`[speed-cjc] banco: ${config.dbFile} · e-mail: ${mailer.enabled ? 'ligado' : 'desligado (links de senha pelo painel)'} · captcha: ${captcha.provider}`);
+    log.info(`[speed-cjc] donos: ${donos.join(', ') || 'nenhum ainda — crie com: cd server && npm run admin -- dono SEU@EMAIL'}`);
 });
 
 // Retenção: testes feitos sem conta são apagados depois de ANON_RETENTION_DAYS.
@@ -542,7 +564,7 @@ if (config.publicIPv4FromDns) {
 }
 
 function shutdown(sig) {
-    log.info(`[audicom-speedtest] ${sig} recebido, encerrando…`);
+    log.info(`[speed-cjc] ${sig} recebido, encerrando…`);
     server.close();
     rtc.shutdown();
     clock.stop();

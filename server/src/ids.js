@@ -47,10 +47,16 @@ const SP = new Intl.DateTimeFormat('en-CA', {
     hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
 });
 
-/** Número de protocolo legível: AUD-AAMMDD-HHMM-XXXX (hora de Brasília). */
+/** Prefixo do protocolo (PROTOCOL_PREFIX no .env, 2 a 6 letras/números; padrão SPD). */
+export const prefixoProtocolo = () => {
+    const p = String(process.env.PROTOCOL_PREFIX || '').trim().toUpperCase();
+    return /^[A-Z0-9]{2,6}$/.test(p) ? p : 'SPD';
+};
+
+/** Número de protocolo legível: SPD-AAMMDD-HHMM-XXXX (hora de Brasília). */
 export function protocol(ms) {
     const p = Object.fromEntries(SP.formatToParts(new Date(ms)).map(x => [x.type, x.value]));
-    return `AUD-${p.year}${p.month}${p.day}-${p.hour}${p.minute}-${rand(4, PROTO)}`;
+    return `${prefixoProtocolo()}-${p.year}${p.month}${p.day}-${p.hour}${p.minute}-${rand(4, PROTO)}`;
 }
 
 const DAY = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit' });

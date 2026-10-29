@@ -1,6 +1,7 @@
 // /tree: mapa com todos os caminhos do site, para quem cada um é, se a conta
 // atual tem acesso, e botões para compartilhar.
 
+import { MARCA } from '../core/marca.js';
 import { ICON } from '../core/icons.js';
 import { iniciarPagina } from '../core/shell.js';
 import { $, copiar, esc, evento, toast } from '../core/util.js';
@@ -91,7 +92,7 @@ function itemHtml(n, nivel) {
         : `<a class="arvore-link" href="${esc(n.caminho)}"><code>${esc(n.caminho)}</code><strong>${esc(n.titulo)}</strong></a>`;
     const compartilhar = n.exemplo ? '' : `<span class="arvore-botoes">
             <button type="button" class="botao botao-fantasma botao-icone" data-copiar="${esc(n.caminho)}" aria-label="Copiar o link de ${esc(n.titulo)}" title="Copiar link">${ICON.copy}</button>
-            <a class="botao botao-fantasma botao-icone" href="https://wa.me/?text=${encodeURIComponent(`${n.titulo}, teste de velocidade Audicom: ${linkCompleto(n.caminho)}`)}" target="_blank" rel="noopener" aria-label="Enviar ${esc(n.titulo)} no WhatsApp" title="Enviar no WhatsApp">${ICON.whatsapp}</a>
+            <a class="botao botao-fantasma botao-icone" href="https://wa.me/?text=${encodeURIComponent(`${n.titulo}, ${MARCA}: ${linkCompleto(n.caminho)}`)}" target="_blank" rel="noopener" aria-label="Enviar ${esc(n.titulo)} no WhatsApp" title="Enviar no WhatsApp">${ICON.whatsapp}</a>
         </span>`;
     const filhos = (n.filhos || []).length ? `<ul>${n.filhos.map((f) => itemHtml(f, nivel + 1)).join('')}</ul>` : '';
     return `<li class="nivel-${nivel}${pode ? '' : ' bloqueado'}">
@@ -121,7 +122,7 @@ const botao = $('#compartilhar-mapa');
 botao.innerHTML = `${ICON.share}Compartilhar o mapa`;
 botao.addEventListener('click', async () => {
     if (navigator.share) {
-        try { await navigator.share({ title: 'Mapa do site: teste de velocidade Audicom', text: 'Todos os caminhos do teste de velocidade da Audicom', url: urlMapa }); evento('share', { method: 'nativo', content_type: 'mapa' }); return; }
+        try { await navigator.share({ title: 'Mapa do site: ${MARCA}', text: `Todos os caminhos do ${MARCA}`, url: urlMapa }); evento('share', { method: 'nativo', content_type: 'mapa' }); return; }
         catch (err) { if (err && err.name === 'AbortError') return; }
     }
     const ok = await copiar(urlMapa);
@@ -130,5 +131,5 @@ botao.addEventListener('click', async () => {
 });
 const zap = $('#zap-mapa');
 zap.innerHTML = `${ICON.whatsapp}WhatsApp`;
-zap.href = 'https://wa.me/?text=' + encodeURIComponent(`Todos os caminhos do teste de velocidade da Audicom: ${urlMapa}`);
+zap.href = 'https://wa.me/?text=' + encodeURIComponent(`Todos os caminhos do ${MARCA}: ${urlMapa}`);
 zap.addEventListener('click', () => evento('share', { method: 'whatsapp', content_type: 'mapa' }));

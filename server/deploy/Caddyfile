@@ -2,9 +2,9 @@
 # Instalar:  apt install caddy   →   cp deploy/Caddyfile /etc/caddy/Caddyfile   →   systemctl reload caddy
 #
 # ANTES precisa existir:
-#  1. DNS: velocidadeteste.audicomtelecom.com.br  →  registro A (e AAAA, se houver IPv6)
-#          v4.velocidadeteste.audicomtelecom.com.br → SÓ registro A
-#          v6.velocidadeteste.audicomtelecom.com.br → SÓ registro AAAA
+#  1. DNS: teste.exemplo.com.br  →  registro A (e AAAA, se houver IPv6)
+#          v4.teste.exemplo.com.br → SÓ registro A
+#          v6.teste.exemplo.com.br → SÓ registro AAAA
 #  2. Portas TCP 80 e 443 abertas e encaminhadas até esta máquina.
 #  3. Porta UDP 8080 (UDP_PORT) encaminhada DIRETO para esta máquina — proxy
 #     reverso não carrega UDP; é por ela que roda o teste de perda de pacotes.
@@ -28,7 +28,7 @@
 	}
 }
 
-velocidadeteste.audicomtelecom.com.br {
+teste.exemplo.com.br {
 	tls {
 		on_demand
 	}
@@ -56,7 +56,7 @@ velocidadeteste.audicomtelecom.com.br {
 }
 
 # Nomes só-IPv4 e só-IPv6, usados no diagnóstico IPv4/IPv6.
-v4.velocidadeteste.audicomtelecom.com.br, v6.velocidadeteste.audicomtelecom.com.br {
+v4.teste.exemplo.com.br, v6.teste.exemplo.com.br {
 	tls {
 		on_demand
 	}

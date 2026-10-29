@@ -1,8 +1,8 @@
-// Login e cliente da API — tudo no servidor da Audicom.
+// Login e cliente da API — tudo no próprio servidor.
 //
 // A sessão fica num cookie HttpOnly (o JavaScript da página nem enxerga):
 // o navegador manda sozinho em cada pedido. Os pedidos que mudam algo levam
-// o cabeçalho X-Audicom, que o servidor exige para recusar pedidos vindos de
+// o cabeçalho X-Speed, que o servidor exige para recusar pedidos vindos de
 // outros sites (CSRF).
 
 import { esc } from './util.js';
@@ -28,7 +28,7 @@ export class ApiError extends Error {
  */
 export async function api(caminho, opts = {}) {
     const { method = 'GET', body, bruto = false, tentativa = 0 } = opts;
-    const headers = { 'X-Audicom': '1' };
+    const headers = { 'X-Speed': '1' };
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     let res;
     try {
@@ -60,7 +60,7 @@ export function sessaoAtual({ recarregar = false } = {}) {
     return mePromise;
 }
 
-const canal = typeof BroadcastChannel === 'function' ? new BroadcastChannel('audicom-sessao') : null;
+const canal = typeof BroadcastChannel === 'function' ? new BroadcastChannel('speedcjc-sessao') : null;
 /** Avisa as outras abas que a pessoa entrou ou saiu. */
 function avisarAbas(tipo) { try { canal && canal.postMessage(tipo); } catch { /* ok */ } }
 export function aoMudarSessao(cb) { if (canal) canal.addEventListener('message', (ev) => cb(ev.data)); }

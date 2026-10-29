@@ -1,8 +1,8 @@
 {
   "id": "/tecnico",
-  "name": "Speed Teste Técnico Audicom",
-  "short_name": "Audicom Técnico",
-  "description": "Diagnóstico completo da conexão para os técnicos da Audicom Telecom.",
+  "name": "{{MARCA}} Técnico",
+  "short_name": "{{MARCA}} Técnico",
+  "description": "Diagnóstico completo da conexão, para técnicos.",
   "start_url": "/tecnico",
   "scope": "/",
   "display": "standalone",

@@ -12,7 +12,7 @@ async function getJson(url) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 3500);
     try {
-        const res = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'audicom-speedtest/1.0' } });
+        const res = await fetch(url, { signal: ctrl.signal, headers: { 'User-Agent': 'speed-cjc/1.0' } });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         return await res.json();
     } finally {

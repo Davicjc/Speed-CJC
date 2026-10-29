@@ -21,7 +21,7 @@ export function createAuthn({ sessions, users, log = console }) {
         if (!u) throw err(401, 'Entre na sua conta para continuar.', 'login');
         if (u.profile.disabled) {
             sessions.encerrar(u.token);
-            throw err(403, 'Esta conta está desativada. Fale com o suporte da Audicom.', 'disabled');
+            throw err(403, 'Esta conta está desativada. Fale com o suporte.', 'disabled');
         }
         return u;
     }
@@ -50,7 +50,7 @@ export function createAuthn({ sessions, users, log = console }) {
         const u = requireUser(req, ip);
         if (!users.isTecnico(u.profile)) {
             log.warn(`[tecnico] acesso negado a ${u.profile.email} (${ip})`);
-            throw err(403, 'O teste técnico é só para técnicos e administradores da Audicom.', 'forbidden');
+            throw err(403, 'O teste técnico é só para técnicos e administradores.', 'forbidden');
         }
         return u;
     }

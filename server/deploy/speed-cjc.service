@@ -1,8 +1,8 @@
 # Modelo da unidade do systemd. Não copie à mão: tools/servico.sh preenche
 # @PASTA@ (a pasta server/) e @NODE@ (o node instalado) e instala em
-# /etc/systemd/system/audicom-speedtest.service.
+# /etc/systemd/system/speed-cjc.service.
 [Unit]
-Description=Teste de velocidade Audicom (site, medição, contas)
+Description=Speed CJC (teste de velocidade: site, medição, contas)
 After=network-online.target
 Wants=network-online.target
 

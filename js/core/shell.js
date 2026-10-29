@@ -1,6 +1,7 @@
 // Moldura comum das páginas: topo (marca, navegação, conta), rodapé,
 // navegação do celular, fundo de constelação, sessão e "sinal de vida".
 
+import { EMPRESA, MARCA } from './marca.js';
 import { aoMudarSessao, api, enviarConfirmacao, getConfig, sair, sessaoAtual } from './auth.js';
 import { coletarAparelho } from './device.js';
 import { ICON } from './icons.js';
@@ -16,14 +17,14 @@ const NAV = [
 
 function marcaHtml(pagina) {
     if (pagina === 'tecnico') {
-        return `<a class="marca" href="/tecnico" aria-label="Audicom Telecom, speed teste técnico — início">
+        return `<a class="marca" href="/tecnico" aria-label="${esc(MARCA)}, teste técnico — início">
         <img class="simbolo" src="/assets/simbolo.webp" alt="" width="27" height="25">
-        <img class="palavra" src="/assets/logotipo.webp" alt="Audicom Telecom" width="86" height="25">
-        <span class="produto">Speed teste<br><span class="selo-tecnico">Técnico</span></span></a>`;
+        <img class="palavra" src="/assets/logotipo.webp" alt="${esc(MARCA)}" width="129" height="25">
+        <span class="produto">Teste<br><span class="selo-tecnico">Técnico</span></span></a>`;
     }
-    return `<a class="marca" href="/" aria-label="Audicom Telecom, teste de velocidade — início">
+    return `<a class="marca" href="/" aria-label="${esc(MARCA)}, teste de velocidade — início">
         <img class="simbolo" src="/assets/simbolo.webp" alt="" width="27" height="25">
-        <img class="palavra" src="/assets/logotipo.webp" alt="Audicom Telecom" width="86" height="25">
+        <img class="palavra" src="/assets/logotipo.webp" alt="${esc(MARCA)}" width="129" height="25">
         <span class="produto">Teste de<br>velocidade</span></a>`;
 }
 
@@ -114,12 +115,13 @@ function renderRodape(cfg) {
     const r = $('#rodape');
     if (!r) return;
     const sup = (cfg && cfg.support) || {};
+    const empresa = (cfg && cfg.serverName) || EMPRESA;
     const wa = sup.whatsapp ? `https://wa.me/${encodeURIComponent(sup.whatsapp)}` : null;
     r.innerHTML = `<div class="rodape-dentro">
         <div>
-            <div class="marca-rodape"><img src="/assets/logotipo.webp" alt="Audicom Telecom" width="96" height="28"></div>
-            <p>Teste de velocidade da Audicom Telecom. Mede a sua conexão até o nosso servidor em ${esc((cfg && cfg.serverLocation) || 'Uberlândia, MG')}, com o mesmo método para todo mundo.</p>
-            <p style="margin-top:10px">Av. Anselmo Alves dos Santos, 1542, Uberlândia, MG</p>
+            <div class="marca-rodape"><img src="/assets/logotipo.webp" alt="${esc(MARCA)}" width="144" height="28"></div>
+            <p>Teste de velocidade ${esc(empresa)}. Mede a sua conexão até o nosso servidor${cfg && cfg.serverLocation ? ` em ${esc(cfg.serverLocation)}` : ''}, com o mesmo método para todo mundo.</p>
+            ${sup.address ? `<p style="margin-top:10px">${esc(sup.address)}</p>` : ''}
         </div>
         <div><strong>Ajuda</strong><ul>
             <li><a href="/como-medimos">Como medimos</a></li>
@@ -127,12 +129,13 @@ function renderRodape(cfg) {
             ${sup.central ? `<li><a href="${esc(sup.central)}" target="_blank" rel="noopener">Central do cliente</a></li>` : ''}
             ${sup.phone ? `<li><a href="tel:${esc(String(sup.phone).replace(/\D/g, ''))}">${esc(sup.phone)}</a></li>` : ''}
         </ul></div>
-        <div><strong>Audicom Telecom</strong><ul>
-            <li><a href="${esc(sup.site || 'https://audicomtelecom.com.br')}" target="_blank" rel="noopener">Site da Audicom</a></li>
+        <div><strong>${esc(empresa)}</strong><ul>
+            ${sup.site ? `<li><a href="${esc(sup.site)}" target="_blank" rel="noopener">Site da empresa</a></li>` : ''}
+            ${sup.email ? `<li><a href="mailto:${esc(sup.email)}">${esc(sup.email)}</a></li>` : ''}
             <li><a href="/privacidade">Política de privacidade</a></li>
             <li><a href="/termos">Termos de uso</a></li>
             <li><a href="/tree">Mapa do site</a></li>
-            <li>© ${new Date().getFullYear()} Audicom Telecom</li>
+            <li>© ${new Date().getFullYear()} ${esc(empresa)}</li>
         </ul></div></div>`;
 }
 

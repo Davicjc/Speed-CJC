@@ -21,7 +21,7 @@ $('#pagina').hidden = false;
 let perfil = sessao.me.profile;
 let testes = [];
 let proximo = null;
-let dias = storage('audicom.painel-periodo', 30);
+let dias = storage('speedcjc.painel-periodo', 30);
 let mapa = null;
 
 faixaConfirmacao($('#faixa-confirmacao'), sessao.user, sessao.me);
@@ -55,7 +55,7 @@ window.addEventListener('hashchange', () => abrirAba(location.hash.slice(1) in A
 function marcarPeriodo() { $$('#periodos button').forEach((b) => b.setAttribute('aria-pressed', String(Number(b.dataset.dias) === dias))); }
 $$('#periodos button').forEach((b) => b.addEventListener('click', () => {
     dias = Number(b.dataset.dias);
-    store('audicom.painel-periodo', dias);
+    store('speedcjc.painel-periodo', dias);
     marcarPeriodo();
     desenhar();
 }));
@@ -230,7 +230,7 @@ $('#h-csv').addEventListener('click', () => {
     const c = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
     const n = (v) => (v == null ? '' : String(Math.round(v * 100) / 100).replace('.', ','));
     const linhas = lista.map((t) => [t.protocol, fmtDataHora(t.createdAt), NOME_MODO[t.mode], n(t.download), n(t.upload), n(t.ping), n(t.jitter), n(t.loss), lugar(t), aparelho(t)].map(c).join(';'));
-    baixarArquivo(`meus-testes-audicom-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + [cab.join(';')].concat(linhas).join('\r\n'), 'text/csv;charset=utf-8');
+    baixarArquivo(`meus-testes-${new Date().toISOString().slice(0, 10)}.csv`, '﻿' + [cab.join(';')].concat(linhas).join('\r\n'), 'text/csv;charset=utf-8');
 });
 
 // ---------- meus dados ----------
@@ -238,7 +238,7 @@ function preencherDados() {
     $('#d-nome').value = perfil.name || '';
     $('#d-email').value = perfil.email || '';
     $('#s-usuario').value = perfil.email || ''; // gerenciador de senhas salva a nova senha na conta certa
-    $('#d-email-ajuda').innerHTML = !sessao.me.mail ? 'Para trocar o e-mail, fale com o suporte da Audicom.'
+    $('#d-email-ajuda').innerHTML = !sessao.me.mail ? 'Para trocar o e-mail, fale com o suporte.'
         : sessao.user.emailVerified ? `${ICON.checkCircle.replace('<svg', '<svg width="14" height="14" style="display:inline;vertical-align:-2px;color:var(--ok)"')} E-mail confirmado. Para trocar o e-mail, fale com o suporte.`
         : 'E-mail ainda não confirmado. Veja o aviso no topo da página.';
     $('#d-tel').value = telefoneBonito(perfil.phone);
@@ -327,7 +327,7 @@ $('#baixar-dados').innerHTML = ICON.fileDown + 'Baixar arquivo';
 $('#baixar-dados').addEventListener('click', (e) => comCarga(e.currentTarget, async () => {
     try {
         const res = await api('/api/me/export', { bruto: true });
-        baixarArquivo(`meus-dados-audicom-${new Date().toISOString().slice(0, 10)}.json`, await res.blob());
+        baixarArquivo(`meus-dados-${new Date().toISOString().slice(0, 10)}.json`, await res.blob());
     } catch (err) { toast(err.message, 'ruim'); }
 }));
 

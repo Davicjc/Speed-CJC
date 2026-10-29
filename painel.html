@@ -2,14 +2,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="marca" content="{{MARCA}}">
+<meta name="empresa" content="{{EMPRESA}}">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Meu painel | Teste de velocidade Audicom</title>
-<meta name="theme-color" content="#081535">
+<title>Meu painel | {{MARCA}}</title>
+<meta name="theme-color" content="#090C10">
 <meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.ico">
 <link rel="manifest" href="/site.webmanifest">
-<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/base.css">
 <link rel="stylesheet" href="/vendor/leaflet.css">
 <link rel="stylesheet" href="/css/painel.css">
@@ -107,7 +109,7 @@
             <div class="grade-conta">
                 <div class="pilha">
                     <form class="painel" id="form-dados" method="post" novalidate>
-                        <div class="painel-cabeca"><div><h2>Seus dados</h2><p>Usados no seu histórico e pelo suporte da Audicom quando você pedir ajuda.</p></div></div>
+                        <div class="painel-cabeca"><div><h2>Seus dados</h2><p>Usados no seu histórico e pelo suporte quando você pedir ajuda.</p></div></div>
                         <div class="form-dados">
                             <div class="campo total"><label for="d-nome">Nome completo</label><input class="entrada" id="d-nome" autocomplete="name" maxlength="80" required></div>
                             <div class="campo total"><label for="d-email">E-mail</label><input class="entrada" id="d-email" type="email" readonly aria-describedby="d-email-ajuda"><span class="ajuda" id="d-email-ajuda"></span></div>

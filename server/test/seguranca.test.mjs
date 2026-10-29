@@ -25,11 +25,11 @@ async function resolverCaptcha() {
     }
     throw new Error('captcha sem solução');
 }
-const banco = () => new DatabaseSync(path.join(srv.dataDir, 'audicom.db'));
+const banco = () => new DatabaseSync(path.join(srv.dataDir, 'speedcjc.db'));
 const codigoDoLink = (saida) => /nova-senha=([A-Za-z0-9_-]+)/.exec(saida)[1];
 
 test('arquivos internos não são servidos', async () => {
-    for (const p of ['/server/src/config.js', '/.git/config', '/docs/MANUAL.md', '/NOTAS-DESTA-MAQUINA.md', '/server/data/audicom.db', '/data/audicom.db', '/server/data/captcha.key',
+    for (const p of ['/server/src/config.js', '/.git/config', '/docs/MANUAL.md', '/NOTAS-DESTA-MAQUINA.md', '/server/data/speedcjc.db', '/data/speedcjc.db', '/server/data/captcha.key',
         '/server/.env', '/.antigo/index.html', '/server/package.json', '/js/../server/src/server.js', '/%2e%2e/server/src/server.js']) {
         const r = await fetch(BASE + p);
         assert.equal(r.status, 404, `${p} deveria dar 404 (deu ${r.status})`);
@@ -52,7 +52,7 @@ test('sem sessão (ou com cookie inventado) não entra em nada', async () => {
     const n = navegador(BASE);
     assert.equal((await n.get('/api/admin/overview')).status, 401);
     assert.equal((await n.get('/api/me')).status, 401);
-    n.cookie = 'audicom_sessao=' + crypto.randomBytes(32).toString('base64url');
+    n.cookie = 'speedcjc_sessao=' + crypto.randomBytes(32).toString('base64url');
     assert.equal((await n.get('/api/me')).status, 401);
     assert.equal((await n.get('/api/admin/users')).status, 401);
 });

@@ -2,19 +2,21 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="marca" content="{{MARCA}}">
+<meta name="empresa" content="{{EMPRESA}}">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Speed Teste Técnico | Audicom Telecom</title>
-<meta name="description" content="Ferramenta interna da Audicom Telecom: teste de velocidade técnico com diagnóstico completo.">
+<title>Teste técnico | {{MARCA}}</title>
+<meta name="description" content="Ferramenta interna: teste de velocidade técnico com diagnóstico completo.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0E1219">
 <link rel="icon" href="/favicon.ico">
 <link rel="apple-touch-icon" href="/assets/icone-192.png">
 <link rel="manifest" href="/tecnico.webmanifest">
-<meta name="apple-mobile-web-app-title" content="Audicom Técnico">
+<meta name="apple-mobile-web-app-title" content="{{MARCA}} Técnico">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
-<link rel="preload" href="/assets/fonts/spacegrotesk-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="/assets/fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/archivo-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="/assets/fonts/ibm-plex-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/css/base.css">
 <link rel="stylesheet" href="/css/teste.css">
 <link rel="stylesheet" href="/css/painel.css">
@@ -28,7 +30,7 @@
     <section class="palco miolo" aria-label="Speed teste técnico">
         <div class="palco-texto">
             <div class="intro" id="intro">
-                <h1><span class="sobretitulo">Speed teste técnico Audicom</span>Diagnóstico completo da conexão</h1>
+                <h1><span class="sobretitulo">{{MARCA}} técnico</span>Diagnóstico completo da conexão</h1>
                 <p class="lead">Todas as medidas, sem filtro: velocidade, latência com a linha cheia, perda por UDP, IPv4 e IPv6, NAT e CGNAT, rota salto a salto e tempo até aplicativos e bancos. O teste fica guardado junto com o atendimento.</p>
 
                 <details class="atendimento" id="atendimento" open>
@@ -126,7 +128,7 @@
             <div><dt>Seu IP</dt><dd id="c-ip"><span class="esqueleto" style="width:120px"></span></dd></div>
             <div><dt>Operadora</dt><dd id="c-isp"><span class="esqueleto" style="width:140px"></span></dd></div>
             <div><dt>Local</dt><dd id="c-local"><span class="esqueleto" style="width:110px"></span></dd></div>
-            <div><dt>Servidor</dt><dd id="c-servidor">Audicom Telecom, Uberlândia, MG</dd></div>
+            <div><dt>Servidor</dt><dd id="c-servidor">{{EMPRESA}}</dd></div>
         </dl>
     </section>
 
@@ -161,7 +163,7 @@
                 <p>Os feitos na página do cliente e aqui no técnico. Clique para ver tudo o que foi medido.</p>
             </div>
             <form class="filtros-tec" id="filtros-tec" role="search">
-                <input class="entrada" id="busca-tec" type="search" placeholder="Protocolo AUD-…, nome ou e-mail" aria-label="Buscar testes">
+                <input class="entrada" id="busca-tec" type="search" placeholder="Protocolo SPD-…, nome ou e-mail" aria-label="Buscar testes">
                 <div class="segmento" role="radiogroup" aria-label="Origem do teste" id="origem-tec">
                     <button type="button" role="radio" aria-checked="true" data-origem="">Todos</button>
                     <button type="button" role="radio" aria-checked="false" data-origem="cliente">Clientes</button>

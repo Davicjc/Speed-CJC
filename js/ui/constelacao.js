@@ -1,13 +1,13 @@
-// Fundo de constelação (a "rede" do site da Audicom). Durante o teste, pacotes
+// Fundo de constelação (a "rede"). Durante o teste, pacotes
 // de luz percorrem as ligações: no download convergem para o velocímetro, no
 // upload saem dele. A quantidade acompanha a velocidade medida.
 //
 // Desenho leve: pausa com a aba escondida, reduz a densidade em aparelhos
 // lentos e fica parado para quem pediu menos movimento no sistema.
 
-const CORES = { download: [0, 212, 255], upload: [148, 121, 255] };
+const CORES = { download: [70, 224, 140], upload: [122, 162, 247] };
 // cor da rede (linhas e nós) vem do tema da página: --constelacao: "r, g, b"
-const corDaRede = () => (getComputedStyle(document.body).getPropertyValue('--constelacao').trim() || '96, 128, 255');
+const corDaRede = () => (getComputedStyle(document.body).getPropertyValue('--constelacao').trim() || '70, 224, 140');
 
 let estado = null;
 
@@ -127,7 +127,7 @@ export function iniciarConstelacao() {
         }
         // nós
         for (const n of nos) {
-            ctx.fillStyle = n.brilho === 1 ? 'rgba(235, 240, 255, 0.85)' : `rgba(${rede}, ${Math.min(1, n.brilho + 0.1)})`;
+            ctx.fillStyle = n.brilho === 1 ? 'rgba(232, 255, 242, 0.85)' : `rgba(${rede}, ${Math.min(1, n.brilho + 0.1)})`;
             ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
         }
         // pacotes

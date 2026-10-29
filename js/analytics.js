@@ -11,7 +11,7 @@
     var id = script && script.getAttribute('data-ga');
     if (!id) return;
 
-    var CHAVE = 'audicom.cookies';
+    var CHAVE = 'speedcjc.cookies';
     function ler() { try { return localStorage.getItem(CHAVE); } catch (e) { return null; } }
     function gravar(v) { try { localStorage.setItem(CHAVE, v); } catch (e) { /* navegação privada: vale só nesta visita */ } }
     function semConsulta(u) { return u ? String(u).split('#')[0].split('?')[0] : u; }

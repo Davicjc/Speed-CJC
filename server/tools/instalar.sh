@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # Instala o teste de velocidade numa VM Debian/Ubuntu crua, do zero.
 #
-#   curl -fsSL https://raw.githubusercontent.com/davicjc/audicom-speedtest/main/server/tools/instalar.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/Davicjc/Speed-CJC/main/server/tools/instalar.sh | sudo bash
 #       → instala e liga o site em http://IP-DA-VM:8080 (rede local, sem domínio)
 #
 #   curl -fsSL .../instalar.sh | sudo bash -s -- --dominio teste.seudominio.com.br --dono voce@email --dono-nome "Seu Nome"
 #       → instala e publica com HTTPS no domínio (chama tools/publicar.sh)
 #
 # Opções:
-#   --pasta DIR        onde instalar (padrão /opt/audicom-speedtest)
-#   --repo URL         repositório git (padrão https://github.com/davicjc/audicom-speedtest.git)
+#   --pasta DIR        onde instalar (padrão /opt/speed-cjc)
+#   --repo URL         repositório git (padrão https://github.com/Davicjc/Speed-CJC.git)
 #   --so-preparar      só instala dependências, Node e o projeto; não liga nada
 #   --dono EMAIL / --dono-nome "Nome"   cria o administrador principal
 #   qualquer outra opção (--dominio, --ip, --sem-ipv6, --turnstile-*, ...) vai para o publicar.sh
@@ -17,8 +17,8 @@
 # Pode rodar de novo para atualizar: ele faz git pull e reinstala as dependências.
 set -euo pipefail
 
-PASTA=/opt/audicom-speedtest
-REPO=https://github.com/davicjc/audicom-speedtest.git
+PASTA=/opt/speed-cjc
+REPO=https://github.com/Davicjc/Speed-CJC.git
 SO_PREPARAR=0; DOMINIO=""; DONO=""; DONO_NOME=""; RESTO=()
 while [ $# -gt 0 ]; do
     case "$1" in
@@ -49,7 +49,7 @@ fi
 
 passo "1. Pacotes do sistema"
 apt-get update -qq
-apt-get install -y -qq ca-certificates curl git gnupg iproute2 mtr-tiny tcpdump >/dev/null
+apt-get install -y -qq ca-certificates curl git gnupg iproute2 iputils-ping mtr-tiny tcpdump >/dev/null
 verde "  ✓ git, curl, mtr (rota) e tcpdump (diagnóstico de NAT)"
 
 passo "2. Node.js 22"
