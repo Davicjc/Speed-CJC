@@ -5,8 +5,22 @@
 const NS = 'http://www.w3.org/2000/svg';
 const CX = 200, CY = 200, R = 160;
 const INICIO = 135, VARREDURA = 270;
-const ESCALA_PADRAO = [0, 5, 10, 50, 100, 250, 500, 750, 1000];
-const ESCALA_GIGA = [0, 10, 50, 100, 250, 500, 1000, 2500, 5000];
+// Escala que cresce: começa em 50 e, quando a velocidade passa do topo, sobe
+// para a próxima. O ponteiro fica sempre da metade do arco para cima, então
+// quem testa vê o arco cheio em vez de um risquinho no começo de uma escala de 1G.
+const ESCALAS = [
+    [0, 10, 20, 30, 40, 50],
+    [0, 20, 40, 60, 80, 100],
+    [0, 50, 100, 150, 200],
+    [0, 50, 100, 150, 200, 250, 300],
+    [0, 100, 200, 300, 400, 500],
+    [0, 100, 200, 300, 400, 500, 600, 700],
+    [0, 200, 400, 600, 800, 1000],
+    [0, 300, 600, 900, 1200, 1500],
+    [0, 500, 1000, 1500, 2000, 2500],
+    [0, 1000, 2000, 3000, 4000, 5000],
+    [0, 2000, 4000, 6000, 8000, 10000],
+];
 
 const rad = (g) => (g * Math.PI) / 180;
 const ponto = (ang, r = R) => [CX + r * Math.cos(rad(ang)), CY + r * Math.sin(rad(ang))];
@@ -29,7 +43,8 @@ function el(nome, attrs = {}, pai) {
 const cor = (nome, padrao) => getComputedStyle(document.body).getPropertyValue(nome).trim() || padrao;
 
 export function criarVelocimetro(alvo) {
-    let escala = ESCALA_PADRAO;
+    let nivel = 0;
+    let escala = ESCALAS[0];
     const svg = el('svg', { viewBox: '0 0 400 400', class: 'velo-svg', role: 'img', 'aria-hidden': 'true' });
     const defs = el('defs', {}, svg);
     const gradDl = el('linearGradient', { id: 'grad-dl', x1: '0', y1: '1', x2: '1', y2: '0' }, defs);
@@ -129,15 +144,19 @@ export function criarVelocimetro(alvo) {
             const grad = m === 'upload' ? 'url(#grad-ul)' : 'url(#grad-dl)';
             valorArco.setAttribute('stroke', grad);
             brilhoValor.setAttribute('stroke', grad);
+            // cada etapa começa na escala de 50 (o upload costuma ser menor que o download)
+            if (m === 'download' || m === 'upload' || m === 'fim') this.reiniciarEscala();
             if (m === 'ocioso' || m === 'ping') this.valor(0, true);
         },
         get modoAtual() { return modo; },
         valor(v, imediato = false) {
-            if (v > escala[escala.length - 1] && escala === ESCALA_PADRAO) { escala = ESCALA_GIGA; desenharMarcas(); }
+            let n = nivel;
+            while (v > ESCALAS[n][ESCALAS[n].length - 1] && n < ESCALAS.length - 1) n++;
+            if (n !== nivel) { nivel = n; escala = ESCALAS[n]; desenharMarcas(); }
             destino = Math.max(0, v || 0);
             if (imediato) { atual = destino; pintar(); return; }
             if (!raf) raf = requestAnimationFrame(animar);
         },
-        reiniciarEscala() { if (escala !== ESCALA_PADRAO) { escala = ESCALA_PADRAO; desenharMarcas(); } },
+        reiniciarEscala() { if (nivel !== 0) { nivel = 0; escala = ESCALAS[0]; atual = Math.min(atual, 50); desenharMarcas(); pintar(); } },
     };
 }
