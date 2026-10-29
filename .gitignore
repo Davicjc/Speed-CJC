@@ -16,3 +16,12 @@ server/.env
 
 # notas com IPs e dados desta instalação (só nesta máquina)
 NOTAS-DESTA-MAQUINA.md
+
+# vídeos renderizados e cache do HyperFrames (os MP4 vão para um release do GitHub)
+video-tutorial/*.mp4
+video-tutorial/*/renders/
+video-tutorial/*/.hyperframes/
+video-tutorial/trabalho/
+video-tutorial/ferramentas/node_modules/
+assets/tutorial/*.mp4
+__pycache__/
