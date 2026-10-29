@@ -24,4 +24,5 @@ video-tutorial/*/.hyperframes/
 video-tutorial/trabalho/
 video-tutorial/ferramentas/node_modules/
 assets/tutorial/*.mp4
+assets/tutorial/*.tmp
 __pycache__/

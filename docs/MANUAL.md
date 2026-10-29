@@ -807,3 +807,15 @@ achar a conexão certa (vale depois de rodar o `publicar.sh` de novo).
   dentro da rede (IP da operadora) e a internet vê outro IP, o cartão mostra os
   dois.
 - Conexão por IPv6: não há NAT ("não se aplica").
+
+## 28. Tutoriais em vídeo
+
+- **Página do teste:** o vídeo do cliente (Parte 1) fica na seção "Como
+  funciona", com um atalho "Primeira vez? Veja o tutorial em vídeo" no topo.
+- **Administração → Tutoriais:** as três partes (cliente, técnico,
+  administração) e o tutorial completo, com botão de baixar.
+- Os MP4 vêm do release `tutorial-speedcjc-v1` do GitHub e são servidos pelo próprio
+  site, a partir de `assets/tutorial/` (fora do git). Numa instalação nova ou
+  depois de um vídeo novo: `bash server/tools/baixar-tutoriais.sh`.
+- O projeto dos vídeos (para editar e renderizar de novo) está em
+  `video-tutorial/`.

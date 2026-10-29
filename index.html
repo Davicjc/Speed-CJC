@@ -238,6 +238,7 @@
                         Registrar a localização do aparelho
                     </label>
                     <p class="opcao-ajuda" id="local-ajuda">Mostra no seu histórico e no mapa onde cada teste foi feito. O navegador pede permissão.</p>
+                    <a class="link-tutorial" href="#tutorial"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l12.5-7.5L7 4.5z"/></svg>Primeira vez? Veja o tutorial em vídeo (3 min)</a>
                 </div>
             </div>
 
@@ -356,6 +357,10 @@
             <h2 id="guia-titulo">Como funciona o {{MARCA}}</h2>
             <p class="lead">O teste mede a sua internet até o nosso servidor{{EM_CIDADE}}: download, upload, ping, jitter e perda de pacotes. Funciona no computador e no celular, com qualquer operadora, é gratuito e não precisa instalar nada.</p>
         </header>
+        <figure class="tutorial-video" id="tutorial">
+            <video controls preload="none" playsinline poster="/assets/tutorial/capa-usuario.jpg" src="/assets/tutorial/tutorial-usuario.mp4"></video>
+            <figcaption>Tutorial em vídeo: como fazer o teste, entender o resultado e acompanhar tudo no seu painel (3 min).</figcaption>
+        </figure>
         <ol class="guia-passos">
             <li><strong>Latência</strong><span>30 pings por uma conexão já aberta medem o tempo de resposta (ping) e a variação entre eles (jitter).</span></li>
             <li><strong>Download</strong><span>6 conexões em paralelo recebem dados por 10 segundos. Os primeiros segundos ficam fora da conta, para medir a velocidade estável.</span></li>
