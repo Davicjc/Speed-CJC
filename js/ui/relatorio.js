@@ -177,18 +177,18 @@ const ms = (v) => (v == null ? 'não medido' : `${fmtMs(v)} ms`);
  * Bolinha de cada medida no texto: verde, amarela e vermelha para o técnico;
  * para o cliente, só verde, azul e branca (nunca vermelho: mesmo critério da tela).
  */
-function bolinha(tipo, valor, tom) {
-    const c = classificar(tipo, valor, { tom });
-    if (!c) return '';
-    if (tom === 'tecnico') return c.nivel === 'ok' ? ' 🟢' : c.nivel === 'atencao' ? ' 🟡' : ' 🔴';
-    return c.nivel === 'ok' ? ' 🟢' : c.nivel === 'azul' ? ' 🔵' : ' ⚪';
-}
+// Bolinha na frente do dado ruim: 🔴 ruim, 🟡 atenção; o que está bom fica sem nada.
+// No tom do cliente a régua não usa "ruim" nem "atenção", então quase nada é marcado.
+const BOLA = { ruim: '🔴 ', atencao: '🟡 ' };
+const bola = (nivel) => BOLA[nivel] || '';
+const bolaDe = (tipo, valor, tom) => bola((classificar(tipo, valor, { tom }) || {}).nivel);
 
 /**
- * Texto completo do teste para o WhatsApp e para copiar, com emojis e seções.
- * Leva tudo o que o teste mediu (no modo completo, também o diagnóstico; a rota
- * e o NAT só para o técnico), menos as coordenadas do aparelho: o local vai
- * pelo nome do bairro e da cidade.
+ * Texto completo do teste para o WhatsApp e para copiar. Emoji só no título;
+ * cada dado ruim ganha uma bolinha vermelha ou amarela na frente. Leva tudo o
+ * que o teste mediu (no modo completo, também o diagnóstico; a rota e o NAT só
+ * para o técnico), menos as coordenadas do aparelho: o local vai pelo nome do
+ * bairro e da cidade.
  */
 /** Partes da mensagem que a administração pode tirar do envio pelo WhatsApp (Administração → WhatsApp). */
 export const PARTES_MSG = [
@@ -208,56 +208,55 @@ export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente'
     const adv = t.advanced || {};
     const ll = t.loadedLatency || {};
     const at = t.atendimento || {};
-    const icone = v.nivel === 'ok' ? '✅' : v.nivel === 'ruim' ? '❌' : tecnico ? '⚠️' : 'ℹ️';
 
     L.push(`📶 *Teste de velocidade · ${empresa}*`);
-    const quando = [t.protocol ? `🧾 ${t.protocol}` : null, t.createdAt ? fmtDataHora(t.createdAt) : null].filter(Boolean).join(' · ');
+    const quando = [t.protocol ? `Protocolo ${t.protocol}` : null, t.createdAt ? fmtDataHora(t.createdAt) : null].filter(Boolean).join(' · ');
     if (quando) L.push(quando);
-    L.push(`${icone} ${NOME_MODO[t.mode] || 'Teste'}: *${v.titulo}*`);
-    if (tecnico && t.verified === false) L.push('⚠️ Não conferido pelo servidor');
+    L.push(`${tecnico ? bola(v.nivel) : ''}${NOME_MODO[t.mode] || 'Teste'}: *${v.titulo}*`);
+    if (tecnico && t.verified === false) L.push('🟡 Não conferido pelo servidor');
 
     if (tecnico && ver('atendimento') && (at.cliente || at.plano || at.obs)) {
-        L.push('', '🏠 *Atendimento*');
-        if (at.cliente) L.push(`• Cliente: ${at.cliente}`);
-        if (at.plano) L.push(`• Plano: ${at.plano} Mbps`);
-        if (at.obs) L.push(`• Obs.: ${at.obs}`);
+        L.push('', '*Atendimento*');
+        if (at.cliente) L.push(`Cliente: ${at.cliente}`);
+        if (at.plano) L.push(`Plano: ${at.plano} Mbps`);
+        if (at.obs) L.push(`Obs.: ${at.obs}`);
     }
 
     const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
-    if (ver('velocidade') || (ver('plano') && pct != null)) L.push('', '🚀 *Velocidade*');
+    if (ver('velocidade') || (ver('plano') && pct != null)) L.push('', '*Velocidade*');
     if (ver('velocidade')) {
-        L.push(`⬇️ Download: *${mbps(t.download)}*${bolinha('download', t.download, tom)}`);
-        L.push(`⬆️ Upload: *${mbps(t.upload)}*${bolinha('upload', t.upload, tom)}`);
+        L.push(`${bolaDe('download', t.download, tom)}Download: *${mbps(t.download)}*`);
+        L.push(`${bolaDe('upload', t.upload, tom)}Upload: *${mbps(t.upload)}*`);
     }
-    if (ver('plano') && pct != null) L.push(`📦 Plano de ${plano} Mbps: ${pct}% no download`);
+    if (ver('plano') && pct != null) L.push(`${tecnico && pct < 60 ? '🔴 ' : tecnico && pct < 80 ? '🟡 ' : ''}Plano de ${plano} Mbps: ${pct}% no download`);
 
     if (ver('latencia')) {
-    L.push('', '⏱️ *Latência e estabilidade*');
-    L.push(`🏓 Ping: ${ms(t.ping)}${t.pingMin != null && t.pingMax != null ? ` (mín. ${fmtMs(t.pingMin)} · máx. ${fmtMs(t.pingMax)})` : ''}${bolinha('ping', t.ping, tom)}`);
-    L.push(`〰️ Jitter: ${ms(t.jitter)}${bolinha('jitter', t.jitter, tom)}`);
-    L.push(`📉 Perda de pacotes: ${t.loss != null ? fmtPct(t.loss) + '%' : 'não medida'}${bolinha('perda', t.loss, tom)}`);
-    if (t.bufferbloat != null) {
-        const det = [ll.download != null ? `${fmtMs(ll.download)} ms no download` : null, ll.upload != null ? `${fmtMs(ll.upload)} ms no upload` : null].filter(Boolean).join(' · ');
-        L.push(`🚦 Ping com a linha cheia: +${fmtMs(t.bufferbloat)} ms${det ? ` (${det})` : ''}${bolinha('bufferbloat', t.bufferbloat, tom)}`);
-    }
+        L.push('', '*Latência e estabilidade*');
+        L.push(`${bolaDe('ping', t.ping, tom)}Ping: ${ms(t.ping)}${t.pingMin != null && t.pingMax != null ? ` (mín. ${fmtMs(t.pingMin)} · máx. ${fmtMs(t.pingMax)})` : ''}`);
+        L.push(`${bolaDe('jitter', t.jitter, tom)}Jitter: ${ms(t.jitter)}`);
+        L.push(`${bolaDe('perda', t.loss, tom)}Perda de pacotes: ${t.loss != null ? fmtPct(t.loss) + '%' : 'não medida'}`);
+        if (t.bufferbloat != null) {
+            const det = [ll.download != null ? `${fmtMs(ll.download)} ms no download` : null, ll.upload != null ? `${fmtMs(ll.upload)} ms no upload` : null].filter(Boolean).join(' · ');
+            L.push(`${bolaDe('bufferbloat', t.bufferbloat, tom)}Ping com a linha cheia: +${fmtMs(t.bufferbloat)} ms${det ? ` (${det})` : ''}`);
+        }
     }
 
     const con = [];
     if (ver('operadora')) {
-        con.push(`🏢 Operadora: ${t.isp || 'não identificada'}`);
-        if (t.ip) con.push(`🔢 IP: ${t.ip}${t.ipFamily ? ` (${t.ipFamily})` : ''}`);
+        con.push(`Operadora: ${t.isp || 'não identificada'}`);
+        if (t.ip) con.push(`IP: ${t.ip}${t.ipFamily ? ` (${t.ipFamily})` : ''}`);
     }
     if (ver('local')) {
-        if (t.place && t.place.label) con.push(`📍 Local: ${t.place.label}${t.place.source === 'aparelho' ? ' (GPS do aparelho)' : ' (aproximado pelo IP)'}`);
-        else con.push('📍 Local: sem localização');
+        if (t.place && t.place.label) con.push(`Local: ${t.place.label}${t.place.source === 'aparelho' ? ' (GPS do aparelho)' : ' (aproximado pelo IP)'}`);
+        else con.push('Local: sem localização');
     }
     if (ver('aparelho')) {
         const ap = aparelhoTexto(t.device);
-        if (ap) con.push(`📱 Aparelho: ${ap}`);
-        if (t.connection && t.connection.type) con.push(`📡 Conexão do aparelho: ${NOMES_CONEXAO[t.connection.type] || t.connection.type}`);
-        if (t.server && t.server.name) con.push(`🖥️ Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
+        if (ap) con.push(`Aparelho: ${ap}`);
+        if (t.connection && t.connection.type) con.push(`Conexão do aparelho: ${NOMES_CONEXAO[t.connection.type] || t.connection.type}`);
+        if (t.server && t.server.name) con.push(`Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
     }
-    if (con.length) L.push('', '🌐 *Conexão*', ...con);
+    if (con.length) L.push('', '*Conexão*', ...con);
 
     if (t.mode === 'completo') {
         const diag = [];
@@ -265,36 +264,40 @@ export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente'
         if (pr && ver('protocolos')) {
             for (const [nome, x] of [['IPv4', pr.ipv4], ['IPv6', pr.ipv6]]) {
                 if (!x) continue;
-                const est = x.alcance == null ? '➖ não testado' : x.alcance ? `✅ funciona${x.mbps != null ? ` · ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? '❌ sem acesso' : '➖ não utilizado';
-                diag.push(`🌍 ${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}`);
+                const est = x.alcance == null ? 'não testado' : x.alcance ? `funciona${x.mbps != null ? ` · ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? 'sem acesso' : 'não utilizado';
+                diag.push(`${tecnico && x.alcance === false ? '🔴 ' : ''}${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}`);
             }
         }
         if (tecnico && adv.nat && ver('nat')) {
             const n = adv.nat;
-            diag.push(`🔀 NAT: ${(TIPO_NAT[n.tipo] || {}).curto || n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
-            if (n.roteadoresInternos != null && n.roteadoresInternos >= 0) diag.push(`🏠 Roteadores dentro da casa: ${n.roteadoresInternos}${n.metodo === 'rota estimada' ? ' (estimado)' : ''}`);
-            if (n.ipsDiferentes) diag.push(`🌐 A internet vê o IP ${n.ipStun} (o servidor vê ${n.ipServidor})`);
+            const duplo = /^sim|provável|possível/.test(n.duploNat || '');
+            diag.push(`${n.tipo === 'simétrico' || duplo ? '🟡 ' : ''}NAT: ${(TIPO_NAT[n.tipo] || {}).curto || n.tipo || 'não medido'} · Duplo NAT: ${n.duploNat || 'não medido'} · CGNAT: ${n.cgnat ? 'sim' : 'não'}`);
+            if (n.roteadoresInternos != null && n.roteadoresInternos >= 0) diag.push(`${n.roteadoresInternos >= 2 ? '🟡 ' : ''}Roteadores dentro da casa: ${n.roteadoresInternos}${n.metodo === 'rota estimada' ? ' (estimado)' : ''}`);
+            if (n.ipsDiferentes) diag.push(`A internet vê o IP ${n.ipStun} (o servidor vê ${n.ipServidor})`);
         }
         if (tecnico && adv.mtu && ver('mtu') && (adv.mtu.mss != null || adv.mtu.mtuCaminho != null)) {
             const a = avaliarMtu(adv.mtu);
             const mssMaior = adv.mtu.mtuPeloMss != null && adv.mtu.mtuCaminho != null && adv.mtu.mtuPeloMss > adv.mtu.mtuCaminho;
-            diag.push(`📏 MTU: ${adv.mtu.mtuCaminho != null ? adv.mtu.mtuCaminho : 'sem resposta ao ping'} · MSS: ${adv.mtu.mss != null ? adv.mtu.mss : '–'} ${a.nivel === 'ruim' ? '❌ MSS maior que o caminho (buraco negro)' : mssMaior ? '⚠️ MSS maior que o caminho' : a.nivel === 'atencao' ? '⚠️ MTU baixo' : '✅'}`);
+            const nota = a.nivel === 'ruim' ? ' · MSS maior que o caminho (buraco negro)' : mssMaior ? ' · MSS maior que o caminho' : a.nivel === 'atencao' ? ' · MTU baixo' : '';
+            diag.push(`${a.nivel === 'ruim' ? '🔴 ' : mssMaior || a.nivel === 'atencao' ? '🟡 ' : ''}MTU: ${adv.mtu.mtuCaminho != null ? adv.mtu.mtuCaminho : 'sem resposta ao ping'} · MSS: ${adv.mtu.mss != null ? adv.mtu.mss : '–'}${nota}`);
         }
-        if (adv.relogio && ver('relogio')) diag.push(`🕒 Relógio do aparelho: ${Math.abs(adv.relogio.offsetS) < 2 ? '✅ certo' : `⚠️ ${relogioTexto(adv.relogio)}`}`);
-        if (diag.length) L.push('', '🔬 *Diagnóstico*', ...diag);
-        const linha = (arr) => arr.map((s) => `${s.label} ${s.ms != null ? s.ms : s.indisponivel ? 'n/d' : '–'}`).join(' · ');
-        for (const [k, titulo] of [['servicos', '📲 *Aplicativos*'], ['streaming', '🎬 *Streaming*'], ['iptv', '📺 *IPTV (TV ao vivo)*'], ['bancos', '🏦 *Bancos e PIX*']]) {
+        if (adv.relogio && ver('relogio')) diag.push(Math.abs(adv.relogio.offsetS) < 2 ? 'Relógio do aparelho: certo' : `🟡 Relógio do aparelho: ${relogioTexto(adv.relogio)}`);
+        if (diag.length) L.push('', '*Diagnóstico*', ...diag);
+        const nivelTempo = tecnico ? nivelMs : nivelMsCliente;
+        const linha = (arr) => arr.map((s) => `${s.ms != null ? bola((nivelTempo(s.ms) || {}).nivel) : ''}${s.label} ${s.ms != null ? s.ms : s.indisponivel ? 'n/d' : '–'}`).join(' · ');
+        for (const [k, titulo] of [['servicos', '*Aplicativos*'], ['streaming', '*Streaming*'], ['iptv', '*IPTV (TV ao vivo)*'], ['bancos', '*Bancos e PIX*']]) {
             if (ver(k) && adv[k] && adv[k].length) L.push('', `${titulo} (ms)`, linha(adv[k]));
         }
         if (tecnico && !ver('rota')) { /* rota fora da mensagem */ } else if (tecnico && adv.rota && adv.rota.length) {
-            L.push('', `🛣️ *Rota até a conexão* (${adv.rota.length} saltos)`);
+            L.push('', `*Rota até a conexão* (${adv.rota.length} saltos)`);
             for (const h of adv.rota) {
                 const extra = [h.media != null ? `${fmtMs(h.media)} ms` : null, h.perda ? `${fmtPct(h.perda)}% perda` : null].filter(Boolean).join(' · ');
-                L.push(`${h.hop}. ${h.host || '* não responde'}${extra ? ` · ${extra}` : ''}`);
+                const perdeu = h.host && h.perda > 0 && h.perda < 100;
+                L.push(`${perdeu ? (h.perda >= 10 ? '🔴 ' : '🟡 ') : ''}${h.hop}. ${h.host || '* não responde'}${extra ? ` · ${extra}` : ''}`);
             }
-        } else if (tecnico && adv.rotaErro) L.push('', `🛣️ Rota: não respondeu (${adv.rotaErro})`);
+        } else if (tecnico && adv.rotaErro) L.push('', `Rota: não respondeu (${adv.rotaErro})`);
     }
 
-    if (link && ver('link')) L.push('', `🔗 ${link}`);
+    if (link && ver('link')) L.push('', `Resultado completo: ${link}`);
     return L.join('\n');
 }
