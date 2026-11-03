@@ -137,15 +137,15 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
                 return {
                     imagem: imagem.toString('base64'),
                     miniatura: mini ? mini.toString('base64') : null,
-                    legenda: `Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente && !ocultar.includes('atendimento') ? ` · ${at.cliente}` : ''}`,
+                    legenda: `📸 Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente && !ocultar.includes('atendimento') ? ` · ${at.cliente}` : ''}`,
                 };
             });
             const link = `${siteOrigin(req)}/r/${t.id}`;
             const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || config.siteName, tom: 'tecnico', ocultar });
             const linhas = [
-                ocultar.includes('quem') ? null : `*Enviado por:* ${profile.name} (${profile.email})`,
-                ocultar.includes('quem') ? null : t.user ? `*Conta do teste:* ${t.user.name || '–'} (${t.user.email || '–'})` : '*Conta do teste:* feito sem conta',
-                imagens.length ? `${imagens.length === 1 ? '1 foto logo abaixo' : `${imagens.length} fotos logo abaixo`}` : null,
+                ocultar.includes('quem') ? null : `👷 Enviado por: ${profile.name} (${profile.email})`,
+                ocultar.includes('quem') ? null : t.user ? `👤 Conta do teste: ${t.user.name || '–'} (${t.user.email || '–'})` : '👤 Conta do teste: feito sem conta',
+                imagens.length ? `📸 ${imagens.length === 1 ? '1 foto logo abaixo' : `${imagens.length} fotos logo abaixo`}` : null,
                 '━━━━━━━━━━━━━━━',
                 relat,
             ].filter((l) => l !== null);
