@@ -136,6 +136,7 @@ async function pedirLocal() {
 // ---------- teste ----------
 $('#iniciar').addEventListener('click', iniciar);
 $('#de-novo').addEventListener('click', iniciar);
+$('#inicio').addEventListener('click', voltarAoInicio);
 $('#parar').addEventListener('click', () => { if (controle) controle.abort(); });
 
 function bloquearOpcoes(sim) {
@@ -154,6 +155,18 @@ function limpar() {
     ['protocolos', 'nat', 'mtu', 'servicos', 'streaming', 'iptv', 'bancos', 'relogio', 'rota', 'medidas'].forEach((k) => { const p = $(`#d-${k}`); if (p) { p.hidden = true; p.innerHTML = ''; } });
     $('#curva').innerHTML = '';
     velo.reiniciarEscala();
+}
+
+/** Depois do resultado: volta à tela inicial (escolher o tipo de teste e Iniciar) sem testar de novo. */
+function voltarAoInicio() {
+    if (rodando) return;
+    limpar();
+    marcarEtapa(null);
+    velo.modo('ocioso');
+    centro('Download', '0', 'Mbps');
+    $('#status').textContent = '';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    $('#iniciar').focus({ preventScroll: true });
 }
 
 async function iniciar() {
