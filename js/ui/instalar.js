@@ -10,7 +10,6 @@
 // - Já aberto como app, ou navegador de computador sem suporte: não aparece.
 // Pergunta uma vez; quem responde "Agora não" só vê de novo depois de 5 dias.
 
-import { MARCA } from '../core/marca.js';
 import { esc, evento, storage, store } from '../core/util.js';
 
 const CHAVE = 'speedcjc.app';
@@ -23,6 +22,7 @@ const IC = {
     pontos: svg('<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>'),
     pontosH: svg('<circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/>'),
     menu: svg('<path d="M4 7h16M4 12h16M4 17h16"/>'),
+    fechar: svg('<path d="M6 6l12 12M18 6 6 18"/>'),
 };
 
 let aviso = null; // evento beforeinstallprompt guardado
@@ -37,30 +37,22 @@ const DENTRO_DE_APP = /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|; wv\)|GSA\//.
 const MAC_SAFARI = !IOS && /Macintosh/.test(ua) && /Version\/\d+.*Safari/.test(ua) && !/Chrome|Chromium|Edg|OPR|Firefox/.test(ua);
 const jaInstalado = () => matchMedia('(display-mode: standalone), (display-mode: fullscreen), (display-mode: minimal-ui)').matches || navigator.standalone === true;
 
-/** Passo a passo manual do aparelho atual, ou null se ele não tem como instalar. */
+/** Como instalar no aparelho atual, numa frase (sem o botão Instalar), ou null se ele não tem como. */
 function passos() {
     const tela = '<strong>Adicionar à Tela de Início</strong>';
-    if (DENTRO_DE_APP) return { titulo: 'Abra no navegador primeiro', lista: [
-        `Toque no menu ${IC.pontosH} ou ${IC.pontos} aqui no alto.`,
-        `Escolha <strong>Abrir no ${IOS ? 'Safari' : 'navegador'}</strong>.`,
-        'Lá, toque em instalar quando este convite aparecer.',
-    ] };
+    if (DENTRO_DE_APP) return { titulo: 'Abra no navegador para instalar', texto: `Toque em ${IOS ? IC.pontosH : IC.pontos} e em <strong>Abrir no ${IOS ? 'Safari' : 'navegador'}</strong>.` };
     if (IOS) {
-        if (/CriOS/.test(ua)) return { lista: [`Toque em Compartilhar ${IC.compartilhar} no alto, ao lado do endereço.`, `Escolha ${tela} ${IC.mais}.`, 'Toque em <strong>Adicionar</strong>.'] };
-        if (/FxiOS/.test(ua)) return { lista: [`Toque no menu ${IC.menu} embaixo.`, `Toque em <strong>Compartilhar</strong> ${IC.compartilhar} e escolha ${tela}.`, 'Toque em <strong>Adicionar</strong>.'] };
-        if (/EdgiOS/.test(ua)) return { lista: [`Toque no menu ${IC.pontosH} embaixo.`, `Toque em <strong>Compartilhar</strong> ${IC.compartilhar} e escolha ${tela}.`, 'Toque em <strong>Adicionar</strong>.'] };
-        return { lista: [
-            `Toque em Compartilhar ${IC.compartilhar} na barra do Safari (se não aparecer, abra o menu ${IC.pontosH} primeiro).`,
-            `Role a lista e toque em ${tela} ${IC.mais}.`,
-            'Toque em <strong>Adicionar</strong>. Pronto!',
-        ] };
+        if (/CriOS/.test(ua)) return { texto: `Toque em ${IC.compartilhar}, ao lado do endereço, e em ${tela}.` };
+        if (/FxiOS/.test(ua)) return { texto: `Toque em ${IC.menu}, em <strong>Compartilhar</strong> e em ${tela}.` };
+        if (/EdgiOS/.test(ua)) return { texto: `Toque em ${IC.pontosH}, em <strong>Compartilhar</strong> e em ${tela}.` };
+        return { texto: `Toque em ${IC.compartilhar} e depois em ${tela}.` };
     }
     if (ANDROID) {
-        if (/Firefox/.test(ua)) return { lista: [`Toque no menu ${IC.pontos} do Firefox.`, 'Toque em <strong>Instalar</strong> (ou <strong>Adicionar à tela inicial</strong>).', 'Confirme em <strong>Adicionar</strong>.'] };
-        if (/SamsungBrowser/.test(ua)) return { lista: [`Toque no menu ${IC.menu} embaixo.`, 'Toque em <strong>Adicionar página a</strong> e escolha <strong>Tela inicial</strong>.', 'Confirme em <strong>Adicionar</strong>.'] };
-        return { lista: [`Toque no menu ${IC.pontos} do navegador, no alto.`, 'Toque em <strong>Instalar app</strong> (ou <strong>Adicionar à tela inicial</strong>).', 'Confirme em <strong>Instalar</strong>.'] };
+        if (/Firefox/.test(ua)) return { texto: `Toque em ${IC.pontos} e em <strong>Instalar</strong>.` };
+        if (/SamsungBrowser/.test(ua)) return { texto: `Toque em ${IC.menu}, em <strong>Adicionar página a</strong> e em <strong>Tela inicial</strong>.` };
+        return { texto: `Toque em ${IC.pontos} e em <strong>Instalar app</strong>.` };
     }
-    if (MAC_SAFARI) return { lista: ['No alto da tela, abra o menu <strong>Arquivo</strong>.', 'Clique em <strong>Adicionar ao Dock</strong>.', 'Clique em <strong>Adicionar</strong>. O teste vira um app no Dock.'] };
+    if (MAC_SAFARI) return { texto: 'No menu <strong>Arquivo</strong>, clique em <strong>Adicionar ao Dock</strong>.' };
     return null; // computador sem o aviso do navegador (Firefox, por exemplo): não insiste
 }
 
@@ -91,32 +83,25 @@ export function convidarInstalar({ tecnico = false, ocupado = () => false } = {}
 function abrir(tecnico) {
     try { sessionStorage.setItem(CHAVE, '1'); } catch { /* modo privado */ }
     const manual = aviso && !IOS ? null : passos();
-    const d = document.createElement('dialog');
-    d.className = 'modal app-convite';
-    d.setAttribute('aria-labelledby', 'app-convite-titulo');
-    const nome = tecnico ? `${MARCA} Técnico` : MARCA;
-    const frase = tecnico
-        ? 'Abre direto no diagnóstico, em tela cheia, pronto para o próximo atendimento.'
-        : 'Testa a sua internet com um toque, em tela cheia, como um aplicativo. Não ocupa espaço.';
-    d.innerHTML = `<div class="app-convite-corpo">
-        <div class="app-convite-icone" aria-hidden="true"><img src="/assets/icone-192.png" alt="" width="64" height="64"><svg class="app-brilho" viewBox="0 0 24 24" width="26" height="26"><path d="M12 2c.6 4.6 2.4 6.9 7 7.6-4.6.7-6.4 3-7 7.6-.6-4.6-2.4-6.9-7-7.6 4.6-.7 6.4-3 7-7.6Z"/><path d="M19.5 15c.3 2 1 2.8 3 3.1-2 .3-2.7 1.1-3 3.1-.3-2-1-2.8-3-3.1 2-.3 2.7-1.1 3-3.1Z"/></svg></div>
-        <h2 id="app-convite-titulo">${manual && manual.titulo ? esc(manual.titulo) : `Leve o ${esc(nome)} na tela inicial?`}</h2>
-        <p>${frase}</p>
-        ${manual ? `<ol class="app-passos">${manual.lista.map((x) => `<li>${x}</li>`).join('')}</ol>` : ''}
-        <div class="app-convite-acoes">
-            ${manual ? '<button type="button" class="botao botao-primario" data-r="ok">Entendi</button>'
-                : `<button type="button" class="botao botao-primario" data-r="instalar">${IC.mais}Instalar</button>`}
-            <button type="button" class="botao botao-fantasma" data-r="depois">Agora não</button>
-        </div></div>`;
-    document.body.appendChild(d);
-    const fechar = (r) => { store(CHAVE, { r, em: Date.now() }); d.close(); };
-    d.addEventListener('close', () => d.remove());
-    d.addEventListener('cancel', () => store(CHAVE, { r: 'depois', em: Date.now() }));
-    d.addEventListener('click', async (e) => {
-        if (e.target === d) return fechar('depois');
+    const celular = IOS || ANDROID;
+    const titulo = (manual && manual.titulo) || (tecnico ? 'Instale o teste técnico' : celular ? 'Instale o teste no celular' : 'Instale o teste no computador');
+    const texto = manual ? manual.texto : tecnico ? 'Abre direto no diagnóstico, em tela cheia.' : 'Abre direto da tela inicial, em tela cheia.';
+    const f = document.createElement('aside');
+    f.className = 'app-faixa';
+    f.setAttribute('role', 'region');
+    f.setAttribute('aria-label', 'Instalar o app');
+    f.innerHTML = `<img src="/assets/icone-192.png" alt="" width="44" height="44">
+        <div class="app-faixa-texto"><strong>${esc(titulo)}</strong><span>${texto}</span></div>
+        ${manual ? '' : '<button type="button" class="botao botao-primario botao-pequeno" data-r="instalar">Instalar</button>'}
+        <button type="button" class="app-faixa-fechar" data-r="depois" aria-label="Agora não">${IC.fechar}</button>`;
+    document.body.appendChild(f);
+    const fechar = (r) => { store(CHAVE, { r, em: Date.now() }); f.remove(); document.removeEventListener('keydown', esc_); };
+    const esc_ = (e) => { if (e.key === 'Escape') fechar('depois'); };
+    document.addEventListener('keydown', esc_);
+    f.addEventListener('click', async (e) => {
         const b = e.target.closest('[data-r]');
         if (!b) return;
-        if (b.dataset.r !== 'instalar') return fechar(b.dataset.r === 'ok' ? 'viu-passos' : 'depois');
+        if (b.dataset.r !== 'instalar') return fechar('depois');
         b.disabled = true;
         try {
             aviso.prompt();
@@ -126,6 +111,5 @@ function abrir(tecnico) {
         } catch { fechar('depois'); }
         aviso = null;
     });
-    d.showModal();
     evento('app_convite', { tipo: manual ? 'passos' : 'botao' });
 }
