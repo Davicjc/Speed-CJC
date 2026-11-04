@@ -375,3 +375,7 @@ Usa [Leaflet](https://leafletjs.com) (mapa), [node-datachannel](https://github.c
 [Caddy](https://caddyserver.com) (HTTPS) e as fontes [Archivo](https://fonts.google.com/specimen/Archivo)
 e [IBM Plex Sans](https://fonts.google.com/specimen/IBM+Plex+Sans) (SIL Open Font
 License).
+
+## Licença
+
+[AGPL-3.0](LICENSE): pode usar, estudar, modificar e rodar no seu servidor, inclusive comercialmente. Quem oferecer uma versão modificada como serviço precisa publicar o código dessa versão sob a mesma licença.
