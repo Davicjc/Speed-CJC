@@ -40,7 +40,9 @@ const DIAG = {
                     : tom === 'tecnico' ? selo('ruim', 'Sem acesso') : selo('', 'Não utilizado');
                 const valor = x.mbps != null ? fmtMbps(x.mbps) + ' <small class="suave">Mbps</small>'
                     : x.alcance === null || x.alcance === undefined ? '<small class="suave">não testado</small>' : '–';
-                const nota = [x.ip ? `Endereço: ${esc(x.ip)}` : null, x.principal ? 'a conexão deste teste' : null].filter(Boolean).join(' · ');
+                const nota = [x.ip ? `Endereço: ${esc(x.ip)}` : null, x.principal ? 'a conexão deste teste' : null,
+                    x.deduzido === 'conexao' ? 'a conexão foi por IPv6, e quem tem IPv6 também chega pelo IPv4'
+                        : x.deduzido === 'stun' ? (x.alcance ? 'confirmado pelo STUN (sem medir a velocidade)' : 'o aparelho só saiu por IPv4 até o STUN') : null].filter(Boolean).join(' · ');
                 return `<div class="diag-linha"><strong>${nome} ${estado}</strong><span class="valor">${valor}</span>
                     ${nota ? `<p>${nota}</p>` : ''}</div>`;
             };
@@ -262,7 +264,8 @@ export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente'
             for (const [nome, x] of [['IPv4', pr.ipv4], ['IPv6', pr.ipv6]]) {
                 if (!x) continue;
                 const est = x.alcance == null ? 'não testado' : x.alcance ? `funciona${x.mbps != null ? ` · ${fmtMbps(x.mbps)} Mbps` : ''}` : tecnico ? 'sem acesso' : 'não utilizado';
-                diag.push(`${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}${tecnico && x.alcance === false ? ' 🔴' : ''}`);
+                const como = x.deduzido === 'conexao' ? ' (pela conexão em IPv6)' : x.deduzido === 'stun' ? (x.alcance ? ' (confirmado por STUN)' : ' (só saiu por IPv4)') : '';
+                diag.push(`${nome}: ${est}${x.ip ? ` (${x.ip})` : ''}${como}${tecnico && x.alcance === false ? ' 🔴' : ''}`);
             }
         }
         if (tecnico && adv.nat && ver('nat')) {
