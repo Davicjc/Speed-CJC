@@ -378,4 +378,4 @@ License).
 
 ## Licença
 
-[AGPL-3.0](LICENSE): pode usar, estudar, modificar e rodar no seu servidor, inclusive comercialmente. Quem oferecer uma versão modificada como serviço precisa publicar o código dessa versão sob a mesma licença.
+[AGPL-3.0](LICENSE): pode usar, estudar, modificar e rodar no seu servidor, inclusive comercialmente. Quem oferecer uma versão modificada como serviço precisa publicar o código dessa versão sob a mesma licença. O crédito de autoria tem que continuar visível: veja [ADDITIONAL-TERMS.md](ADDITIONAL-TERMS.md).
