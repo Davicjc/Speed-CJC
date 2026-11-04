@@ -161,6 +161,10 @@ export async function executarTeste({ modo = 'rapido', eventos, sinal }) {
                 if (atual && !(prot[atual].alcance && prot[atual].mbps != null)) {
                     prot[atual] = { alcance: true, ip: eu.ip || prot[atual].ip, mbps: r.download, principal: true };
                 }
+                // Sem os nomes só-IPv4/só-IPv6 a outra versão não é medida aqui. Chegou por IPv6:
+                // quem tem IPv6 também chega pelo IPv4 (direto ou pela tradução da operadora).
+                // O IPv6 de quem chegou por IPv4 é conferido depois, pelo STUN (deduzirPeloStun).
+                if (atual === 'ipv6' && prot.ipv4.alcance === null) prot.ipv4 = { alcance: true, ip: null, mbps: null, deduzido: 'conexao' };
                 ev.diag('protocolos', prot);
                 r.advanced = { ...(r.advanced || {}), protocolos: prot };
             }
@@ -190,12 +194,30 @@ export async function executarTeste({ modo = 'rapido', eventos, sinal }) {
             ev.etapa('diagnostico');
             ev.status('Fazendo o diagnóstico da sua rede…');
             r.advanced = { ...(r.advanced || {}), ...(await diagnostico(ev, cancelou)) };
+            if (deduzirPeloStun(r.advanced)) ev.diag('protocolos', r.advanced.protocolos);
         }
         ev.status('');
         return r;
     } finally {
         if (sinal) sinal.removeEventListener('abort', ouvirCancelamento);
     }
+}
+
+/**
+ * IPv4/IPv6 sem os nomes separados (v4./v6.): o STUN do diagnóstico de NAT
+ * (Google e Cloudflare) responde pelas duas versões, sem depender do DNS do
+ * site. Se o aparelho saiu por IPv6 até ele, o IPv6 funciona; se o STUN só
+ * respondeu por IPv4, não há IPv6 nessa rede. Sem resposta do STUN, fica sem
+ * medida. Devolve true se mudou algo.
+ */
+function deduzirPeloStun(adv) {
+    const p = adv && adv.protocolos;
+    const n = (adv && adv.nat) || {};
+    if (!p || !n.stunRespondeu) return false;
+    let mudou = false;
+    if (p.ipv6 && p.ipv6.alcance === null) { p.ipv6 = { alcance: !!n.ipv6Stun, ip: n.ipv6Stun || null, mbps: null, deduzido: 'stun' }; mudou = true; }
+    if (p.ipv4 && p.ipv4.alcance === null && n.ipStun) { p.ipv4 = { alcance: true, ip: n.ipStun, mbps: null, deduzido: 'stun' }; mudou = true; }
+    return mudou;
 }
 
 async function diagnostico(ev, cancelou) {
@@ -222,6 +244,8 @@ async function diagnostico(ev, cancelou) {
             saltosAteServidor: servidor.routersBetween ?? null,
             ipServidor: servidor.ip || null,
             ipStun: mapa.ipv4 || null,
+            ipv6Stun: mapa.ipv6 || null,
+            stunRespondeu: !!mapa.ok,
             ipMuda: !!mapa.ipMuda,
         };
         // a internet vê outro IP que o servidor: o servidor enxerga o cliente por dentro da
