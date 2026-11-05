@@ -42,7 +42,7 @@ const log = {
     error: (...a) => console.error(new Date().toISOString(), ...a),
 };
 
-const FOOTER_ORIGIN = 'https://recursos.cjc.pics';
+const FOOTER_ORIGIN = 'https://footer.davicjc.com';
 
 // ---------- serviços ----------
 const db = openDatabase(config.dbFile, log);

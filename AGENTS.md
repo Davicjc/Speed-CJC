@@ -46,7 +46,7 @@ Copilot e qualquer outro agente.
 - **Segurança e LGPD vêm primeiro**: sem script inline (CSP), dados pessoais só
   o necessário, nada de dado real de cliente em capturas, vídeos ou testes.
 - Rodapé obrigatório em **todas** as páginas e em `server/src/result-page.js`:
-  `<script src="https://recursos.cjc.pics/projetos/footer-davi/footer_davicjc.js" defer></script>`
+  `<script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js" defer></script>`
 - Mudança no banco: migração nova em `server/src/db.js` e cópia do banco antes
   (`VACUUM INTO`).
 - Interface e documentação em português do Brasil, linguagem simples.
