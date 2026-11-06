@@ -11,7 +11,7 @@ import { barrasHorizontais, graficoLinhas } from '../ui/graficos.js';
 import { convidarInstalar } from '../ui/instalar.js';
 import { iniciarLocalizacao, pedirPosicao } from '../ui/localizacao.js';
 import { classificar, dicas, planoParaCliente, veredito } from '../ui/qualidade.js';
-import { desenharDiag, textoCompleto, usosHtml } from '../ui/relatorio.js';
+import { desenharDiag, textoCompleto, textoZap, usosHtml } from '../ui/relatorio.js';
 import { criarVelocimetro } from '../ui/velocimetro.js';
 
 // A mesma página serve dois públicos: o cliente (/), com resultado honesto e
@@ -451,7 +451,9 @@ function comoRelatorio(r, res, aparelho) {
 }
 
 function habilitarCompartilhar(link, r, res, aparelho, geo) {
-    const texto = textoCompleto({ ...comoRelatorio(r, res, aparelho), location: geo || null }, { link, plano: planoAtual(), empresa: cfg.serverName || MARCA, tom: TOM });
+    const teste = { ...comoRelatorio(r, res, aparelho), location: geo || null };
+    const opcoes = { link, plano: planoAtual(), empresa: cfg.serverName || MARCA, tom: TOM };
+    const texto = textoCompleto(teste, opcoes);
     const bc = $('#copiar');
     bc.innerHTML = ICON.copy + 'Copiar resultado';
     bc.hidden = false;
@@ -462,7 +464,7 @@ function habilitarCompartilhar(link, r, res, aparelho, geo) {
     };
     const wa = $('#whatsapp');
     wa.innerHTML = ICON.whatsapp + 'Enviar no WhatsApp';
-    wa.href = 'https://wa.me/?text=' + encodeURIComponent(texto);
+    wa.href = 'https://wa.me/?text=' + encodeURIComponent(textoZap(teste, opcoes));
     wa.onclick = () => evento('share', { method: 'whatsapp', content_type: 'resultado' });
     wa.hidden = false;
 }

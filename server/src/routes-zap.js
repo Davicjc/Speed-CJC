@@ -34,7 +34,6 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
     const envios = createRateLimiter({ max: 30, windowMs: 60 * 60_000 });
     let relatorio = null;
     const modulo = async () => (relatorio = relatorio || await import(pathToFileURL(path.join(config.staticDir, 'js/ui/relatorio.js')).href));
-    const textoDoTeste = async (t, opts) => (await modulo()).textoCompleto(t, opts);
     const quem = (p) => ({ uid: p.id, email: p.email, name: p.name });
 
     return async function handleZap(req, res, url, ip) {
@@ -137,19 +136,15 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
                 return {
                     imagem: imagem.toString('base64'),
                     miniatura: mini ? mini.toString('base64') : null,
-                    legenda: `📸 Foto ${i + 1} de ${fotos.length} · ${t.protocol}${at.cliente && !ocultar.includes('atendimento') ? ` · ${at.cliente}` : ''}`,
+                    legenda: `📸 *Foto ${i + 1} de ${fotos.length}* · \`${t.protocol}\`${at.cliente && !ocultar.includes('atendimento') ? ` · ${at.cliente}` : ''}`,
                 };
             });
             const link = `${siteOrigin(req)}/r/${t.id}`;
-            const relat = await textoDoTeste(t, { link, plano: at.plano || null, empresa: config.serverName || config.siteName, tom: 'tecnico', ocultar });
-            const linhas = [
-                ocultar.includes('quem') ? null : `👷 Enviado por: ${profile.name} (${profile.email})`,
-                ocultar.includes('quem') ? null : t.user ? `👤 Conta do teste: ${t.user.name || '–'} (${t.user.email || '–'})` : '👤 Conta do teste: feito sem conta',
-                imagens.length ? `📸 ${imagens.length === 1 ? '1 foto logo abaixo' : `${imagens.length} fotos logo abaixo`}` : null,
-                '━━━━━━━━━━━━━━━',
-                relat,
-            ].filter((l) => l !== null);
-            await zap.enviar(destino.jid, linhas.join('\n'), imagens);
+            const mensagem = (await modulo()).textoZap(t, {
+                link, plano: at.plano || null, empresa: config.serverName || config.siteName, tom: 'tecnico', ocultar,
+                envio: { por: `${profile.name} (${profile.email})`, conta: t.user ? `${t.user.name || '–'} (${t.user.email || '–'})` : null, fotos: imagens.length },
+            });
+            await zap.enviar(destino.jid, mensagem, imagens);
             users.audit({ actor: quem(profile), action: 'enviou teste para o WhatsApp', detail: { protocolo: t.protocol, destino: destino.nome, fotos: imagens.length, cliente: at.cliente || null }, ip });
             log.info(`[whatsapp] ${t.protocol} enviado para "${destino.nome}" por ${profile.email} (${imagens.length} foto(s))`);
             return sendJson(res, 200, { ok: true, destino: destino.nome, fotos: imagens.length }), true;

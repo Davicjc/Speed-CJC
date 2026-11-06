@@ -7,7 +7,7 @@ import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { confirmar, copiar, esc, evento, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, raw, setHtml, toast } from '../core/util.js';
 import { planoParaCliente, veredito } from './qualidade.js';
-import { NOME_MODO, desenharDiag, partesDiag, textoCompleto, usosHtml } from './relatorio.js';
+import { NOME_MODO, desenharDiag, partesDiag, textoCompleto, textoZap, usosHtml } from './relatorio.js';
 
 function dialogo() {
     let d = document.getElementById('gaveta-teste');
@@ -57,6 +57,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, tom = ad
     const con = t.connection || {};
     const curva = t.curve && ((t.curve.download || []).length || (t.curve.upload || []).length) ? t.curve : null;
     const texto = textoCompleto(t, { link, plano, empresa: cfg.serverName || MARCA, tom });
+    const textoWa = textoZap(t, { link, plano, empresa: cfg.serverName || MARCA, tom });
 
     const blocos = [];
     blocos.push(html`<div class="det-cabeca">
@@ -152,7 +153,7 @@ export async function abrirDetalhe({ carregar, cfg = {}, admin = false, tom = ad
 
     blocos.push(raw(`<div class="det-acoes">
         ${tecnico ? `<button type="button" class="botao botao-primario botao-pequeno" data-zap-enviar>${ICON.whatsapp}Enviar para o Zap</button>` : ''}
-        <a class="botao botao-secundario botao-pequeno" href="https://wa.me/?text=${encodeURIComponent(texto)}" target="_blank" rel="noopener" data-whatsapp>${ICON.whatsapp}Enviar no WhatsApp</a>
+        <a class="botao botao-secundario botao-pequeno" href="https://wa.me/?text=${encodeURIComponent(textoWa)}" target="_blank" rel="noopener" data-whatsapp>${ICON.whatsapp}Enviar no WhatsApp</a>
         <button type="button" class="botao botao-secundario botao-pequeno" data-copiar>${ICON.copy}Copiar resultado</button>
         <a class="botao botao-secundario botao-pequeno" href="/r/${esc(t.id)}" target="_blank" rel="noopener">${ICON.external}Página pública</a>
         ${aoExcluir ? `<button type="button" class="botao botao-perigo botao-pequeno" data-excluir>${ICON.trash}Excluir teste</button>` : ''}

@@ -189,14 +189,22 @@ const bolaTempo = (ms, tecnico) => (!tecnico || ms == null ? '' : ms >= 150 ? ' 
 const RECUO = '    ';
 const coord = (v) => v.toFixed(5).replace('.', ',');
 
-/** Linhas da seção de coordenadas: link do Google Maps e a coordenada crua (-18,76295, -48,39476). */
+const SEM_COORD = 'Sem coordenadas: o aparelho não liberou a localização';
+
+/** Link do Google Maps, coordenada crua (-18,76295, -48,39476) e precisão; null sem posição. */
+function coordenadas(loc) {
+    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return null;
+    return {
+        maps: `https://www.google.com/maps/search/?api=1&query=${loc.lat.toFixed(5)},${loc.lng.toFixed(5)}`,
+        crua: `${coord(loc.lat)}, ${coord(loc.lng)}`,
+        prec: Number.isFinite(loc.accuracy) && loc.accuracy > 0 ? ` (precisão de ${fmtNum(Math.round(loc.accuracy), 0)} m)` : '',
+    };
+}
+
+/** Linhas da seção de coordenadas: link do Google Maps e a coordenada crua. */
 export function linhasCoordenadas(loc) {
-    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return ['Sem coordenadas: o aparelho não liberou a localização'];
-    const prec = Number.isFinite(loc.accuracy) && loc.accuracy > 0 ? ` (precisão de ${fmtNum(Math.round(loc.accuracy), 0)} m)` : '';
-    return [
-        `Google Maps: https://www.google.com/maps/search/?api=1&query=${loc.lat.toFixed(5)},${loc.lng.toFixed(5)}`,
-        `${coord(loc.lat)}, ${coord(loc.lng)}${prec}`,
-    ];
+    const c = coordenadas(loc);
+    return c ? [`Google Maps: ${c.maps}`, `${c.crua}${c.prec}`] : [SEM_COORD];
 }
 
 /**
@@ -311,5 +319,114 @@ export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente'
     }
 
     if (link && ver('link')) L.push('', `Resultado completo: ${link}`);
+    return L.join('\n');
+}
+
+/**
+ * A mesma mensagem com a formatação do WhatsApp (negrito, citação, monoespaçado
+ * e itálico). Vai no envio automático (Enviar para o Zap) e no botão Enviar no
+ * WhatsApp; o Copiar resultado continua com o texto simples (textoCompleto).
+ * envio = { por, conta, fotos }: quem mandou e as fotos, só no envio automático.
+ */
+export function textoZap(t, { link, plano, empresa = MARCA, tom = 'cliente', ocultar = [], envio = null } = {}) {
+    const L = [];
+    const ver = (k) => !ocultar.includes(k);
+    const tecnico = tom === 'tecnico';
+    const adv = t.advanced || {};
+    const ll = t.loadedLatency || {};
+    const at = t.atendimento || {};
+    const cod = (v) => `\`${v}\``;
+    const obs = (v) => ` _(${v})_`;
+    const num = (v, f, un) => (v == null ? 'não medido' : cod(`${f(v)} ${un}`));
+    const secao = (titulo, linhas) => {
+        const l = linhas.filter(Boolean);
+        if (l.length) L.push('', titulo, ...l.map((x) => '> ' + x));
+    };
+
+    L.push(`📶 *Teste de velocidade · ${empresa}*`);
+    L.push(...[
+        t.protocol ? `🧾 *Protocolo:* ${cod(t.protocol)}` : null,
+        t.createdAt ? `🗓️ *Realizado em:* ${fmtDataHora(t.createdAt)}` : null,
+        `🧪 *Tipo:* ${NOME_MODO[t.mode] || 'Teste'}`,
+        tecnico && t.verified === false ? '🟠 *Não conferido pelo servidor*' : null,
+        envio && envio.fotos ? `📸 *Mídia:* _${envio.fotos === 1 ? '1 foto' : `${envio.fotos} fotos`} logo abaixo_` : null,
+    ].filter(Boolean).map((x) => '> ' + x));
+
+    if (envio && ver('quem')) secao('🪪 *Identificação*', [`👷 *Enviado por:* ${envio.por}`, `👤 *Conta do teste:* ${envio.conta || 'feito sem conta'}`]);
+    if (tecnico && ver('atendimento')) secao('🏠 *Atendimento*', [at.cliente && `*Cliente:* ${at.cliente}`, at.plano && `*Plano:* ${cod(`${at.plano} Mbps`)}`, at.obs && `*Obs.:* ${at.obs}`]);
+
+    // com o plano informado, quem diz se está bom é a porcentagem do plano
+    const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
+    const bolaPct = tecnico && pct != null ? (pct < 60 ? ' 🔴' : pct < 80 ? ' 🟠' : '') : '';
+    const notaPct = ver('plano') && pct != null ? `${obs(`${pct}% do plano`)}${bolaPct}` : '';
+    const bolaVel = (tipo, v) => (plano ? '' : bolaDe(tipo, v, tom));
+    secao('🚀 *Velocidade*', ver('velocidade')
+        ? [`*Download:* ${num(t.download, fmtMbps, 'Mbps')}${bolaVel('download', t.download)}${notaPct}`, `*Upload:* ${num(t.upload, fmtMbps, 'Mbps')}${bolaVel('upload', t.upload)}`]
+        : [notaPct && `*Plano:* ${pct}% no download${bolaPct}`]);
+
+    if (ver('latencia')) {
+        const faixa = t.pingMin != null && t.pingMax != null ? obs(`${fmtMs(t.pingMin)} a ${fmtMs(t.pingMax)}`) : '';
+        const cheia = [ll.download != null ? `↓${fmtMs(ll.download)}` : null, ll.upload != null ? `↑${fmtMs(ll.upload)}` : null].filter(Boolean).join(' · ');
+        secao('⏱️ *Latência e estabilidade*', [
+            `*Ping:* ${num(t.ping, fmtMs, 'ms')}${faixa}${bolaDe('ping', t.ping, tom)}`,
+            `*Jitter:* ${num(t.jitter, fmtMs, 'ms')}${bolaDe('jitter', t.jitter, tom)} · *Perda:* ${t.loss != null ? cod(fmtPct(t.loss) + '%') : 'não medida'}${bolaDe('perda', t.loss, tom)}`,
+            t.bufferbloat != null ? `*Linha cheia:* ${cod(`+${fmtMs(t.bufferbloat)} ms`)}${cheia ? obs(cheia + ' ms') : ''}${bolaDe('bufferbloat', t.bufferbloat, tom)}` : null,
+        ]);
+    }
+
+    const tipoCon = ver('aparelho') && t.connection && t.connection.type ? NOMES_CONEXAO[t.connection.type] || t.connection.type : null;
+    const ipLinha = ver('operadora') && t.ip;
+    const ap = ver('aparelho') ? aparelhoTexto(t.device) : null;
+    secao('🌐 *Conexão*', [
+        ver('operadora') && `*Operadora:* ${t.isp || 'não identificada'}`,
+        ipLinha && `*IP:* ${cod(t.ip)}${t.ipFamily ? ` (${t.ipFamily})` : ''}${tipoCon ? ` · *Conexão:* ${tipoCon}` : ''}`,
+        ver('local') && (t.place && t.place.label ? `*Local:* ${t.place.label}${obs(t.place.source === 'aparelho' ? 'GPS' : 'pelo IP')}` : '*Local:* sem localização'),
+        ap && `*Aparelho:* ${ap}`,
+        tipoCon && !ipLinha && `*Conexão:* ${tipoCon}`,
+        ver('aparelho') && t.server && t.server.name && `*Servidor:* ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`,
+    ]);
+
+    const c = coordenadas(t.location);
+    secao('📍 *Coordenadas*', c ? [`*Google Maps:* ${c.maps}`, `${cod(c.crua)}${c.prec}`] : [`_${SEM_COORD}_`]);
+
+    if (t.mode === 'completo') {
+        const diag = [];
+        const pr = adv.protocolos;
+        if (pr && ver('protocolos')) {
+            for (const [nome, x] of [['IPv4', pr.ipv4], ['IPv6', pr.ipv6]]) {
+                if (!x) continue;
+                const est = x.alcance == null ? 'não testado' : x.alcance ? `funciona${x.mbps != null ? ` · ${cod(`${fmtMbps(x.mbps)} Mbps`)}` : ''}` : tecnico ? 'sem acesso' : 'não utilizado';
+                const como = x.deduzido === 'conexao' ? obs('pela conexão') : x.deduzido === 'stun' ? obs('STUN') : '';
+                diag.push(`*${nome}:* ${est}${x.ip ? ` ${cod(x.ip)}` : ''}${como}${tecnico && x.alcance === false ? ' 🔴' : ''}`);
+            }
+        }
+        if (tecnico && adv.nat && ver('nat')) {
+            const n = adv.nat;
+            const duplo = /^sim|provável|possível/.test(n.duploNat || '');
+            diag.push(`*NAT:* ${(TIPO_NAT[n.tipo] || {}).curto || n.tipo || 'não medido'} · *Duplo NAT:* ${n.duploNat || 'não medido'} · *CGNAT:* ${n.cgnat ? 'sim' : 'não'}${n.tipo === 'simétrico' || duplo ? ' 🟠' : ''}`);
+            if (n.roteadoresInternos != null && n.roteadoresInternos >= 0) diag.push(`*Roteadores na casa:* ${n.roteadoresInternos}${n.metodo === 'rota estimada' ? obs('estimado') : ''}${n.roteadoresInternos >= 2 ? ' 🟠' : ''}`);
+            if (n.ipsDiferentes) diag.push(`*IP na internet:* ${cod(n.ipStun)}${obs(`o servidor vê ${n.ipServidor}`)}`);
+        }
+        if (tecnico && adv.mtu && ver('mtu') && (adv.mtu.mss != null || adv.mtu.mtuCaminho != null)) {
+            const a = avaliarMtu(adv.mtu);
+            const mssMaior = adv.mtu.mtuPeloMss != null && adv.mtu.mtuCaminho != null && adv.mtu.mtuPeloMss > adv.mtu.mtuCaminho;
+            const nota = a.nivel === 'ruim' ? 'buraco negro' : mssMaior ? 'MSS maior que o caminho' : a.nivel === 'atencao' ? 'MTU baixo' : '';
+            diag.push(`*MTU:* ${adv.mtu.mtuCaminho != null ? cod(adv.mtu.mtuCaminho) : 'sem resposta ao ping'} · *MSS:* ${adv.mtu.mss != null ? cod(adv.mtu.mss) : '–'}${nota ? obs(nota) : ''}${a.nivel === 'ruim' ? ' 🔴' : mssMaior || a.nivel === 'atencao' ? ' 🟠' : ''}`);
+        }
+        if (adv.relogio && ver('relogio')) diag.push(Math.abs(adv.relogio.offsetS) < 2 ? '*Relógio:* certo' : `*Relógio:* ${relogioTexto(adv.relogio)} 🟠`);
+        secao('🔬 *Diagnóstico*', diag);
+        const lista = (arr) => arr.map((s) => (s.ms != null ? `${s.label}: ${cod(s.ms)}${bolaTempo(s.ms, tecnico)}` : s.indisponivel ? `${s.label}: n/d` : s.label));
+        for (const [k, titulo] of [['servicos', '📲 *Aplicativos (ms)*'], ['streaming', '🎬 *Streaming (ms)*'], ['iptv', '📺 *IPTV (ms)*'], ['bancos', '🏦 *Bancos e PIX (ms)*']]) {
+            if (ver(k) && adv[k] && adv[k].length) secao(titulo, lista(adv[k]));
+        }
+        if (tecnico && ver('rota') && adv.rota && adv.rota.length) {
+            secao(`🛣️ *Rota (${adv.rota.length} saltos)*`, adv.rota.map((h) => {
+                const extra = [h.media != null ? `${fmtMs(h.media)} ms` : null, h.perda ? `${fmtPct(h.perda)}% perda` : null].filter(Boolean).join(' · ');
+                return `${h.hop}. ${h.host || '_não responde_'}${extra ? ` · ${extra}` : ''}${h.perda >= 10 ? ' 🔴' : h.perda > 0 ? ' 🟠' : ''}`;
+            }));
+        } else if (tecnico && ver('rota') && adv.rotaErro) secao('🛣️ *Rota*', [`não respondeu${obs(adv.rotaErro)}`]);
+    }
+
+    if (link && ver('link')) secao('🔗 *Resultado completo*', [link]);
     return L.join('\n');
 }
