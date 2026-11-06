@@ -7,7 +7,7 @@ import { NOMES_CONEXAO } from '../core/device.js';
 import { ICON } from '../core/icons.js';
 import { esc, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct } from '../core/util.js';
 import { barrasHorizontais } from './graficos.js';
-import { classificar, planoParaCliente, usos, veredito } from './qualidade.js';
+import { classificar, planoParaCliente, usos } from './qualidade.js';
 
 export const NOME_MODO = { rapido: 'Teste rápido', completo: 'Diagnóstico completo' };
 
@@ -66,7 +66,7 @@ const DIAG = {
                 ${d.roteadoresInternos != null && d.roteadoresInternos >= 0 && !d.ipPrivado ? `<div class="diag-linha"><strong>Roteadores dentro da casa</strong><span class="valor">${fmtNum(d.roteadoresInternos, 0)}</span><p>O normal é 1. ${esc(metodo)}</p></div>` : ''}
                 <div class="diag-linha"><strong>IP compartilhado (CGNAT)</strong><span>${d.cgnat ? selo('atencao', 'Sim') : selo('ok', 'Não')}</span></div>
                 ${d.ipsDiferentes ? `<div class="diag-linha"><strong>IP visto pela internet</strong><span class="valor">${esc(d.ipStun)}</span><p>O servidor vê ${esc(d.ipServidor)}: ${d.ipPrivado || d.cgnat ? 'o aparelho chegou por dentro da rede e sai para a internet por outro IP.' : 'o NAT usa IPs diferentes conforme o destino.'}</p></div>` : ''}
-                ${d.ipPrivado ? '<div class="diag-linha"><strong>Teste pela rede interna</strong><span>' + selo('', 'Rede local') + '</span><p>O aparelho chegou ao servidor por um IP privado, sem passar pela internet.</p></div>' : ''}
+                ${d.ipPrivado ? '<div class="diag-linha"><strong>Teste pela rede interna</strong><span>' + selo('', 'Rede da operadora') + '</span><p>O aparelho chegou ao servidor por dentro da rede da operadora (IP interno), sem sair para a internet.</p></div>' : ''}
             </div>`;
         },
     },
@@ -221,7 +221,6 @@ export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente'
     const L = [];
     const ver = (k) => !ocultar.includes(k);
     const tecnico = tom === 'tecnico';
-    const v = veredito(t, { tom });
     const adv = t.advanced || {};
     const ll = t.loadedLatency || {};
     const at = t.atendimento || {};
@@ -230,14 +229,17 @@ export function textoCompleto(t, { link, plano, empresa = MARCA, tom = 'cliente'
     L.push(`📶 Teste de velocidade · ${empresa}`);
     const quando = [t.protocol ? `Protocolo ${t.protocol}` : null, t.createdAt ? fmtDataHora(t.createdAt) : null].filter(Boolean).join(' · ');
     if (quando) L.push(`🧾 ${quando}`);
-    L.push(`${NOME_MODO[t.mode] || 'Teste'}: ${v.titulo}${tecnico ? bola(v.nivel) : ''}`);
+    // sem veredito geral aqui: ele não sabe o plano contratado e chamava de ruim
+    // uma conexão de 20 Mbps entregando os 20 Mbps
     if (tecnico && t.verified === false) L.push('Não conferido pelo servidor 🟠');
 
     if (tecnico && ver('atendimento')) secao('🏠 Atendimento', [at.cliente ? `Cliente: ${at.cliente}` : null, at.plano ? `Plano: ${at.plano} Mbps` : null, at.obs ? `Obs.: ${at.obs}` : null].filter(Boolean));
 
     const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
     const vel = [];
-    if (ver('velocidade')) vel.push(`Download: ${mbps(t.download)}${bolaDe('download', t.download, tom)}`, `Upload: ${mbps(t.upload)}${bolaDe('upload', t.upload, tom)}`);
+    // com o plano informado, quem diz se está bom é a porcentagem do plano, não um número fixo
+    const bolaVel = (tipo, valor) => (plano ? '' : bolaDe(tipo, valor, tom));
+    if (ver('velocidade')) vel.push(`Download: ${mbps(t.download)}${bolaVel('download', t.download)}`, `Upload: ${mbps(t.upload)}${bolaVel('upload', t.upload)}`);
     if (ver('plano') && pct != null) vel.push(`Plano de ${plano} Mbps: ${pct}% no download${tecnico && pct < 60 ? ' 🔴' : tecnico && pct < 80 ? ' 🟠' : ''}`);
     secao('🚀 Velocidade', vel);
 

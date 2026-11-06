@@ -8,6 +8,12 @@ import { isPrivateIp } from './util.js';
 const TTL_MS = 24 * 60 * 60_000;
 const cache = new Map();
 
+// IP privado ou de CGNAT (100.64.0.0/10): o aparelho chegou ao servidor por
+// dentro da rede da operadora que hospeda o servidor. A operadora é a mesma do
+// IP público do servidor (e, sem ele, o nome configurado do servidor).
+let redeInterna = () => ({ ip: null, nome: null });
+export function configurarRedeInterna(fn) { redeInterna = fn; }
+
 async function getJson(url) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 3500);
@@ -41,7 +47,11 @@ const providers = [
 ];
 
 export async function lookupIsp(ip) {
-    if (isPrivateIp(ip)) return { isp: 'Rede local (sem passar pela internet)', asn: null, city: null, region: null, country: null, hostname: null, private: true };
+    if (isPrivateIp(ip)) {
+        const { ip: publico, nome } = redeInterna() || {};
+        const d = publico && !isPrivateIp(publico) ? await lookupIsp(publico) : {};
+        return { isp: d.isp || nome || null, asn: d.asn ?? null, city: d.city || null, region: d.region || null, country: d.country || null, hostname: null, private: true };
+    }
     const hit = cache.get(ip);
     if (hit && Date.now() - hit.at < TTL_MS) return hit.data;
     for (const p of providers) {
