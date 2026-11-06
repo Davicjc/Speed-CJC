@@ -203,6 +203,11 @@ test('acesso técnico: só técnico e admin usam o /tecnico; teste "técnico" de
     assert.equal(me.body.isTecnico, true);
     assert.equal(me.body.isAdmin, false, 'técnico não vira administrador');
     assert.equal((await est.navB.get('/api/admin/users')).status, 403, 'técnico não mexe em usuários');
+    const inicio = await est.navB.get('/');
+    assert.equal(inicio.status, 302, 'técnico que abre o / vai para o teste técnico');
+    assert.equal(inicio.headers.get('location'), '/tecnico');
+    assert.equal((await est.dono.get('/')).status, 200, 'administrador continua no /');
+    assert.equal((await est.navC.get('/')).status, 200, 'cliente continua no /');
 
     const tec = await est.navB.post('/api/results', { mode: 'completo', download: 480, upload: 240, ping: 6, jitter: 1, origem: 'tecnico', atendimento: { cliente: 'Cliente 123', plano: 500, obs: 'teste no cabo' } });
     assert.equal(tec.status, 201);
@@ -222,6 +227,7 @@ test('acesso técnico: só técnico e admin usam o /tecnico; teste "técnico" de
 
     assert.match(srv.admin('sem-tecnico', B.email), /não tem mais acesso técnico/);
     assert.equal((await est.navB.get('/api/tecnico/tests')).status, 403, 'perde o acesso na hora');
+    assert.equal((await est.navB.get('/')).status, 200, 'sem acesso técnico, volta a ver o /');
     assert.equal((await est.dono.get('/api/tecnico/tests')).status, 200, 'administrador também usa o /tecnico');
 });
 

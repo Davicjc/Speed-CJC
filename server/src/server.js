@@ -489,6 +489,17 @@ async function handle(req, res) {
             return res.end(req.method === 'HEAD' ? undefined : xml);
         }
 
+        // técnico (que não é administrador) abrindo o teste do cliente vai direto para o
+        // teste técnico, para não confundir; administrador e cliente seguem no /
+        if (url.pathname === '/') {
+            let quem = null;
+            try { quem = authn.optionalUser(req, ip); } catch { /* sessão inválida: segue como visitante */ }
+            if (quem && users.isTecnico(quem.profile) && !users.isAdmin(quem.profile)) {
+                res.writeHead(302, { Location: '/tecnico', 'Cache-Control': 'no-store' });
+                return res.end();
+            }
+        }
+
         const page = PAGES[url.pathname];
         if (page) {
             const name = page.replace('.html', '').replace('index', 'teste');
