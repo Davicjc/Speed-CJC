@@ -186,14 +186,25 @@ const bolaDe = (tipo, valor, tom) => bola((classificar(tipo, valor, { tom }) || 
 // tempo até aplicativos, streaming, TV e bancos (só o técnico vê bolinha)
 const bolaTempo = (ms, tecnico) => (!tecnico || ms == null ? '' : ms >= 150 ? ' 🔴' : ms >= 60 ? ' 🟠' : '');
 const RECUO = '    ';
+const coord = (v) => v.toFixed(5).replace('.', ',');
+
+/** Linhas da seção de coordenadas: link do Google Maps e a coordenada crua (-18,76295, -48,39476). */
+export function linhasCoordenadas(loc) {
+    if (!loc || !Number.isFinite(loc.lat) || !Number.isFinite(loc.lng)) return ['Sem coordenadas: o aparelho não liberou a localização'];
+    const prec = Number.isFinite(loc.accuracy) && loc.accuracy > 0 ? ` (precisão de ${fmtNum(Math.round(loc.accuracy), 0)} m)` : '';
+    return [
+        `Google Maps: https://www.google.com/maps/search/?api=1&query=${loc.lat.toFixed(5)},${loc.lng.toFixed(5)}`,
+        `${coord(loc.lat)}, ${coord(loc.lng)}${prec}`,
+    ];
+}
 
 /**
  * Texto completo do teste para o WhatsApp e para copiar: título e seções com
  * emoji, dados recuados embaixo de cada seção (um serviço por linha) e uma
  * bolinha vermelha ou laranja no fim do dado ruim. Leva tudo o que o teste
  * mediu (no modo completo, também o diagnóstico; a rota e o NAT só para o
- * técnico), menos as coordenadas do aparelho: o local vai pelo nome do bairro
- * e da cidade.
+ * técnico). A seção de coordenadas vai sempre (link do Google Maps e a
+ * coordenada crua), mesmo quando o aparelho não liberou a localização.
  */
 /** Partes da mensagem que a administração pode tirar do envio pelo WhatsApp (Administração → WhatsApp). */
 export const PARTES_MSG = [
@@ -255,6 +266,7 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
         if (t.server && t.server.name) con.push(`Servidor: ${t.server.name}${t.server.location ? `, ${t.server.location}` : ''}`);
     }
     secao('🌐 Conexão', con);
+    secao('📍 Coordenadas', linhasCoordenadas(t.location));
 
     if (t.mode === 'completo') {
         const diag = [];
