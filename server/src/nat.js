@@ -146,7 +146,7 @@ export async function analyzeNat(ip, trace) {
         reason = `IP na faixa de CGNAT (100.64.0.0/10): a operadora compartilha um IP público entre vários clientes${innerRouters >= 2 ? `, e há ${innerRouters} roteadores dentro da casa` : ''}`;
     } else if (privateIp) {
         doubleNat = 'rede local';
-        reason = 'teste feito por dentro da rede (IP privado), sem passar pela internet';
+        reason = 'teste feito por dentro da rede da operadora (IP interno), sem sair para a internet';
     }
 
     const data = {
