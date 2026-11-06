@@ -386,7 +386,7 @@ async function salvar(r, geo) {
     } catch (e) {
         salvo.className = 'salvo atencao';
         setHtml(salvo, html`${{ __raw: ICON.alert }}<span>Não foi possível guardar o resultado (${e.message}). O resultado acima continua valendo.</span>`);
-        habilitarCompartilhar(null, r, null, aparelho);
+        habilitarCompartilhar(null, r, null, aparelho, geo);
         if (tec) tec.medidasDetalhadas($('#d-medidas'), comoRelatorio(r, null, aparelho), { erroAoGuardar: e.message });
         return;
     }
@@ -396,7 +396,7 @@ async function salvar(r, geo) {
         leitura('upload', r.upload, { selo: true });
     }
     setHtml($('#r-quando'), html`Hoje às ${fmtHora(Date.now())}. Protocolo <span class="mono-copy">${res.protocol}</span>`);
-    habilitarCompartilhar(location.origin + res.path, r, res, aparelho);
+    habilitarCompartilhar(location.origin + res.path, r, res, aparelho, geo);
     if (tec) {
         tec.medidasDetalhadas($('#d-medidas'), comoRelatorio(r, res, aparelho), { res });
         tec.recarregarLista();
@@ -450,8 +450,8 @@ function comoRelatorio(r, res, aparelho) {
     };
 }
 
-function habilitarCompartilhar(link, r, res, aparelho) {
-    const texto = textoCompleto(comoRelatorio(r, res, aparelho), { link, plano: planoAtual(), empresa: cfg.serverName || MARCA, tom: TOM });
+function habilitarCompartilhar(link, r, res, aparelho, geo) {
+    const texto = textoCompleto({ ...comoRelatorio(r, res, aparelho), location: geo || null }, { link, plano: planoAtual(), empresa: cfg.serverName || MARCA, tom: TOM });
     const bc = $('#copiar');
     bc.innerHTML = ICON.copy + 'Copiar resultado';
     bc.hidden = false;
