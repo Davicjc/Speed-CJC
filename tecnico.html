@@ -21,66 +21,41 @@
 <link rel="stylesheet" href="/css/teste.css">
 <link rel="stylesheet" href="/css/painel.css">
 <link rel="stylesheet" href="/css/tecnico.css">
+<link rel="stylesheet" href="/css/tecnico-simples.css">
 </head>
-<body class="pagina-teste tema-tecnico" data-tom="tecnico">
+<body class="pagina-teste tema-tecnico tec-simples" data-tom="tecnico">
 <a class="pular" href="#conteudo">Pular para o teste técnico</a>
 <header class="topo" id="topo"></header>
 
-<main id="conteudo">
-    <section class="palco miolo" aria-label="Speed teste técnico">
-        <div class="palco-texto">
-            <div class="intro" id="intro">
-                <h1><span class="sobretitulo">{{MARCA}} técnico</span>Diagnóstico completo da conexão</h1>
-                <p class="lead">Todas as medidas, sem filtro: velocidade, latência com a linha cheia, perda por UDP, IPv4 e IPv6, NAT e CGNAT, rota salto a salto e tempo até aplicativos e bancos. O teste fica guardado junto com o atendimento.</p>
-
-                <details class="atendimento" id="atendimento" open>
-                    <summary><span class="atendimento-titulo">Dados do atendimento</span><span class="atendimento-resumo" id="at-resumo">cliente, plano e observação</span></summary>
-                    <div class="atendimento-grade">
-                        <div class="campo"><label for="at-cliente">Cliente (nome, código ou contrato)</label><input class="entrada" id="at-cliente" maxlength="80" autocomplete="off"></div>
-                        <div class="campo"><label for="at-plano">Plano (Mbps)</label><input class="entrada" id="at-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off" placeholder="Ex.: 500"></div>
-                        <div class="campo total"><label for="at-obs">Observação</label><input class="entrada" id="at-obs" maxlength="500" autocomplete="off" placeholder="Ex.: teste no cabo, ONU trocada, Wi-Fi 5 GHz na sala"></div>
-                    </div>
-                </details>
-
-                <div class="opcoes">
-                    <div class="segmento" role="radiogroup" aria-label="Tipo de teste" id="modos">
-                        <button type="button" role="radio" aria-checked="true" data-modo="rapido">Teste rápido</button>
-                        <button type="button" role="radio" aria-checked="false" data-modo="completo">Diagnóstico completo</button>
-                    </div>
-                    <p class="opcao-ajuda" id="modo-ajuda">Velocidade, latência e estabilidade, em cerca de 30 segundos.</p>
-                    <label class="chave" id="local-chave">
-                        <input type="checkbox" id="usar-local">
-                        <span class="trilho" aria-hidden="true"></span>
-                        Registrar a localização do aparelho
-                    </label>
-                    <p class="opcao-ajuda" id="local-ajuda">Mostra no seu histórico e no mapa onde cada teste foi feito. O navegador pede permissão.</p>
-                </div>
+<main id="conteudo" class="ts">
+    <section class="miolo ts-palco" aria-label="Teste de técnico">
+        <div class="ts-intro" id="intro">
+            <h1>Teste de técnico</h1>
+            <div class="ts-campos">
+                <div class="campo ts-cliente"><label for="at-cliente">Cliente</label><input class="entrada" id="at-cliente" maxlength="80" autocomplete="off" placeholder="Nome, código ou contrato"></div>
+                <div class="campo ts-plano"><label for="at-plano">Plano (Mbps)</label><input class="entrada" id="at-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off" placeholder="500"></div>
+                <div class="campo ts-obs"><label for="at-obs">Observação</label><input class="entrada" id="at-obs" maxlength="500" autocomplete="off" placeholder="Ex.: ONU trocada, cabo, Wi-Fi 5 GHz"></div>
             </div>
-
-            <div class="resultado" id="resultado" hidden tabindex="-1">
-                <p class="resultado-quando" id="r-quando"></p>
-                <h2 id="r-titulo"></h2>
-                <p class="lead" id="r-texto"></p>
-                <p class="plano" id="r-plano" hidden></p>
-                <ul class="usos" id="r-usos" aria-label="O que a conexão aguenta"></ul>
-                <ul class="dicas" id="r-dicas" hidden></ul>
-                <div class="resultado-acoes">
-                    <button type="button" class="botao botao-primario" id="de-novo">Testar de novo</button>
-                    <button type="button" class="botao botao-secundario" id="inicio">Voltar ao início</button>
-                    <button type="button" class="botao botao-secundario" id="copiar" hidden></button>
-                    <a class="botao botao-secundario" id="whatsapp" target="_blank" rel="noopener" hidden></a>
-                </div>
-                <div class="salvo" id="r-salvo" aria-live="polite"></div>
+            <div class="segmento ts-modos" role="radiogroup" aria-label="Tipo de teste" id="modos">
+                <button type="button" role="radio" aria-checked="false" data-modo="rapido">Rápido <small>30 s</small></button>
+                <button type="button" role="radio" aria-checked="true" data-modo="completo">Completo <small>1 min</small></button>
             </div>
+            <p class="ts-oculto" id="modo-ajuda"></p>
+            <label class="chave ts-local" id="local-chave">
+                <input type="checkbox" id="usar-local">
+                <span class="trilho" aria-hidden="true"></span>
+                Salvar localização (GPS)
+            </label>
+            <p class="ts-oculto" id="local-ajuda"></p>
         </div>
 
-        <div class="palco-velo">
+        <div class="palco-velo ts-velo">
             <div class="velo" id="velo" data-modo="ocioso">
                 <div class="velo-centro">
                     <span class="velo-rotulo" id="velo-rotulo">Download</span>
                     <span class="velo-numero num" id="velo-numero">0</span>
                     <span class="velo-unidade" id="velo-unidade">Mbps</span>
-                    <span class="velo-concluido"><strong>Concluído!</strong><small>Veja o resultado abaixo<br>ou envie</small></span>
+                    <span class="velo-concluido"><strong>Concluído!</strong></span>
                 </div>
                 <button type="button" class="velo-iniciar" id="iniciar" aria-describedby="modo-ajuda">
                     <span>Iniciar</span>
@@ -98,7 +73,12 @@
         </div>
     </section>
 
-    <section class="miolo leituras-faixa" aria-label="Medidas">
+    <div class="miolo ts-fim-topo">
+        <p class="ts-quando" id="r-quando"></p>
+        <div class="salvo ts-salvo" id="r-salvo" aria-live="polite"></div>
+    </div>
+
+    <section class="miolo leituras-faixa ts-leituras" aria-label="Medidas">
         <dl class="leituras" id="leituras">
             <div class="leitura" data-tipo="download">
                 <dt><i class="chave-serie" style="--c: var(--serie-download)"></i>Download</dt>
@@ -117,24 +97,36 @@
                 <dd><b class="num" id="v-jitter">–</b><small>ms</small><span class="leitura-selo" id="q-jitter"></span></dd>
             </div>
             <div class="leitura" data-tipo="perda">
-                <dt>Perda de pacotes</dt>
+                <dt>Perda</dt>
                 <dd><b class="num" id="v-perda">–</b><small>%</small><span class="leitura-selo" id="q-perda"></span></dd>
             </div>
             <div class="leitura" data-tipo="bufferbloat">
-                <dt>Ping com a linha cheia</dt>
-                <dd><b class="num" id="v-bufferbloat">–</b><small>ms a mais</small><span class="leitura-selo" id="q-bufferbloat"></span></dd>
+                <dt>Linha cheia</dt>
+                <dd><b class="num" id="v-bufferbloat">–</b><small>ms</small><span class="leitura-selo" id="q-bufferbloat"></span></dd>
             </div>
         </dl>
-        <dl class="conexao" id="conexao">
-            <div><dt>Seu IP</dt><dd id="c-ip"><span class="esqueleto" style="width:120px"></span></dd></div>
+        <ul class="ts-diag" id="ts-diag" aria-label="Resumo do diagnóstico" hidden></ul>
+        <dl class="conexao ts-conexao" id="conexao">
             <div><dt>Operadora</dt><dd id="c-isp"><span class="esqueleto" style="width:140px"></span></dd></div>
+            <div><dt>IP</dt><dd id="c-ip"><span class="esqueleto" style="width:120px"></span></dd></div>
             <div><dt>Local</dt><dd id="c-local"><span class="esqueleto" style="width:110px"></span></dd></div>
             <div><dt>Servidor</dt><dd id="c-servidor">{{EMPRESA}}</dd></div>
         </dl>
     </section>
 
-    <section class="miolo detalhes" id="detalhes" hidden aria-labelledby="detalhes-titulo">
-        <h2 id="detalhes-titulo">Detalhes do teste</h2>
+    <section class="miolo ts-resultado" id="resultado" hidden tabindex="-1" aria-label="Resultado">
+        <div class="ts-plano-barra" id="r-plano" hidden></div>
+        <div class="ts-oculto" aria-hidden="true"><h2 id="r-titulo"></h2><p id="r-texto"></p><ul id="r-usos"></ul><ul id="r-dicas" hidden></ul></div>
+        <div class="ts-acoes" id="ts-acoes">
+            <button type="button" class="botao botao-secundario" id="copiar" hidden></button>
+            <a class="botao botao-secundario" id="whatsapp" target="_blank" rel="noopener" hidden></a>
+            <button type="button" class="botao botao-secundario" id="de-novo">Testar de novo</button>
+            <button type="button" class="botao botao-secundario" id="inicio">Voltar ao início</button>
+        </div>
+    </section>
+
+    <details class="miolo detalhes ts-dobra" id="detalhes" hidden>
+        <summary><h2 id="detalhes-titulo">Ver tudo o que foi medido</h2></summary>
         <div class="detalhes-grade">
             <article class="painel largo" id="d-curva">
                 <div class="painel-cabeca">
@@ -155,14 +147,11 @@
             <article class="painel total" id="d-medidas" hidden></article>
             <article class="painel total" id="d-rota" hidden></article>
         </div>
-    </section>
+    </details>
 
-    <section class="miolo testes-tec" id="testes-tec" aria-labelledby="testes-tec-titulo" hidden>
+    <details class="miolo testes-tec ts-dobra" id="testes-tec" hidden>
+        <summary><h2 id="testes-tec-titulo">Testes de todos os clientes</h2></summary>
         <div class="testes-tec-cabeca">
-            <div>
-                <h2 id="testes-tec-titulo">Testes de todos os clientes</h2>
-                <p>Os feitos na página do cliente e aqui no técnico. Clique para ver tudo o que foi medido.</p>
-            </div>
             <form class="filtros-tec" id="filtros-tec" role="search">
                 <input class="entrada" id="busca-tec" type="search" placeholder="Protocolo SPD-…, nome ou e-mail" aria-label="Buscar testes">
                 <div class="segmento" role="radiogroup" aria-label="Origem do teste" id="origem-tec">
@@ -179,10 +168,9 @@
             </table>
         </div>
         <p style="margin-top:12px"><button type="button" class="botao botao-secundario botao-pequeno" id="mais-tec" hidden>Carregar mais</button></p>
-    </section>
+    </details>
 </main>
 
-<footer class="rodape" id="rodape"></footer>
 <script type="module" src="/js/pages/teste.js"></script>
 <script src="https://footer.davicjc.com/projetos/footer-davi/footer_davicjc.js" defer></script>
 </body>

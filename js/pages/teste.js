@@ -11,13 +11,16 @@ import { barrasHorizontais, graficoLinhas } from '../ui/graficos.js';
 import { convidarInstalar } from '../ui/instalar.js';
 import { iniciarLocalizacao, pedirPosicao } from '../ui/localizacao.js';
 import { classificar, dicas, planoParaCliente, veredito } from '../ui/qualidade.js';
-import { desenharDiag, textoCompleto, textoZap, usosHtml } from '../ui/relatorio.js';
+import { avaliarMtu, desenharDiag, textoCompleto, textoZap, usosHtml } from '../ui/relatorio.js';
 import { criarVelocimetro } from '../ui/velocimetro.js';
 
 // A mesma página serve dois públicos: o cliente (/), com resultado honesto e
 // sem alarme, e o técnico (/tecnico), com tudo, para técnicos e administradores.
 const TOM = document.body.dataset.tom === 'tecnico' ? 'tecnico' : 'cliente';
 const TECNICO = TOM === 'tecnico';
+// teste de técnico (/tecnico, layout simples): fim do teste na primeira tela, com o Zap em destaque
+const SIMPLES = TECNICO && document.body.classList.contains('tec-simples');
+const resumoDiag = new Map(); // selos do diagnóstico no simples
 
 const sessao = await iniciarPagina({ pagina: TECNICO ? 'tecnico' : 'teste', exigirLogin: TECNICO });
 const cfg = sessao.cfg || {};
@@ -150,6 +153,13 @@ function limpar() {
     leituraAtiva(null);
     $('#resultado').hidden = true;
     $('#intro').hidden = false;
+    if (SIMPLES) {
+        document.body.classList.remove('ts-fim');
+        resumoDiag.clear();
+        $('#ts-diag').hidden = true;
+        $('#ts-diag').innerHTML = '';
+        $('#ts-aviso')?.remove();
+    }
     const bz = $('#zap-enviar-teste');
     if (bz) bz.remove();
     $('#detalhes').hidden = true;
@@ -182,6 +192,7 @@ async function iniciar() {
     $('#de-novo').disabled = true;
     sessao.definirEstado('testing');
     document.body.classList.add('testando');
+    if (SIMPLES) window.scrollTo({ top: 0, behavior: 'smooth' });
 
     const geo = querLocal ? pedirLocal() : Promise.resolve(null);
     evento('teste_iniciado', { modo });
@@ -301,7 +312,9 @@ function mostrarResultado(r, amostras) {
     velo.modo('fim');
     velo.valor(r.download || 0);
     centro('Download', fmtMbps(r.download), 'Mbps');
-    for (const t of ['download', 'upload', 'ping', 'jitter', 'bufferbloat']) leitura(t, r[t], { selo: true });
+    // no simples, com o plano informado, download e upload não usam régua fixa: vale a porcentagem do plano
+    const pelaPorcentagem = SIMPLES && !!planoAtual();
+    for (const t of ['download', 'upload', 'ping', 'jitter', 'bufferbloat']) leitura(t, r[t], { selo: !(pelaPorcentagem && (t === 'download' || t === 'upload')) });
     leitura('perda', r.loss, { selo: true });
     const faltou = r.erros.map((x) => x.split(':')[0]).join(', ');
     $('#status').textContent = !r.erros.length ? 'Teste concluído.'
@@ -316,7 +329,12 @@ function mostrarResultado(r, amostras) {
     const plano = planoAtual();
     // cliente: a comparação aparece quando o resultado chega perto do plano; técnico: sempre
     const pct = TECNICO ? (plano && r.download != null ? Math.round((r.download / plano) * 100) : null) : planoParaCliente(r.download, plano);
-    if (pct != null) {
+    if (pct != null && SIMPLES) {
+        const nivel = pct >= 80 ? 'ok' : pct >= 60 ? 'atencao' : 'ruim';
+        setHtml($('#r-plano'), html`<span><strong>${pct}%</strong> do plano de ${plano} Mbps</span><i class="ts-barra ${nivel}"><b style="width:${Math.min(100, pct)}%"></b></i>`);
+        $('#q-download').innerHTML = nivel === 'ok' ? '' : `<span class="selo ${nivel}"></span>`;
+        $('#r-plano').hidden = false;
+    } else if (pct != null) {
         setHtml($('#r-plano'), html`${TECNICO ? 'O cliente recebeu' : 'Você recebeu'} <strong>${pct}%</strong> do plano de ${plano} Mbps neste teste.`);
         $('#r-plano').hidden = false;
     } else $('#r-plano').hidden = true;
@@ -334,6 +352,11 @@ function mostrarResultado(r, amostras) {
     $('#intro').hidden = true;
     $('#resultado').hidden = false;
     $('#resultado').focus({ preventScroll: true });
+    if (SIMPLES) {
+        document.body.classList.add('ts-fim');
+        if (r.erros.length) $('#r-quando').insertAdjacentHTML('afterend', `<p class="ts-aviso" id="ts-aviso">Não medido: ${esc(r.erros.join('; '))}</p>`);
+        window.scrollTo({ top: 0 });
+    }
 
     // detalhes: curva de velocidade + aparelho
     $('#detalhes').hidden = false;
@@ -406,10 +429,13 @@ async function salvar(r, geo) {
         bz.id = 'zap-enviar-teste';
         bz.innerHTML = ICON.whatsapp + 'Enviar para o Zap';
         bz.addEventListener('click', () => import('../ui/zap-envio.js').then((m) => m.abrirEnvioZap({ id: res.id, protocol: res.protocol, atendimento: tec.atendimento(), place: res.place })));
-        $('#de-novo').after(bz);
+        if (SIMPLES) $('#ts-acoes').prepend(bz); else $('#de-novo').after(bz);
     }
 
-    if (TECNICO) {
+    if (SIMPLES) {
+        salvo.className = 'salvo ts-salvo ok';
+        setHtml(salvo, html`${{ __raw: ICON.checkCircle }}<span>Guardado${res.verified === false ? ' · não conferido pelo servidor' : ''}</span>`);
+    } else if (TECNICO) {
         salvo.className = 'salvo ok';
         setHtml(salvo, html`${{ __raw: ICON.checkCircle }}<span>Teste técnico guardado (protocolo ${res.protocol})${res.place && res.place.label ? `, com local: ${res.place.label}` : ''}. Aparece na lista abaixo e na administração.</span>`);
     } else if (res.saved === 'account') {
@@ -424,7 +450,7 @@ async function salvar(r, geo) {
             setHtml(salvo, html`${{ __raw: ICON.checkCircle }}<span>Resultado registrado.</span>`);
         }
     }
-    if (res.verified === false && TECNICO) {
+    if (res.verified === false && TECNICO && !SIMPLES) {
         salvo.insertAdjacentHTML('beforeend', '<span class="suave" style="flex-basis:100%;font-size:var(--t-xs)">O servidor não conseguiu conferir todas as medidas deste teste; ele fica marcado como não conferido.</span>');
     }
 }
@@ -473,6 +499,31 @@ function habilitarCompartilhar(link, r, res, aparelho, geo) {
 function mostrarDiag(chave, d) {
     desenharDiag($(`#d-${chave}`), chave, d, { tom: TOM });
     $('#detalhes').hidden = false;
+    if (SIMPLES) resumirDiag(chave, d);
+}
+
+// teste de técnico simples: o principal do diagnóstico em selos, junto dos números
+const NAT_CURTO = { normal: 'NAT moderado', 'simétrico': 'NAT estrito', 'sem NAT (IPv6 direto)': 'Sem NAT (IPv6)' };
+function resumirDiag(chave, d) {
+    if (!d) return;
+    const sel = [];
+    if (chave === 'protocolos') {
+        for (const [nome, x] of [['IPv4', d.ipv4], ['IPv6', d.ipv6]]) if (x && x.alcance != null) sel.push([x.alcance ? 'ok' : 'ruim', `${nome} ${x.alcance ? '✓' : '✗'}`]);
+    } else if (chave === 'nat') {
+        if (d.tipo) sel.push([d.tipo === 'simétrico' ? 'atencao' : 'ok', NAT_CURTO[d.tipo] || `NAT ${d.tipo}`]);
+        if (d.cgnat) sel.push(['', 'CGNAT']);
+        else if (/^sim|provável/.test(d.duploNat || '')) sel.push(['atencao', 'Duplo NAT']);
+    } else if (chave === 'mtu') {
+        if (d.mtuCaminho == null && d.mss == null) return;
+        const a = avaliarMtu(d);
+        sel.push([a.nivel === 'ruim' ? 'ruim' : a.nivel === 'atencao' ? 'atencao' : 'ok', `MTU ${d.mtuCaminho ?? '–'} · MSS ${d.mss ?? '–'}`]);
+    } else if (chave === 'relogio') {
+        if (Math.abs(d.offsetS) >= 2) sel.push(['atencao', 'Relógio do aparelho errado']);
+    } else return;
+    resumoDiag.set(chave, sel);
+    const ul = $('#ts-diag');
+    ul.innerHTML = [...resumoDiag.values()].flat().map(([nivel, txt]) => `<li class="selo ${nivel}">${esc(txt)}</li>`).join('');
+    ul.hidden = !ul.children.length;
 }
 
 // atalho: espaço/enter no velocímetro parado inicia
