@@ -1,0 +1,118 @@
+/* Teste de técnico (/tecnico): só o necessário na tela. Antes do teste,
+   os dados do atendimento, o tipo e o Iniciar; no fim, os números, o plano e o
+   botão de enviar para o Zap na primeira tela, sem rolar. O resto (gráfico,
+   diagnóstico detalhado, lista de testes) fica dobrado embaixo. */
+
+.ts-oculto { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- antes do teste ---------- */
+.ts-palco {
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(20px, 4vw, 56px); align-items: center;
+    padding: clamp(16px, 3vh, 32px) 0 8px;
+}
+.ts-intro { display: grid; gap: 14px; align-content: start; max-width: 520px; }
+.ts-intro h1 { font-size: clamp(1.45rem, 3vw, 2.2rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; }
+.ts-campos { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 10px; }
+.ts-campos .campo { gap: 4px; }
+.ts-campos label { font-size: var(--t-xs); }
+.ts-campos .entrada { min-height: 46px; }
+.ts-obs { grid-column: 1 / -1; }
+.ts-modos { width: 100%; }
+.ts-modos button { flex: 1; padding: 11px 10px; font-size: var(--t-md); }
+.ts-modos small { font-size: var(--t-xs); font-weight: 500; opacity: 0.7; margin-left: 4px; }
+.ts-local { justify-self: start; }
+.ts-velo { gap: 10px; }
+.ts-velo .velo { width: min(400px, 100%); }
+
+/* ---------- números ---------- */
+/* antes do teste não há o que mostrar: os números só aparecem durante e depois */
+.tec-simples:not(.testando):not(.ts-fim) .ts-leituras { display: none; }
+.tec-simples .leituras-faixa { margin-top: 4px; }
+.tec-simples .leituras { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; border: 0; }
+.tec-simples .leituras .leitura {
+    border: 1px solid var(--linha); border-radius: var(--r-md);
+    padding: 10px 12px; background: rgba(19, 25, 37, 0.55);
+}
+.tec-simples .leituras .leitura.ativa::before { left: 10px; right: 10px; }
+.tec-simples .leitura dt { font-size: var(--t-xs); }
+.tec-simples .leitura dd { margin-top: 2px; column-gap: 4px; }
+.tec-simples .leitura b { font-size: clamp(1.3rem, 2vw, 1.7rem); }
+.tec-simples .leitura:is([data-tipo="download"], [data-tipo="upload"]) b { font-size: clamp(1.9rem, 3.4vw, 2.6rem); }
+/* só o dado ruim muda de cor (verde não precisa); o texto do selo não ocupa espaço */
+.tec-simples .leitura-selo { display: none; }
+.tec-simples .leitura:has(.selo.atencao) b { color: var(--atencao); }
+.tec-simples .leitura:has(.selo.ruim) b { color: var(--ruim); }
+
+.ts-diag { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.ts-diag .selo { font-size: var(--t-sm); padding: 4px 12px; }
+
+.tec-simples .conexao { margin-top: 12px; gap: 6px 16px; }
+.tec-simples .conexao dd { color: var(--texto); }
+
+/* ---------- fim do teste ---------- */
+.ts-fim-topo { display: none; align-items: center; justify-content: space-between; gap: 6px 16px; flex-wrap: wrap; padding: 14px 0 10px; }
+.ts-fim .ts-palco { display: none; }
+.ts-fim .ts-fim-topo { display: flex; }
+.ts-quando { font-size: var(--t-sm); color: var(--texto-2); }
+.ts-quando .mono-copy { color: var(--texto); font-weight: 600; }
+.ts-salvo { margin: 0; max-width: none; }
+.ts-aviso { flex-basis: 100%; font-size: var(--t-sm); color: var(--atencao); }
+
+.ts-resultado:focus { outline: none; }
+.ts-plano-barra { display: grid; gap: 6px; margin-top: 14px; font-size: var(--t-sm); color: var(--texto-2); }
+.ts-plano-barra strong { color: var(--texto); font-family: var(--fonte-display); font-size: 1.1rem; }
+.ts-barra { display: block; height: 8px; border-radius: var(--r-full); background: rgba(255, 236, 214, 0.08); overflow: hidden; }
+.ts-barra b { display: block; height: 100%; border-radius: inherit; background: var(--ok); }
+.ts-barra.atencao b { background: var(--atencao); }
+.ts-barra.ruim b { background: var(--ruim); }
+
+.ts-acoes { display: grid; grid-template-columns: 2fr repeat(4, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.ts-acoes .botao { width: 100%; justify-content: center; min-height: 50px; }
+.ts-acoes #zap-enviar-teste {
+    min-height: 58px; font-size: 1.08rem;
+    background: #1E9E50; color: #fff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset, 0 12px 30px -12px rgba(37, 211, 102, 0.75);
+}
+.ts-acoes #zap-enviar-teste:hover { background: #22B35B; }
+.ts-acoes #zap-enviar-teste svg { width: 22px; height: 22px; }
+.ts-acoes:not(:has(#zap-enviar-teste)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+/* ---------- dobras: detalhes e testes de todos os clientes ---------- */
+.ts-dobra { border: 1px solid var(--linha); border-radius: var(--r-lg); background: rgba(19, 25, 37, 0.45); padding: 0 16px; }
+.tec-simples .detalhes { margin-top: 24px; }
+.tec-simples .testes-tec { margin-top: 12px; }
+.ts-dobra > summary { list-style: none; cursor: pointer; padding: 16px 0; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ts-dobra > summary::-webkit-details-marker { display: none; }
+.ts-dobra > summary h2 { font-size: var(--t-lg); margin: 0; }
+.ts-dobra > summary::after { content: '+'; font-family: var(--fonte-display); font-size: 1.5rem; line-height: 1; color: var(--ciano); transition: transform .2s; }
+.ts-dobra[open] > summary::after { transform: rotate(45deg); }
+.ts-dobra[open] { padding-bottom: 16px; }
+.tec-simples .testes-tec-cabeca { justify-content: flex-start; }
+
+/* ---------- celular ---------- */
+@media (max-width: 760px) {
+    .ts-palco { grid-template-columns: minmax(0, 1fr); gap: 12px; padding-top: 12px; }
+    .ts-intro { max-width: none; gap: 12px; }
+    .ts-campos { grid-template-columns: minmax(0, 1fr) 104px; }
+    .ts-campos .entrada { font-size: 16px; }
+    .ts-local { justify-self: center; }
+    .ts-velo .velo { width: min(290px, 76vw); }
+    /* durante o teste, só o velocímetro e os números */
+    .tec-simples.testando .ts-intro { display: none; }
+
+    .tec-simples .leituras { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+    .tec-simples .leituras .leitura { padding: 8px 9px; border: 1px solid var(--linha); }
+    .tec-simples .leitura:is([data-tipo="download"], [data-tipo="upload"]) { grid-column: span 2; }
+    .tec-simples .leitura b { font-size: 1.15rem; }
+    .tec-simples .leitura:is([data-tipo="download"], [data-tipo="upload"]) b { font-size: 2rem; }
+    .tec-simples .leitura small { font-size: 0.6875rem; }
+    .tec-simples .conexao { grid-template-columns: repeat(2, minmax(0, 1fr)); font-size: var(--t-xs); }
+
+    .ts-fim-topo { padding: 10px 0 8px; }
+    .ts-acoes, .ts-acoes:not(:has(#zap-enviar-teste)) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
+    .ts-acoes #zap-enviar-teste { grid-column: 1 / -1; }
+    .ts-acoes .botao { min-height: 46px; padding: 0 10px; }
+    .ts-dobra { padding: 0 12px; }
+    .ts-dobra > summary h2 { font-size: var(--t-md); }
+}
