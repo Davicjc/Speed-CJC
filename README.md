@@ -212,13 +212,23 @@ modelo: leia e passe pelo seu jurídico.
 
 **Contas** (`/entrar`)
 - Cadastro com captcha próprio (sem serviço externo) ou Cloudflare Turnstile.
-- "Manter conectado", confirmação de e-mail e "esqueci minha senha" (com SMTP,
-  opcional). O teste feito sem conta vai para a conta ao entrar.
+  O WhatsApp com DDD é obrigatório: é por ele que a pessoa recupera a senha.
+- **Esqueci minha senha pelo WhatsApp** (com o WhatsApp dos técnicos
+  conectado): a pessoa digita o e-mail ou o WhatsApp da conta e recebe um
+  código de 6 números no WhatsApp já cadastrado (nunca num número digitado na
+  hora). Com o código ela cria a senha nova e já entra; os outros aparelhos
+  saem e ela é avisada no WhatsApp. Contra abuso: captcha, resposta igual
+  exista a conta ou não, código que vale 10 minutos, 5 tentativas e uso único,
+  e limites por IP, conta, número e no total. A conta de dono não usa esse
+  caminho (só pelo terminal do servidor).
+- "Manter conectado", confirmação de e-mail e "esqueci minha senha" por e-mail
+  (com SMTP, opcional). O teste feito sem conta vai para a conta ao entrar.
 
 **Meu painel** (`/painel`)
 - Histórico, gráfico, mapa de onde a pessoa testou, melhor horário, comparação
   com o plano. Cada teste abre com tudo o que foi medido.
 - Aparelhos conectados, troca de senha, baixar e excluir os próprios dados (LGPD).
+  Trocar o WhatsApp pede a senha de novo (ele recupera a conta).
 
 **Área técnica** (`/tecnico`), para técnicos e administradores
 - Tema próprio (grafite e âmbar) e todas as medidas, sem filtro.
@@ -231,10 +241,15 @@ modelo: leia e passe pelo seu jurídico.
 
 **Administração** (`/admin`)
 - Visão geral, **ao vivo** (quem está no site e testando agora), todos os testes
-  com busca e planilha, usuários (administrador, técnico, desativar, link de
-  nova senha), auditoria, sistema.
+  com busca e planilha, auditoria, sistema.
+- Usuários: **editar dados** (nome, e-mail, WhatsApp, cidade e plano),
+  **definir uma senha nova** (a pessoa sai dos aparelhos e é avisada no
+  WhatsApp), administrador, técnico, desativar, link de nova senha. Tudo pede
+  a senha de novo e fica na auditoria; senha, e-mail e WhatsApp de outro
+  administrador só o dono muda.
 - **WhatsApp**: conectar por QR code, escolher os destinos e o que vai em cada
-  mensagem.
+  mensagem, e ligar ou desligar a **recuperação de senha pelo WhatsApp**
+  (desligar é na hora; ligar pede a senha).
 - **HubSoft** (opcional, só leitura): com a integração ligada, o teste do
   técnico acha o cliente pelo IP da conexão (a sessão do Radius aberta agora,
   o que funciona com CGNAT) e pergunta "É o cliente deste teste?", com nome,
@@ -309,7 +324,8 @@ próprio site.
 - LGPD: política de privacidade, consentimento de cookies, baixar e excluir os
   próprios dados, testes sem conta apagados depois do prazo, fotos do WhatsApp
   sem metadados e não gravadas.
-- 34 testes automáticos cobrem a medição, a segurança e a integração com o HubSoft:
+- 42 testes automáticos cobrem a medição, a segurança, a integração com o HubSoft e
+  a recuperação de senha pelo WhatsApp:
   `cd server && npm test`.
 
 Tabela completa na seção 13 do [MANUAL.md](docs/MANUAL.md#13-como-a-segurança-funciona).
@@ -344,7 +360,7 @@ cd Speed-CJC/server
 npm ci
 npm start                                       # http://localhost:8080
 npm run admin -- dono voce@email.com "Seu Nome" # administrador
-npm test                                        # 27 testes automáticos
+npm test                                        # 42 testes automáticos
 ```
 
 Requer Node 22.13 ou mais novo. Para a rota, o duplo NAT e o MTU:
