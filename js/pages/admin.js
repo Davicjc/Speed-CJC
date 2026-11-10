@@ -6,6 +6,7 @@ import {
     copiar, fmtNum, fmtPct, fmtRelativo, html, iniciais, raw, setHtml, sleep, telefoneBonito, toast,
 } from '../core/util.js';
 import { abrirDetalhe } from '../ui/detalhe.js';
+import { CABECALHO_TESTES, linhaTeste } from '../ui/lista-testes.js';
 import { barrasHorizontais, graficoColunas, graficoLinhas } from '../ui/graficos.js';
 
 const sessao = await iniciarPagina({ pagina: 'admin', exigirLogin: true });
@@ -40,7 +41,7 @@ const lugar = (t) => (t.place && t.place.label) || '–';
 const quem = (t) => (t.user ? html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(t.user.name, t.user.email)}</span><div><strong>${t.user.name || t.user.email}</strong><span>${t.user.email || ''}</span></div></div>` : html`<span class="fraco">Sem conta</span>`);
 
 // ---------- navegação ----------
-const VISTAS = ['geral', 'vivo', 'testes', 'usuarios', 'admins', 'auditoria', 'zap', 'tutoriais', 'sistema'];
+const VISTAS = ['geral', 'vivo', 'testes', 'usuarios', 'admins', 'auditoria', 'zap', 'hubsoft', 'tutoriais', 'sistema'];
 const carregadas = new Set();
 function abrirVista(v, { historico = true } = {}) {
     if (!VISTAS.includes(v)) v = 'geral';
@@ -112,14 +113,12 @@ function desenharGeral(d) {
     $('#geral-horas').innerHTML = d.hours.map((n, h) => `<div style="--a:${(0.06 + (n / maxH) * 0.94).toFixed(2)}" title="${h}h: ${n} teste${n === 1 ? '' : 's'}"><span class="sr-only">${h} horas: ${n} testes</span></div>`).join('');
     $('#geral-horas-rotulos').innerHTML = d.hours.map((_, h) => `<span>${h}h</span>`).join('');
 
-    setHtml($('#geral-recentes'), html`${d.recent.map(linhaRecente)}`);
+    setHtml($('#geral-recentes'), html`${d.recent.map((t) => linhaRecente(t))}`);
     ligarLinhas($('#geral-recentes'));
 }
 
-function linhaRecente(t, novo = false) {
-    return html`<tr class="clicavel${novo ? ' novo' : ''}" data-id="${t.id}" tabindex="0"><td>${fmtDiaCurto(t.createdAt)}, ${fmtHora(t.createdAt)}</td><td>${quem(t)}</td>
-        <td class="n">${fmtMbps(t.download)}</td><td class="n">${fmtMbps(t.upload)}</td><td class="n">${fmtMs(t.ping)}</td><td>${lugar(t)}</td><td class="fraco">${t.isp || '–'}</td></tr>`;
-}
+const linhaRecente = (t, novo = false) => raw(linhaTeste(t, { novo }));
+$$('.cabecalho-testes').forEach((el) => { el.innerHTML = CABECALHO_TESTES; });
 
 function desenharAgora(l) {
     ultimoLive = l;
@@ -284,17 +283,13 @@ async function carregarTestes(mais = false) {
     q.set('limit', '50');
     if (mais && testesProximo) q.set('after', testesProximo);
     const tb = $('#testes-linhas');
-    if (!mais) tb.innerHTML = '<tr><td colspan="9"><div class="esqueleto" style="height:120px"></div></td></tr>';
+    if (!mais) tb.innerHTML = '<tr><td colspan="8" class="c-total"><div class="esqueleto" style="height:120px"></div></td></tr>';
     try {
         const r = await api('/api/admin/tests?' + q);
         testesProximo = r.next;
-        const linhas = html`${r.items.map((t) => html`<tr class="clicavel" data-id="${t.id}" tabindex="0">
-            <td>${fmtDataHora(t.createdAt)}<br><span class="fraco">${t.protocol} ${NOME_MODO[t.mode] ? '(' + NOME_MODO[t.mode] + ')' : ''}</span>${t.origem === 'tecnico' ? raw(' <span class="selo origem-tecnico">Técnico</span>') : ''}</td><td>${quem(t)}${t.atendimento && t.atendimento.cliente ? html`<br><span class="fraco">Cliente: ${t.atendimento.cliente}</span>` : ''}</td>
-            <td class="n">${fmtMbps(t.download)}</td><td class="n">${fmtMbps(t.upload)}</td><td class="n">${fmtMs(t.ping)}</td><td class="n">${t.loss != null ? fmtPct(t.loss) + '%' : '–'}</td>
-            <td>${lugar(t)}</td><td class="fraco">${t.isp || '–'}</td>
-            <td>${t.verified ? raw('<span class="selo ok">Sim</span>') : raw('<span class="selo atencao">Não</span>')}</td></tr>`)}`;
+        const linhas = html`${r.items.map((t) => linhaRecente(t))}`;
         if (mais) tb.insertAdjacentHTML('beforeend', String(linhas)); else setHtml(tb, linhas);
-        if (!mais && !r.items.length) tb.innerHTML = '<tr><td colspan="9"><div class="vazio"><span>Nenhum teste encontrado com esses filtros.</span></div></td></tr>';
+        if (!mais && !r.items.length) tb.innerHTML = '<tr><td colspan="8" class="c-total"><div class="vazio"><span>Nenhum teste encontrado com esses filtros.</span></div></td></tr>';
         ligarLinhas(tb);
         $('#testes-mais').hidden = !testesProximo;
         const mu = r.matchedUsers;
@@ -309,7 +304,7 @@ async function carregarTestes(mais = false) {
             }));
         } else $('#testes-usuarios').innerHTML = '';
     } catch (e) {
-        tb.innerHTML = `<tr><td colspan="9"><div class="aviso ruim">${ICON.alert}<div>${esc(e.message)}</div></div></td></tr>`;
+        tb.innerHTML = `<tr><td colspan="8" class="c-total"><div class="aviso ruim">${ICON.alert}<div>${esc(e.message)}</div></div></td></tr>`;
     }
 }
 $('#testes-filtros').addEventListener('submit', (e) => { e.preventDefault(); carregarTestes(); });
@@ -344,9 +339,9 @@ async function carregarUsuarios(mais = false) {
         const r = await api('/api/admin/users?' + q);
         usuariosProximo = r.next;
         const linhas = html`${r.items.map((u) => html`<tr class="clicavel" data-uid="${u.uid}" tabindex="0">
-            <td>${html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(u.name, u.email)}</span><div><strong>${u.name}</strong><span>${u.email}</span></div></div>`}</td>
-            <td class="selos">${papel(u)}</td><td class="n">${fmtInt(u.testsCount)}</td><td class="sem-quebra">${fmtData(u.createdAt)}</td>
-            <td class="sem-quebra">${u.lastSeenAt || u.lastLoginAt ? fmtRelativo(Math.max(u.lastSeenAt || 0, u.lastLoginAt || 0)) : 'nunca'}</td><td class="selos">${situacao(u)}</td></tr>`)}`;
+            <td class="c-pessoa">${html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(u.name, u.email)}</span><div><strong title="${u.name}">${u.name}</strong><span title="${u.email}">${u.email}</span></div></div>`}</td>
+            <td class="selos" data-r="Acesso">${papel(u)}</td><td class="n" data-r="Testes">${fmtInt(u.testsCount)}</td><td class="sem-quebra" data-r="Criada em">${fmtData(u.createdAt)}</td>
+            <td class="sem-quebra" data-r="Último acesso">${u.lastSeenAt || u.lastLoginAt ? fmtRelativo(Math.max(u.lastSeenAt || 0, u.lastLoginAt || 0)) : 'nunca'}</td><td class="selos" data-r="Situação">${situacao(u)}</td></tr>`)}`;
         if (mais) tb.insertAdjacentHTML('beforeend', String(linhas)); else setHtml(tb, linhas);
         if (!mais && !r.items.length) tb.innerHTML = '<tr><td colspan="6"><div class="vazio"><span>Nenhuma conta encontrada.</span></div></td></tr>';
         ligarLinhas(tb);
@@ -540,10 +535,10 @@ async function carregarAdmins() {
         const todos = [...adm.items, ...tec.items.filter((t) => !adm.items.some((a) => a.uid === t.uid))]
             .sort((a, b) => ordem(a) - ordem(b) || a.name.localeCompare(b.name, 'pt-BR'));
         setHtml(tb, html`${todos.map((u) => html`<tr class="clicavel" data-uid="${u.uid}" tabindex="0">
-            <td>${html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(u.name, u.email)}</span><div><strong>${u.name}</strong><span>${u.email}</span></div></div>`}</td>
-            <td class="selos">${papel(u)}${u.disabled ? raw('<span class="nota-cel atencao">conta desativada</span>') : cfg.mail && !u.emailVerified && u.role === 'admin' ? raw('<span class="nota-cel atencao">falta confirmar o e-mail</span>') : ''}</td>
-            <td class="sem-quebra">${u.lastSeenAt ? fmtRelativo(u.lastSeenAt) : 'nunca'}</td>
-            <td class="sem-quebra">${u.uid === eu.uid ? raw('<span class="fraco">Você</span>') : ''}</td></tr>`)}`);
+            <td class="c-pessoa">${html`<div class="quem"><span class="avatar" aria-hidden="true">${iniciais(u.name, u.email)}</span><div><strong title="${u.name}">${u.name}</strong><span title="${u.email}">${u.email}</span></div></div>`}</td>
+            <td class="selos" data-r="Acesso">${papel(u)}${u.disabled ? raw('<span class="nota-cel atencao">conta desativada</span>') : cfg.mail && !u.emailVerified && u.role === 'admin' ? raw('<span class="nota-cel atencao">falta confirmar o e-mail</span>') : ''}</td>
+            <td class="sem-quebra" data-r="Último acesso">${u.lastSeenAt ? fmtRelativo(u.lastSeenAt) : 'nunca'}</td>
+            <td class="sem-quebra c-voce">${u.uid === eu.uid ? raw('<span class="fraco">Você</span>') : ''}</td></tr>`)}`);
         if (!todos.length) tb.innerHTML = '<tr><td colspan="4"><span class="fraco">Nenhum administrador ou técnico além dos donos.</span></td></tr>';
         ligarLinhas(tb);
     } catch (e) { tb.innerHTML = `<tr><td colspan="4">${esc(e.message)}</td></tr>`; }
@@ -574,9 +569,9 @@ async function carregarAuditoria(mais = false) {
     try {
         const r = await api('/api/admin/audit?' + q);
         auditoriaProximo = r.next;
-        const linhas = html`${r.items.map((x) => html`<tr><td>${fmtDataHora(x.at)}</td><td>${x.actor ? x.actor.email : 'sistema'}</td>
-            <td>${x.action}${x.detail ? html`<br><span class="fraco">${Object.entries(x.detail).map(([k, v]) => `${k}: ${v}`).join(', ')}</span>` : ''}</td>
-            <td>${x.target ? x.target.email || x.target.uid : '–'}</td><td class="fraco">${x.ip || '–'}</td></tr>`)}`;
+        const linhas = html`${r.items.map((x) => html`<tr><td class="sem-quebra c-quando">${fmtDataHora(x.at)}</td><td class="c-quemfez"><span class="corta" title="${x.actor ? x.actor.email : 'sistema'}">${x.actor ? x.actor.email : 'sistema'}</span></td>
+            <td class="c-oque">${x.action}${x.detail ? html`<span class="fraco c-detalhe">${Object.entries(x.detail).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(' · ')}</span>` : ''}</td>
+            <td data-r="Com quem"><span class="corta" title="${x.target ? x.target.email || x.target.uid : ''}">${x.target ? x.target.email || x.target.uid : '–'}</span></td><td class="fraco mono" data-r="IP">${x.ip || '–'}</td></tr>`)}`;
         if (mais) tb.insertAdjacentHTML('beforeend', String(linhas)); else setHtml(tb, linhas);
         if (!mais && !r.items.length) tb.innerHTML = '<tr><td colspan="5"><div class="vazio"><span>Nenhuma ação registrada ainda.</span></div></td></tr>';
         $('#auditoria-mais').hidden = !auditoriaProximo;
@@ -627,6 +622,7 @@ const CARREGAR = {
     auditoria: () => carregarAuditoria(),
     sistema: () => carregarSistema(),
     zap: () => import('../ui/zap-admin.js').then((m) => m.iniciarZapAdmin()),
+    hubsoft: () => import('../ui/hubsoft-admin.js').then((m) => m.iniciarHubsoftAdmin()),
 };
 
 // "Recarregar" em cada aba, para não precisar apertar F5 (Visão geral e Sistema já têm o "Atualizar")

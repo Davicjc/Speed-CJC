@@ -100,6 +100,8 @@ opcional, com faixa de cookies e consentimento (LGPD).
 
 **WhatsApp dos técnicos**: a administração conecta um WhatsApp por QR code e libera grupos e contatos; o técnico manda qualquer teste, com até 6 fotos, com um clique (processo isolado, fotos sem metadados e não gravadas). Sem login, cada aparelho faz até 6 testes por dia.
 
+**HubSoft (opcional, só leitura)**: com a integração ligada em Administração → HubSoft, o teste do técnico acha o cliente pelo IP da conexão (a sessão do Radius aberta agora, o que funciona com CGNAT) e pergunta "É o cliente deste teste?", com nome, código, plano, rua, bairro e "conectado desde". Sim preenche o cliente e o plano; Não pede o código; quem não sabe preenche à mão. Se o IP mudar, ele pergunta de novo. Só GET (o único POST é o login do token), endereço travado em `https://….hubsoft.com.br`, credenciais criptografadas no servidor, CPF/telefone/senha PPPoE descartados, cada consulta na auditoria. Sem configuração, nada muda.
+
 **Mapa do site** (`/tree`): todos os caminhos em árvore, para quem cada um é e se a conta atual tem acesso, com botões de copiar o link, enviar no WhatsApp e compartilhar o mapa.
 
 **Resultado público** (`/r/<id>`): o link que vai no WhatsApp, com prévia, sem
@@ -143,7 +145,7 @@ página `/como-medimos`.
   pedem a senha de novo; auditoria.
 - CSP por página sem script inline, HSTS, nada de arquivo interno servido (lista
   fechada).
-- 24 testes automáticos cobrem a medição e a segurança: `cd server && npm test`.
+- 34 testes automáticos cobrem a medição, a segurança e a integração com o HubSoft: `cd server && npm test`.
 
 Tabela completa na seção 13 do [MANUAL.md](docs/MANUAL.md#13-como-a-segurança-funciona).
 

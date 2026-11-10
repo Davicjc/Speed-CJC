@@ -368,6 +368,73 @@ table.tabela { width: 100%; border-collapse: collapse; font-size: var(--t-sm); }
 .tabela .quem div strong { display: block; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 .tabela .quem div span { display: block; color: var(--texto-3); font-size: var(--t-xs); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px; }
 
+/* ---------- listas (testes, usuários, auditoria): colunas certas no computador, cartões no celular ---------- */
+.tabela.lista { table-layout: fixed; }
+.tabela.lista th small { font-size: 0.625rem; color: var(--texto-4); font-weight: 500; }
+.tabela.lista td { min-width: 0; }
+.tabela .corta { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabela .corta2 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; overflow-wrap: anywhere; }
+.tabela .mono { font-family: ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace; font-size: 0.72rem; letter-spacing: -0.01em; }
+.tabela.lista .quem div strong, .tabela.lista .quem div span { max-width: none; }
+.tabela.lista .c-quando strong, .tabela.lista .c-quem strong { display: block; font-weight: 500; color: var(--texto); }
+.tabela.lista .c-quando > span, .tabela.lista .c-quem > span { display: block; margin-top: 2px; }
+.tabela.lista .c-origem .selo { margin-bottom: 3px; }
+.tabela.lista .c-origem > span.fraco { display: block; }
+.tabela .nao-conferido { display: block; color: var(--atencao); font-weight: 600; font-size: var(--t-xs); }
+.tabela.lista .c-rede { font-size: var(--t-xs); color: var(--texto-2); }
+.tabela.lista .c-detalhe { display: block; margin-top: 2px; overflow-wrap: anywhere; }
+
+.lista-testes th.c-quando { width: 176px; }
+.lista-testes th.c-origem { width: 112px; }
+.lista-testes th.n { width: 74px; }
+.lista-testes th.c-rede { width: 150px; }
+.tabela.lista .c-quando .mono { white-space: nowrap; }
+.lista-usuarios th:nth-child(2) { width: 130px; } .lista-usuarios th:nth-child(3) { width: 72px; }
+.lista-usuarios th:nth-child(4) { width: 104px; } .lista-usuarios th:nth-child(5) { width: 118px; } .lista-usuarios th:nth-child(6) { width: 150px; }
+.lista-admins th:nth-child(2) { width: 190px; } .lista-admins th:nth-child(3) { width: 130px; } .lista-admins th:nth-child(4) { width: 70px; }
+.lista-auditoria th:nth-child(1) { width: 150px; } .lista-auditoria th:nth-child(2) { width: 210px; } .lista-auditoria th:nth-child(4) { width: 200px; } .lista-auditoria th:nth-child(5) { width: 128px; }
+.lista-historico th:nth-child(1) { width: 150px; } .lista-historico th:nth-child(2) { width: 140px; } .lista-historico th.n { width: 74px; } .lista-historico th:nth-child(9) { width: 180px; }
+
+@media (max-width: 760px) {
+    .tabela-wrap:has(.tabela.lista) { overflow: visible; }
+    .tabela.lista, .tabela.lista tbody { display: block; width: 100%; }
+    .tabela.lista thead { display: none; }
+    .tabela.lista tr { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px 10px; padding: 12px 2px; border-bottom: 1px solid var(--linha); }
+    .tabela.lista tr:last-child { border-bottom: 0; }
+    .tabela.lista td { display: block; padding: 0; border: 0; width: auto; text-align: left; }
+    .tabela.lista td.n { text-align: left; font-size: var(--t-md); }
+    .tabela.lista td[data-r]::before { content: attr(data-r); display: block; font-family: var(--fonte); font-size: 0.6875rem; font-weight: 500; color: var(--texto-4); margin-bottom: 1px; }
+    .tabela.lista td.c-total, .tabela.lista td[colspan] { grid-column: 1 / -1; }
+    .tabela.lista .c-detalhe { white-space: normal; }
+
+    /* testes: quando + origem / cliente / 4 números / operadora */
+    .lista-testes .c-quando { grid-column: 1 / 4; }
+    .lista-testes .c-quando strong { display: inline; margin-right: 8px; }
+    .lista-testes .c-quando > span { display: inline; }
+    .tabela.lista-testes .c-origem { grid-column: 4; grid-row: 1; text-align: right; }
+    .tabela.lista-testes .c-origem > span.fraco { display: none; }
+    .tabela.lista-testes .c-origem > .nao-conferido { margin-top: 2px; }
+    .lista-testes .c-quem, .lista-testes .c-rede { grid-column: 1 / -1; }
+    .lista-testes .c-quem strong { font-size: var(--t-md); }
+
+    /* usuários e administradores: pessoa em cima, o resto com rótulo */
+    .tabela.lista-usuarios tr, .tabela.lista-admins tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lista-usuarios .c-pessoa, .lista-admins .c-pessoa { grid-column: 1 / -1; }
+    .lista-admins .c-voce:empty { display: none; }
+
+    /* auditoria: quando e quem fez / o quê / com quem e IP */
+    .lista-auditoria tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .lista-auditoria .c-oque { grid-column: 1 / -1; }
+    .lista-auditoria .c-quando { color: var(--texto-3); font-size: var(--t-xs); }
+
+    /* histórico do cliente: data e tipo / 5 números / local e aparelho */
+    .lista-historico tr { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+    .lista-historico .c-quando { grid-column: 1 / 4; }
+    .lista-historico .c-tipo { grid-column: 4 / -1; text-align: right; }
+    .lista-historico .c-local, .lista-historico .c-aparelho { grid-column: 1 / -1; }
+    .lista-historico td.n { font-size: var(--t-sm); }
+}
+
 /* ---------- estados vazios e carregando ---------- */
 .vazio { text-align: center; padding: 40px 16px; color: var(--texto-3); display: grid; justify-items: center; gap: 12px; }
 .vazio svg { width: 40px; height: 40px; color: var(--texto-4); }

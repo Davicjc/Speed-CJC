@@ -240,7 +240,7 @@ export function textoCompleto(t, { link, plano, empresa = 'Audicom Telecom', tom
     // uma conexão de 20 Mbps entregando os 20 Mbps
     if (tecnico && t.verified === false) L.push('Não conferido pelo servidor 🟠');
 
-    if (tecnico && ver('atendimento')) secao('🏠 Atendimento', [at.cliente ? `Cliente: ${at.cliente}` : null, at.plano ? `Plano: ${at.plano} Mbps` : null, at.obs ? `Obs.: ${at.obs}` : null].filter(Boolean));
+    if (tecnico && ver('atendimento')) secao('🏠 Atendimento', [at.cliente ? `Cliente: ${at.cliente}` : null, at.codigo != null ? `Código do cliente: ${at.codigo}` : null, at.plano ? `Plano: ${at.plano} Mbps` : null, at.obs ? `Obs.: ${at.obs}` : null].filter(Boolean));
 
     const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);
     const vel = [];
@@ -352,7 +352,7 @@ export function textoZap(t, { link, plano, empresa = 'Audicom Telecom', tom = 'c
     ].filter(Boolean).map((x) => '> ' + x));
 
     if (envio && ver('quem')) secao('🪪 *Identificação*', [`👷 *Enviado por:* ${envio.por}`, `👤 *Conta do teste:* ${envio.conta || 'feito sem conta'}`]);
-    if (tecnico && ver('atendimento')) secao('🏠 *Atendimento*', [at.cliente && `*Cliente:* ${at.cliente}`, at.plano && `*Plano:* ${cod(`${at.plano} Mbps`)}`, at.obs && `*Obs.:* ${at.obs}`]);
+    if (tecnico && ver('atendimento')) secao('🏠 *Atendimento*', [at.cliente && `*Cliente:* ${at.cliente}`, at.codigo != null && `*Código:* ${cod(at.codigo)}`, at.plano && `*Plano:* ${cod(`${at.plano} Mbps`)}`, at.obs && `*Obs.:* ${at.obs}`]);
 
     // com o plano informado, quem diz se está bom é a porcentagem do plano
     const pct = tecnico ? (plano && t.download != null ? Math.round((t.download / plano) * 100) : null) : planoParaCliente(t.download, plano);

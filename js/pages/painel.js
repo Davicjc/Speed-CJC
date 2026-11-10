@@ -206,13 +206,13 @@ function desenharHistorico() {
     const lista = noPeriodo().filter((t) => !modo || t.mode === modo);
     $('#h-contagem').textContent = `${fmtInt(lista.length)} ${lista.length === 1 ? 'teste' : 'testes'} ${dias ? `nos últimos ${dias} dias` : 'no total'}`;
     if (!lista.length) {
-        $('#h-linhas').innerHTML = '<tr><td colspan="9"><div class="vazio"><span>Nenhum teste neste período.</span></div></td></tr>';
+        $('#h-linhas').innerHTML = '<tr><td colspan="9" class="c-total"><div class="vazio"><span>Nenhum teste neste período.</span></div></td></tr>';
     } else {
         setHtml($('#h-linhas'), html`${lista.map((t) => html`<tr class="clicavel" data-id="${t.id}" tabindex="0">
-            <td>${fmtDataHora(t.createdAt)}</td><td>${NOME_MODO[t.mode] || t.mode}</td>
-            <td class="n">${fmtMbps(t.download)}</td><td class="n">${fmtMbps(t.upload)}</td>
-            <td class="n">${fmtMs(t.ping)}</td><td class="n">${fmtMs(t.jitter)}</td><td class="n">${t.loss != null ? fmtPct(t.loss) + '%' : '–'}</td>
-            <td>${lugar(t)}</td><td class="fraco">${aparelho(t)}</td></tr>`)}`);
+            <td class="sem-quebra c-quando"><strong>${fmtDataHora(t.createdAt)}</strong></td><td class="c-tipo"><span class="fraco">${NOME_MODO[t.mode] || t.mode}</span></td>
+            <td class="n" data-r="Down (Mbps)">${fmtMbps(t.download)}</td><td class="n" data-r="Up (Mbps)">${fmtMbps(t.upload)}</td>
+            <td class="n" data-r="Ping (ms)">${fmtMs(t.ping)}</td><td class="n" data-r="Jitter (ms)">${fmtMs(t.jitter)}</td><td class="n" data-r="Perda">${t.loss != null ? fmtPct(t.loss) + '%' : '–'}</td>
+            <td class="c-local"><span class="corta" title="${lugar(t)}">${lugar(t)}</span></td><td class="fraco c-aparelho"><span class="corta" title="${aparelho(t)}">${aparelho(t)}</span></td></tr>`)}`);
     }
     $$('#h-linhas tr.clicavel').forEach((tr) => {
         tr.addEventListener('click', () => abrir(tr.dataset.id));

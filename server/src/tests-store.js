@@ -84,7 +84,7 @@ export function createTestsStore({ db, log = console }) {
             bufferbloat: d.bufferbloat ?? null,
             verified: !!d.verified,
             origem: d.origem || 'cliente',
-            atendimento: d.atendimento ? { cliente: d.atendimento.cliente || null, plano: d.atendimento.plano ?? null } : null,
+            atendimento: d.atendimento ? { cliente: d.atendimento.cliente || null, plano: d.atendimento.plano ?? null, codigo: d.atendimento.codigo ?? null } : null,
             isp: d.isp || null,
             ip: d.ip || null,
             place: d.place || null,
@@ -97,7 +97,7 @@ export function createTestsStore({ db, log = console }) {
     }
 
     /** Página de testes, do mais novo para o mais antigo (o id já vem nessa ordem). */
-    function list({ uid, mode = null, origem = null, from = null, to = null, after = null, limit = 50 } = {}) {
+    function list({ uid, mode = null, origem = null, from = null, to = null, after = null, limit = 50, cliente = null } = {}) {
         limit = Math.min(Math.max(Number(limit) || 50, 1), 1000);
         const onde = [], vals = [];
         if (uid === null) onde.push('t.user_id IS NULL');
@@ -107,6 +107,12 @@ export function createTestsStore({ db, log = console }) {
         if (Number.isFinite(from)) { onde.push('t.created_at >= ?'); vals.push(from); }
         if (Number.isFinite(to)) { onde.push('t.created_at <= ?'); vals.push(to); }
         if (after && isId(after)) { onde.push('t.id > ?'); vals.push(after); }
+        if (cliente) {
+            // pelo cliente do atendimento: nome (parte dele) ou código do HubSoft
+            const like = '%' + String(cliente).slice(0, 80).replace(/[\\%_]/g, (c) => '\\' + c) + '%';
+            if (/^\d{1,9}$/.test(cliente)) { onde.push("(json_extract(t.data, '$.atendimento.codigo') = ? OR json_extract(t.data, '$.atendimento.cliente') LIKE ? ESCAPE '\\')"); vals.push(Number(cliente), like); }
+            else { onde.push("json_extract(t.data, '$.atendimento.cliente') LIKE ? ESCAPE '\\'"); vals.push(like); }
+        }
         const rows = db.all(`${SELECT} ${onde.length ? 'WHERE ' + onde.join(' AND ') : ''} ORDER BY t.id LIMIT ?`, ...vals, limit + 1);
         const itens = rows.slice(0, limit).map(linha);
         return { items: itens.map(summary), next: rows.length > limit ? itens[itens.length - 1].id : null };
