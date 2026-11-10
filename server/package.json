@@ -12,7 +12,7 @@
     "start": "node --disable-warning=ExperimentalWarning src/server.js",
     "admin": "node --disable-warning=ExperimentalWarning tools/admin.mjs",
     "build:vendor": "node tools/build-vendor.mjs",
-    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/protocolo.test.mjs test/seguranca.test.mjs test/hubsoft.test.mjs"
+    "test": "node --disable-warning=ExperimentalWarning --test --test-concurrency=1 test/protocolo.test.mjs test/seguranca.test.mjs test/hubsoft.test.mjs test/senha-zap.test.mjs"
   },
   "dependencies": {
     "@whiskeysockets/baileys": "7.0.0-rc14",

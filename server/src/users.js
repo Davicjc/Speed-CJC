@@ -22,6 +22,8 @@ function novoId() {
 export function createUsers({ db, mailEnabled = false, log = console }) {
     const get = (id) => (id ? db.get('SELECT * FROM users WHERE id = ?', id) : null);
     const getByEmail = (email) => (email ? db.get('SELECT * FROM users WHERE email = ?', String(email).trim()) : null);
+    /** Contas com este telefone (+55…); pode haver mais de uma. */
+    const getByPhone = (phone) => (phone ? db.all('SELECT * FROM users WHERE phone = ? LIMIT 5', phone) : []);
 
     /** O que a própria pessoa (ou um admin) vê da conta. */
     function view(u) {
@@ -77,6 +79,14 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
             vals.push(typeof v === 'boolean' ? (v ? 1 : 0) : v);
         }
         if (sets.length) db.run(`UPDATE users SET ${sets.join(', ')} WHERE id = ?`, ...vals, id);
+        return get(id);
+    }
+
+    /** Troca o e-mail (login) da conta; o novo precisa ser confirmado de novo. */
+    function setEmail(id, email) {
+        const outro = getByEmail(email);
+        if (outro && outro.id !== id) throw Object.assign(new Error('Já existe outra conta com este e-mail.'), { status: 409 });
+        db.run('UPDATE users SET email = ?, email_verified = 0 WHERE id = ?', email, id);
         return get(id);
     }
 
@@ -170,5 +180,5 @@ export function createUsers({ db, mailEnabled = false, log = console }) {
         };
     }
 
-    return { get, getByEmail, view, create, update, setPassword, checkLogin, checkPassword, isOwner, isAdmin, isTecnico, touch, list, counts, newUsersByDay, remove, audit, listAudit };
+    return { get, getByEmail, getByPhone, setEmail, view, create, update, setPassword, checkLogin, checkPassword, isOwner, isAdmin, isTecnico, touch, list, counts, newUsersByDay, remove, audit, listAudit };
 }
