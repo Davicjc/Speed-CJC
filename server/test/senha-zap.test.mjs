@@ -78,8 +78,15 @@ test('inundar não funciona: um código por minuto por conta e limite por IP', a
     assert.throws(() => sz.pedir({ login: 'ana@teste.local', ip: '2.2.2.2' }), /Muitos pedidos/, '6º pedido do mesmo IP na hora');
 });
 
+test('recuperação desligada pela administração: não envia, mesmo com o WhatsApp conectado', () => {
+    const zap = { estado: () => ({ estado: 'conectado' }), senhaAtiva: () => false, contato: async () => ({ jid: 'x' }), enviar: async () => { throw new Error('não devia enviar'); } };
+    const sz = createSenhaZap({ users, zap, createRateLimiter, log: { info() {}, warn() {} } });
+    assert.equal(sz.disponivel(), false);
+    assert.throws(() => sz.pedir({ login: 'ana@teste.local', ip: '4.4.4.4' }), /não está disponível/);
+});
+
 test('WhatsApp desligado: avisa, sem enviar nada', () => {
     const sz = createSenhaZap({ users, zap: { estado: () => ({ estado: 'desligado' }) }, createRateLimiter, log: { info() {}, warn() {} } });
     assert.equal(sz.disponivel(), false);
-    assert.throws(() => sz.pedir({ login: 'ana@teste.local', ip: '3.3.3.3' }), /fora do ar/);
+    assert.throws(() => sz.pedir({ login: 'ana@teste.local', ip: '3.3.3.3' }), /não está disponível/);
 });

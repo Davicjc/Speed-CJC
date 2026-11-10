@@ -43,7 +43,15 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
         // ---------- administração ----------
         if (p === '/api/admin/zap' || p.startsWith('/api/admin/zap/')) {
             const { sess, profile } = authn.requireAdmin(req, ip);
-            if (p === '/api/admin/zap' && m === 'GET') return sendJson(res, 200, { ...zap.estado(), ...zap.destinos(), ocultar: zap.ocultar(), partes: (await modulo()).PARTES_MSG }), true;
+            if (p === '/api/admin/zap' && m === 'GET') return sendJson(res, 200, { ...zap.estado(), ...zap.destinos(), ocultar: zap.ocultar(), partes: (await modulo()).PARTES_MSG, senhaAtiva: zap.senhaAtiva() }), true;
+            if (p === '/api/admin/zap/senha' && m === 'POST') {
+                const body = await readJsonBody(req, 1024);
+                const ativa = body.ativa === true;
+                if (ativa) authn.requireRecentLogin(sess); // desligar é imediato; ligar pede a senha
+                zap.salvarSenhaAtiva(ativa);
+                users.audit({ actor: quem(profile), action: ativa ? 'ligou a recuperação de senha pelo WhatsApp' : 'desligou a recuperação de senha pelo WhatsApp', ip });
+                return sendJson(res, 200, { senhaAtiva: zap.senhaAtiva() }), true;
+            }
             if (p === '/api/admin/zap/mensagem' && m === 'POST') {
                 const body = await readJsonBody(req, 4 * 1024);
                 const validas = new Set((await modulo()).PARTES_MSG.map(([k]) => k));

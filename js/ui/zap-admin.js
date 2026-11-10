@@ -84,7 +84,7 @@ function desenhar() {
             <div class="painel-cabeca"><div><h2>Destinos permitidos</h2><p>Para onde os técnicos podem enviar. O marcado é o padrão.</p></div></div>
             ${destinos.length ? `<ul class="zap-destinos">${destinos.map((d) => `<li>
                 <label><input type="radio" name="zap-padrao" value="${esc(d.jid)}" ${d.jid === padrao ? 'checked' : ''}>
-                <span>${d.tipo === 'grupo' ? ICON.users : ICON.user}<strong>${esc(d.nome)}</strong><small>${d.tipo === 'grupo' ? 'grupo' : 'contato'}</small></span></label>
+                <span>${d.tipo === 'grupo' ? ICON.users : ICON.user}<strong title="${esc(d.nome)}">${esc(d.nome)}</strong><small>${d.tipo === 'grupo' ? 'grupo' : 'contato'}</small></span></label>
                 <button type="button" class="botao botao-fantasma botao-icone" data-zap="remover" data-jid="${esc(d.jid)}" aria-label="Remover ${esc(d.nome)}">${ICON.trash}</button></li>`).join('')}</ul>`
                 : '<p class="suave" style="font-size:var(--t-sm)">Nenhum destino ainda. Conecte o WhatsApp e adicione grupos ou contatos.</p>'}
             ${alterado ? `<div class="det-acoes" style="margin-top:12px"><button type="button" class="botao botao-primario botao-pequeno" data-zap="salvar">Salvar destinos</button>
@@ -100,10 +100,18 @@ function desenhar() {
                 <button type="submit" class="botao botao-secundario botao-pequeno">Adicionar contato</button>
             </form>
             <div style="margin-top:14px">${grupos === null ? `<button type="button" class="botao botao-secundario botao-pequeno" data-zap="grupos">${ICON.users}Ver os grupos</button>`
-                : grupos.length ? `<ul class="zap-grupos">${grupos.map((g) => `<li><span><strong>${esc(g.nome)}</strong><small>${g.participantes} participantes</small></span>
+                : grupos.length ? `<ul class="zap-grupos">${grupos.map((g) => `<li><span><strong title="${esc(g.nome)}">${esc(g.nome)}</strong><small>${g.participantes} participantes</small></span>
                     ${destinos.some((d) => d.jid === g.jid) ? '<span class="selo ok">Adicionado</span>' : `<button type="button" class="botao botao-secundario botao-pequeno" data-zap="add-grupo" data-jid="${esc(g.jid)}" data-nome="${esc(g.nome)}">Adicionar</button>`}</li>`).join('')}</ul>`
                 : '<p class="suave" style="font-size:var(--t-sm)">Este WhatsApp não participa de nenhum grupo.</p>'}</div>
         </div></div>` : ''}
+    <div class="painel zap-senha" style="margin-top:16px">
+        <div class="painel-cabeca"><div><h2>Esqueci a senha pelo WhatsApp</h2>
+            <p>Quem esqueceu a senha recebe um código neste WhatsApp e cria uma senha nova sozinho. ${estado.senhaAtiva === false ? 'Desligado: a tela de entrar manda falar com o suporte.' : conectado ? 'Ligado.' : 'Ligado, mas só funciona com o WhatsApp conectado.'}</p></div>
+            <span class="selo ${estado.senhaAtiva === false ? '' : conectado ? 'ok' : 'atencao'}">${estado.senhaAtiva === false ? 'Desligado' : conectado ? 'Ligado' : 'Sem conexão'}</span></div>
+        <div class="det-acoes">${estado.senhaAtiva === false
+            ? `<button type="button" class="botao botao-primario botao-pequeno" data-zap="senha-ligar">${ICON.check}Ligar a recuperação pelo WhatsApp</button>`
+            : `<button type="button" class="botao botao-secundario botao-pequeno" data-zap="senha-desligar">Desligar a recuperação pelo WhatsApp</button>`}</div>
+    </div>
     ${partes.length ? `<div class="painel" style="margin-top:16px">
         <div class="painel-cabeca"><div><h2>O que vai na mensagem</h2><p>Desmarque o que não deve ir para o WhatsApp. Vale para todos os envios dos técnicos; o teste guardado continua completo.</p></div></div>
         <div class="zap-partes">${partes.map(([k, rotulo]) => `<label class="marcar"><input type="checkbox" data-parte="${esc(k)}" ${ocultar.includes(k) ? '' : 'checked'}><span>${esc(rotulo)}</span></label>`).join('')}</div>
@@ -151,6 +159,11 @@ async function aoClicar(e) {
             toast('Destinos salvos.');
         }
         if (acao === 'teste') { await api('/api/admin/zap/teste', { method: 'POST' }); toast('Mensagem de teste enviada.'); }
+        if (acao === 'senha-ligar' || acao === 'senha-desligar') {
+            const r = await api('/api/admin/zap/senha', { method: 'POST', body: { ativa: acao === 'senha-ligar' } });
+            estado.senhaAtiva = r.senhaAtiva;
+            toast(r.senhaAtiva ? 'Recuperação de senha pelo WhatsApp ligada.' : 'Recuperação de senha pelo WhatsApp desligada.');
+        }
     } catch (err) { toast(err.message, 'ruim'); }
     finally { b.disabled = false; }
     if (['conectar', 'desconectar'].includes(acao)) atualizar(); else desenhar();

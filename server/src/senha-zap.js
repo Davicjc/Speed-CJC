@@ -38,7 +38,9 @@ export function createSenhaZap({ users, zap, createRateLimiter, nomeSite = 'Test
     const hmac = (uid, codigo) => crypto.createHmac('sha256', segredo).update(`${uid}:${codigo}`).digest();
     setInterval(() => { const agora = Date.now(); for (const [k, v] of codigos) if (v.expira < agora) codigos.delete(k); }, 60_000).unref();
 
-    const disponivel = () => zap.estado().estado === 'conectado';
+    const conectado = () => zap.estado().estado === 'conectado';
+    // a administração pode desligar a recuperação pelo WhatsApp (Administração → WhatsApp)
+    const disponivel = () => conectado() && (typeof zap.senhaAtiva !== 'function' || zap.senhaAtiva());
 
     /** A conta pelo e-mail ou pelo WhatsApp (só se o número for de uma conta só). */
     function conta(login) {
@@ -64,7 +66,7 @@ export function createSenhaZap({ users, zap, createRateLimiter, nomeSite = 'Test
 
     /** Pede um código. Não diz se a conta existe: quem chama responde sempre igual. */
     function pedir({ login, ip }) {
-        if (!disponivel()) throw erro(503, 'O envio pelo WhatsApp está fora do ar agora. Fale com o suporte.', 'zap_off');
+        if (!disponivel()) throw erro(503, 'A recuperação de senha pelo WhatsApp não está disponível agora. Fale com o suporte.', 'zap_off');
         if (!limites.ip.take(ip)) throw erro(429, 'Muitos pedidos a partir da sua rede. Espere um pouco e tente de novo.');
         const u = conta(login);
         if (!podeUsar(u)) { if (u) log.info(`[senha-zap] pedido para ${u.email} ignorado (${u.disabled ? 'desativada' : !u.phone ? 'sem WhatsApp' : 'conta de dono'})`); return; }
@@ -98,7 +100,7 @@ export function createSenhaZap({ users, zap, createRateLimiter, nomeSite = 'Test
 
     /** Aviso no WhatsApp da pessoa de que a senha mudou (quem não pediu fica sabendo). */
     function avisarTroca(u, { porAdmin = false } = {}) {
-        if (!u || !u.phone || !disponivel()) return;
+        if (!u || !u.phone || !conectado()) return;
         mandar(u, `🔐 *${nomeSite}*\n\nA senha da sua conta (${u.email}) foi trocada agora há pouco${porAdmin ? ' por um administrador' : ''}.\n\nSe não foi você, fale com o suporte.`);
     }
 

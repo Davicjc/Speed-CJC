@@ -191,6 +191,11 @@
 .zap-destinos label span, .zap-grupos li > span { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .zap-destinos svg { width: 16px; height: 16px; color: var(--texto-3); flex-shrink: 0; }
 .zap-destinos small, .zap-grupos small { color: var(--texto-3); font-size: var(--t-xs); }
+.zap-destinos li, .zap-grupos li { min-width: 0; }
+.zap-destinos strong, .zap-grupos strong { min-width: 0; overflow: hidden; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; font-weight: 500; line-height: 1.3; }
+.zap-destinos label span, .zap-grupos li > span { flex: 1; overflow: hidden; }
+.zap-destinos small, .zap-grupos small { flex-shrink: 0; }
+.zap-destinos .botao-icone, .zap-grupos .botao, .zap-grupos .selo { flex-shrink: 0; }
 .zap-grupos { max-height: 360px; overflow: auto; }
 
 /* envio para o WhatsApp (técnico e administração) */
@@ -246,14 +251,13 @@ dialog.modal.zap-modal { width: min(560px, calc(100% - 24px)); max-height: calc(
 .zap-passo legend { display: flex; align-items: center; gap: 10px; padding: 0; margin-bottom: 10px; font-family: var(--fonte-display); font-size: var(--t-lg); font-weight: 600; color: var(--texto); }
 .zap-passo legend small { font-family: var(--fonte); font-size: var(--t-xs); font-weight: 500; color: var(--texto-3); }
 .zap-num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: var(--t-sm); background: #1E9E50; color: #fff; flex-shrink: 0; }
-.zap-destinos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.zap-destinos { width: 100%; }
-.zap-destino { position: relative; cursor: pointer; display: block; min-width: 0; }
-.zap-destino input { position: absolute; opacity: 0; width: 1px; height: 1px; }
-.zap-destino span { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 10px 14px; border-radius: var(--r-md); border: 2px solid var(--linha-forte); background: rgba(244, 246, 249, 0.03); font-weight: 600; color: var(--texto-2); overflow-wrap: anywhere; transition: border-color .15s, background-color .15s; }
-.zap-destino span svg { width: 18px; height: 18px; flex-shrink: 0; }
-.zap-destino input:checked + span { border-color: #25D366; background: rgba(37, 211, 102, 0.12); color: var(--texto); }
-.zap-destino input:focus-visible + span { outline: 3px solid var(--ciano); outline-offset: 2px; }
+.zap-opcoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; width: 100%; }
+.zap-opcao { position: relative; cursor: pointer; display: block; min-width: 0; }
+.zap-opcao input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.zap-opcao span { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 10px 14px; border-radius: var(--r-md); border: 2px solid var(--linha-forte); background: rgba(244, 246, 249, 0.03); font-weight: 600; color: var(--texto-2); overflow-wrap: anywhere; transition: border-color .15s, background-color .15s; }
+.zap-opcao span svg { width: 18px; height: 18px; flex-shrink: 0; }
+.zap-opcao input:checked + span { border-color: #25D366; background: rgba(37, 211, 102, 0.12); color: var(--texto); }
+.zap-opcao input:focus-visible + span { outline: 3px solid var(--ciano); outline-offset: 2px; }
 .zap-foto-botao { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px; border-radius: var(--r-md); border: 2px dashed var(--linha-forte); background: rgba(244, 246, 249, 0.03); color: var(--texto); font-weight: 600; cursor: pointer; text-align: center; padding: 10px; }
 .zap-foto-botao:hover { border-color: rgba(244, 246, 249, 0.35); }
 .zap-foto-botao svg { width: 22px; height: 22px; }
@@ -270,7 +274,7 @@ dialog.modal.zap-modal { width: min(560px, calc(100% - 24px)); max-height: calc(
 @media (max-width: 560px) {
     dialog.modal.zap-modal { width: 100%; max-width: 100%; max-height: 94dvh; margin: auto 0 0; border-radius: var(--r-xl) var(--r-xl) 0 0; }
     .zap-form { padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); }
-    .zap-destinos { grid-template-columns: minmax(0, 1fr); }
+    .zap-opcoes { grid-template-columns: minmax(0, 1fr); }
 }
 .grade-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 @media (max-width: 480px) { .grade-2 { grid-template-columns: minmax(0, 1fr); } }

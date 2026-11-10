@@ -370,6 +370,14 @@ test('esqueci a senha pelo WhatsApp; dados e senha pela administração, com as 
 
     // a administração edita os dados e define a senha
     assert.equal((await est.dono.post('/api/auth/reauth', { password: DONO.senha })).status, 200);
+    // e liga/desliga a recuperação pelo WhatsApp (Administração → WhatsApp)
+    assert.equal((await est.navB.post('/api/admin/zap/senha', { ativa: false })).status, 403, 'quem não é admin não mexe');
+    let zs = await est.dono.post('/api/admin/zap/senha', { ativa: false });
+    assert.equal(zs.status, 200);
+    assert.equal(zs.body.senhaAtiva, false);
+    assert.equal((await est.dono.get('/api/admin/zap')).body.senhaAtiva, false);
+    zs = await est.dono.post('/api/admin/zap/senha', { ativa: true });
+    assert.equal(zs.body.senhaAtiva, true);
     r = await est.dono.patch(`/api/admin/users/${est.uidB}`, { name: 'Beto Editado', planMbps: 500 });
     assert.equal(r.status, 200, JSON.stringify(r.body));
     assert.equal(r.body.user.name, 'Beto Editado');

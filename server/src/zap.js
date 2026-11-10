@@ -84,6 +84,8 @@ export function createZap({ db, dataDir, log = console }) {
         destinos: () => ({ destinos: ler('zap.destinos', []), padrao: ler('zap.padrao', null) }),
         salvarDestinos(destinos, padrao) { gravar('zap.destinos', destinos); gravar('zap.padrao', padrao); },
         ocultar: () => ler('zap.ocultar', []),
+        senhaAtiva: () => ler('zap.senha', true) !== false,
+        salvarSenhaAtiva(v) { gravar('zap.senha', !!v); },
         salvarOcultar(lista) { gravar('zap.ocultar', lista); },
         pronto: () => atual.estado === 'conectado' && ler('zap.destinos', []).length > 0,
         conectar() { gravar('zap.ativo', true); espera = 5000; iniciar(); },
