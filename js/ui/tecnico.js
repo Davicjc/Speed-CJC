@@ -5,6 +5,10 @@ import { api } from '../core/auth.js';
 import { NOMES_CONEXAO } from '../core/device.js';
 import { $, $$, esc, fmtDataHora, fmtMbps, fmtMs, fmtNum, fmtPct, html, setHtml } from '../core/util.js';
 import { abrirDetalhe } from './detalhe.js';
+import { CABECALHO_TESTES, linhaTeste } from './lista-testes.js';
+import { codigoHubsoft } from './hubsoft-tecnico.js';
+
+export { iniciarHubsoft } from './hubsoft-tecnico.js';
 
 // ---------- atendimento ----------
 export function atendimento() {
@@ -13,6 +17,7 @@ export function atendimento() {
         cliente: $('#at-cliente').value.trim() || null,
         plano: Number.isFinite(plano) && plano > 0 ? Math.round(plano) : null,
         obs: $('#at-obs').value.trim() || null,
+        codigo: codigoHubsoft(), // cliente confirmado no HubSoft (null sem integração ou à mão)
     };
 }
 
@@ -50,7 +55,7 @@ export function medidasDetalhadas(el, t, { res = null, erroAoGuardar = null } = 
                 <dt>Servidor</dt><dd>${t.server ? `${t.server.name}, ${t.server.location}` : '–'}</dd>
                 <dt>Protocolo</dt><dd class="mono">${(res && res.protocol) || '–'}</dd>
                 <dt>Conferência</dt><dd>${conferencia}</dd>
-                ${at.cliente || at.plano || at.obs ? html`<dt>Atendimento</dt><dd>${[at.cliente, at.plano ? `plano de ${at.plano} Mbps` : null, at.obs].filter(Boolean).join(' · ')}</dd>` : ''}
+                ${at.cliente || at.plano || at.obs ? html`<dt>Atendimento</dt><dd>${[at.cliente, at.codigo != null ? `código ${at.codigo}` : null, at.plano ? `plano de ${at.plano} Mbps` : null, at.obs].filter(Boolean).join(' · ')}</dd>` : ''}
             </dl>
         </div>`);
     el.hidden = false;
@@ -62,26 +67,7 @@ let filtros = { q: '', origem: '' };
 let proximo = null;
 let carregando = false;
 
-const quemFez = (t) => {
-    const at = t.atendimento && t.atendimento.cliente ? `<span class="fraco">Cliente: ${esc(t.atendimento.cliente)}</span>` : '';
-    const pessoa = t.user ? `${esc(t.user.name || t.user.email)}<br><span class="fraco">${esc(t.user.email || '')}</span>` : '<span class="fraco">sem conta</span>';
-    return `${pessoa}${at ? '<br>' + at : ''}`;
-};
-
-function linhaHtml(t) {
-    return `<tr class="clicavel" data-id="${esc(t.id)}" tabindex="0">
-        <td>${esc(fmtDataHora(t.createdAt))}</td>
-        <td class="mono">${esc(t.protocol)}</td>
-        <td><span class="selo ${t.origem === 'tecnico' ? 'origem-tecnico' : 'origem-cliente'}">${t.origem === 'tecnico' ? 'Técnico' : 'Cliente'}</span>${t.mode === 'completo' ? '<br><span class="fraco">completo</span>' : ''}</td>
-        <td>${quemFez(t)}</td>
-        <td class="n">${fmtMbps(t.download)}</td>
-        <td class="n">${fmtMbps(t.upload)}</td>
-        <td class="n">${fmtMs(t.ping)}</td>
-        <td class="n">${t.loss != null ? fmtPct(t.loss) + '%' : '–'}</td>
-        <td>${esc(t.isp || '–')}</td>
-        <td>${esc((t.place && t.place.label) || '–')}</td>
-    </tr>`;
-}
+const linhaHtml = (t) => linhaTeste(t);
 
 async function carregar({ mais = false } = {}) {
     if (carregando) return;
@@ -91,16 +77,16 @@ async function carregar({ mais = false } = {}) {
     if (filtros.q) busca.set('q', filtros.q);
     if (filtros.origem) busca.set('origem', filtros.origem);
     if (mais && proximo) busca.set('after', proximo);
-    if (!mais) tb.innerHTML = '<tr><td colspan="10"><div class="esqueleto" style="height:60px"></div></td></tr>';
+    if (!mais) tb.innerHTML = '<tr><td colspan="8" class="c-total"><div class="esqueleto" style="height:60px"></div></td></tr>';
     try {
         const r = await api('/api/tecnico/tests?' + busca);
         proximo = r.next;
         const linhas = r.items.map(linhaHtml).join('');
         if (mais) tb.insertAdjacentHTML('beforeend', linhas);
-        else tb.innerHTML = linhas || `<tr><td colspan="10"><p class="suave" style="padding:12px">${filtros.q ? 'Nenhum teste encontrado para essa busca.' : 'Nenhum teste ainda.'}</p></td></tr>`;
+        else tb.innerHTML = linhas || `<tr><td colspan="8" class="c-total"><p class="suave" style="padding:12px">${filtros.q ? 'Nenhum teste encontrado para essa busca.' : 'Nenhum teste ainda.'}</p></td></tr>`;
         $('#mais-tec').hidden = !proximo;
     } catch (e) {
-        tb.innerHTML = `<tr><td colspan="10"><div class="aviso ruim"><div>${esc(e.message)}</div></div></td></tr>`;
+        tb.innerHTML = `<tr><td colspan="8" class="c-total"><div class="aviso ruim"><div>${esc(e.message)}</div></div></td></tr>`;
     } finally { carregando = false; }
 }
 
@@ -109,6 +95,8 @@ export function recarregarLista() { carregar(); }
 export function iniciarListaTecnica({ cfg }) {
     cfgLista = cfg || {};
     $('#testes-tec').hidden = false;
+    const cab = $('#testes-tec thead');
+    if (cab) cab.innerHTML = CABECALHO_TESTES;
     let espera;
     $('#busca-tec').addEventListener('input', (e) => {
         clearTimeout(espera);

@@ -116,3 +116,43 @@
     .ts-dobra { padding: 0 12px; }
     .ts-dobra > summary h2 { font-size: var(--t-md); }
 }
+
+/* ---------- HubSoft: "É o cliente deste teste?" ---------- */
+.ts-intro.hs-ligado :is(.ts-cliente, .ts-plano) { display: none; }
+.ts-intro.hs-ligado .ts-campos { grid-template-columns: minmax(0, 1fr); }
+.hs-cartao {
+    border: 1px solid var(--linha-forte); border-radius: var(--r-lg);
+    background: rgba(19, 25, 37, 0.72); padding: 14px 16px;
+    display: grid; gap: 6px;
+}
+.hs-cartao[data-modo="pergunta"] { border-color: color-mix(in srgb, var(--ciano) 55%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ciano) 12%, transparent); }
+.hs-cartao[data-modo="manual"] { background: none; border: 0; padding: 0; }
+.hs-procurando { display: flex; align-items: center; gap: 10px; font-size: var(--t-sm); color: var(--texto-2); }
+.hs-giro { width: 16px; height: 16px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: giro .7s linear infinite; flex-shrink: 0; }
+.hs-titulo { font-size: var(--t-sm); color: var(--ciano); font-weight: 600; }
+.hs-nome { font-family: var(--fonte-display); font-size: 1.3rem; line-height: 1.2; color: var(--texto); overflow-wrap: anywhere; }
+.hs-cod { font-size: var(--t-sm); color: var(--texto-2); font-family: ui-monospace, Menlo, Consolas, monospace; margin-top: -2px; }
+.hs-info { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 6px; font-size: var(--t-sm); color: var(--texto-2); }
+.hs-info li { display: flex; align-items: flex-start; gap: 8px; min-width: 0; }
+.hs-info li span { min-width: 0; overflow-wrap: anywhere; }
+.hs-info b { color: var(--texto); }
+.hs-info svg { width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px; color: var(--texto-3); }
+.hs-info .hs-alerta { color: var(--atencao); }
+.hs-info .hs-alerta svg { color: var(--atencao); }
+.hs-botoes { display: grid; grid-template-columns: 1.4fr 1fr; gap: 8px; margin-top: 10px; }
+.hs-botoes .botao { min-height: 50px; justify-content: center; font-size: var(--t-md); }
+.hs-form { display: grid; gap: 8px; }
+.hs-form label { font-size: var(--t-xs); color: var(--texto-2); }
+.hs-busca { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.hs-busca .entrada { min-height: 50px; font-size: 1.1rem; letter-spacing: 0.04em; }
+.hs-busca .botao { min-height: 50px; }
+.hs-link { background: none; border: 0; padding: 4px 0; color: var(--azul-claro); font: inherit; font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; justify-self: start; display: inline-flex; align-items: center; gap: 6px; }
+.hs-link svg { width: 16px; height: 16px; }
+.hs-ok { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.hs-ok-icone { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--ok-fundo); color: var(--ok); }
+.hs-ok-icone svg { width: 18px; height: 18px; }
+.hs-ok strong { display: block; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hs-ok span { display: block; font-size: var(--t-sm); color: var(--texto-2); }
+@media (max-width: 760px) {
+    .hs-nome { font-size: 1.2rem; }
+}

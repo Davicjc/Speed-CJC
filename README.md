@@ -235,6 +235,14 @@ modelo: leia e passe pelo seu jurídico.
   nova senha), auditoria, sistema.
 - **WhatsApp**: conectar por QR code, escolher os destinos e o que vai em cada
   mensagem.
+- **HubSoft** (opcional, só leitura): com a integração ligada, o teste do
+  técnico acha o cliente pelo IP da conexão (a sessão do Radius aberta agora,
+  o que funciona com CGNAT) e pergunta "É o cliente deste teste?", com nome,
+  código, plano, rua, bairro e "conectado desde". Sim preenche o cliente e o
+  plano; Não pede o código; quem não sabe preenche à mão. Só GET (o único POST
+  é o login do token), endereço travado em `https://….hubsoft.com.br`,
+  credenciais criptografadas no servidor, cada consulta na auditoria. Sem
+  configuração, nada muda.
 
 **Resultado público** (`/r/<id>`): o link que vai no WhatsApp, com prévia, sem
 nome, IP nem localização. **SEO**: dados estruturados, perguntas frequentes,
@@ -301,7 +309,8 @@ próprio site.
 - LGPD: política de privacidade, consentimento de cookies, baixar e excluir os
   próprios dados, testes sem conta apagados depois do prazo, fotos do WhatsApp
   sem metadados e não gravadas.
-- 27 testes automáticos cobrem a medição e a segurança: `cd server && npm test`.
+- 34 testes automáticos cobrem a medição, a segurança e a integração com o HubSoft:
+  `cd server && npm test`.
 
 Tabela completa na seção 13 do [MANUAL.md](docs/MANUAL.md#13-como-a-segurança-funciona).
 

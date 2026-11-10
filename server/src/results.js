@@ -56,8 +56,9 @@ export function validateResult(body) {
     out.origem = body.origem === 'tecnico' ? 'tecnico' : 'cliente';
     // dados do atendimento, preenchidos pelo técnico (cliente, plano, observação)
     const at = body.atendimento && typeof body.atendimento === 'object' ? body.atendimento : null;
-    out.atendimento = at ? { cliente: text(at.cliente, 80), plano: num(at.plano, 100_000) ?? null, obs: text(at.obs, 500) } : null;
-    if (out.atendimento && !out.atendimento.cliente && out.atendimento.plano == null && !out.atendimento.obs) out.atendimento = null;
+    const codigo = at && /^\d{1,9}$/.test(String(at.codigo ?? '')) ? Number(at.codigo) : null;
+    out.atendimento = at ? { cliente: text(at.cliente, 80), plano: num(at.plano, 100_000) ?? null, obs: text(at.obs, 500), codigo } : null;
+    if (out.atendimento && !out.atendimento.cliente && out.atendimento.plano == null && !out.atendimento.obs && out.atendimento.codigo == null) out.atendimento = null;
 
     // curva de velocidade durante o teste: pares [segundos, Mbps], em médias de meio segundo
     out.curve = null;

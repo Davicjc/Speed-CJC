@@ -210,7 +210,7 @@
 .grade-admins { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 960px) { .grade-admins { grid-template-columns: minmax(0, 1fr); } }
 
-@media (max-width: 1180px) { .tabela-usuarios th:nth-child(4), .tabela-usuarios td:nth-child(4) { display: none; } }
+@media (min-width: 761px) and (max-width: 1180px) { .lista-usuarios th:nth-child(4), .lista-usuarios td:nth-child(4) { display: none; } }
 .zap-campos { display: grid; grid-template-columns: minmax(0, 1fr) 8rem; gap: 10px; }
 @media (max-width: 480px) { .zap-campos { grid-template-columns: minmax(0, 1fr); } }
 .zap-local { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 10px; border-radius: var(--r-md); font-size: var(--t-sm); color: var(--texto-2); background: rgba(244, 246, 249, 0.05); border: 1px solid var(--linha); }
@@ -228,3 +228,47 @@
 .tutorial-info { padding: 16px 18px 18px; display: grid; gap: 8px; justify-items: start; }
 .tutorial-info h2 { font-size: var(--t-lg); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .tutorial-info p { color: var(--texto-2); font-size: var(--t-sm); }
+
+/* ---------- Enviar para o Zap: 3 passos grandes ---------- */
+dialog.modal.zap-modal { width: min(560px, calc(100% - 24px)); max-height: calc(100dvh - 24px); overflow-y: auto; }
+.zap-form { display: grid; gap: 16px; }
+.zap-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.zap-topo h2 { display: flex; align-items: center; gap: 10px; margin: 0; font-size: var(--t-xl); }
+.zap-topo h2 svg { width: 24px; height: 24px; color: #25D366; }
+.zap-x { width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--linha-forte); background: transparent; color: var(--texto-2); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
+.zap-x svg { width: 18px; height: 18px; }
+.zap-resumo { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: var(--r-md); background: rgba(244, 246, 249, 0.05); border: 1px solid var(--linha); }
+.zap-resumo > div { min-width: 0; }
+.zap-resumo strong { display: block; color: var(--texto); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.zap-resumo > div > span { display: block; font-size: var(--t-xs); color: var(--texto-3); overflow-wrap: anywhere; }
+.zap-link { background: none; border: 0; padding: 6px 0; color: var(--azul-claro); font: inherit; font-size: var(--t-sm); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; flex-shrink: 0; }
+.zap-passo { border: 0; margin: 0; padding: 0; min-width: 0; display: grid; gap: 10px; }
+.zap-passo legend { display: flex; align-items: center; gap: 10px; padding: 0; margin-bottom: 10px; font-family: var(--fonte-display); font-size: var(--t-lg); font-weight: 600; color: var(--texto); }
+.zap-passo legend small { font-family: var(--fonte); font-size: var(--t-xs); font-weight: 500; color: var(--texto-3); }
+.zap-num { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-size: var(--t-sm); background: #1E9E50; color: #fff; flex-shrink: 0; }
+.zap-destinos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.zap-destinos { width: 100%; }
+.zap-destino { position: relative; cursor: pointer; display: block; min-width: 0; }
+.zap-destino input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.zap-destino span { width: 100%; display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 10px 14px; border-radius: var(--r-md); border: 2px solid var(--linha-forte); background: rgba(244, 246, 249, 0.03); font-weight: 600; color: var(--texto-2); overflow-wrap: anywhere; transition: border-color .15s, background-color .15s; }
+.zap-destino span svg { width: 18px; height: 18px; flex-shrink: 0; }
+.zap-destino input:checked + span { border-color: #25D366; background: rgba(37, 211, 102, 0.12); color: var(--texto); }
+.zap-destino input:focus-visible + span { outline: 3px solid var(--ciano); outline-offset: 2px; }
+.zap-foto-botao { position: relative; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 64px; border-radius: var(--r-md); border: 2px dashed var(--linha-forte); background: rgba(244, 246, 249, 0.03); color: var(--texto); font-weight: 600; cursor: pointer; text-align: center; padding: 10px; }
+.zap-foto-botao:hover { border-color: rgba(244, 246, 249, 0.35); }
+.zap-foto-botao svg { width: 22px; height: 22px; }
+.zap-foto-botao input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.zap-form .zap-fotos:empty { display: none; }
+.zap-form .zap-fotos { margin-top: 0; }
+.zap-form textarea { min-height: 84px; font-size: 16px; resize: vertical; }
+.zap-gps { display: flex; align-items: center; gap: 8px; margin: 0; font-size: var(--t-xs); color: var(--texto-3); }
+.zap-gps svg { width: 14px; height: 14px; flex-shrink: 0; }
+.zap-gps.ok { color: var(--ok); }
+.zap-enviar-grande { width: 100%; min-height: 58px; justify-content: center; font-size: 1.1rem; background: #1E9E50; color: #fff; border: 0; box-shadow: 0 12px 30px -12px rgba(37, 211, 102, 0.75); }
+.zap-enviar-grande:hover:not(:disabled) { background: #22B35B; color: #fff; }
+.zap-enviar-grande svg { width: 22px; height: 22px; }
+@media (max-width: 560px) {
+    dialog.modal.zap-modal { width: 100%; max-width: 100%; max-height: 94dvh; margin: auto 0 0; border-radius: var(--r-xl) var(--r-xl) 0 0; }
+    .zap-form { padding: 18px 16px calc(18px + env(safe-area-inset-bottom)); }
+    .zap-destinos { grid-template-columns: minmax(0, 1fr); }
+}

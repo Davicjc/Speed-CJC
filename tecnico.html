@@ -31,6 +31,7 @@
     <section class="miolo ts-palco" aria-label="Teste de técnico">
         <div class="ts-intro" id="intro">
             <h1>Teste de técnico</h1>
+            <div class="hs-cartao" id="hs-cartao" aria-live="polite" hidden></div>
             <div class="ts-campos">
                 <div class="campo ts-cliente"><label for="at-cliente">Cliente</label><input class="entrada" id="at-cliente" maxlength="80" autocomplete="off" placeholder="Nome, código ou contrato"></div>
                 <div class="campo ts-plano"><label for="at-plano">Plano (Mbps)</label><input class="entrada" id="at-plano" type="number" min="1" max="100000" inputmode="numeric" autocomplete="off" placeholder="500"></div>
@@ -153,7 +154,7 @@
         <summary><h2 id="testes-tec-titulo">Testes de todos os clientes</h2></summary>
         <div class="testes-tec-cabeca">
             <form class="filtros-tec" id="filtros-tec" role="search">
-                <input class="entrada" id="busca-tec" type="search" placeholder="Protocolo SPD-…, nome ou e-mail" aria-label="Buscar testes">
+                <input class="entrada" id="busca-tec" type="search" placeholder="Protocolo, cliente, código ou e-mail" aria-label="Buscar testes">
                 <div class="segmento" role="radiogroup" aria-label="Origem do teste" id="origem-tec">
                     <button type="button" role="radio" aria-checked="true" data-origem="">Todos</button>
                     <button type="button" role="radio" aria-checked="false" data-origem="cliente">Clientes</button>
@@ -162,8 +163,8 @@
             </form>
         </div>
         <div class="tabela-wrap painel" style="padding:0">
-            <table class="tabela">
-                <thead><tr><th>Data</th><th>Protocolo</th><th>Origem</th><th>Quem / cliente</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th class="n">Perda</th><th>Operadora</th><th>Local</th></tr></thead>
+            <table class="tabela lista lista-testes">
+                <thead></thead>
                 <tbody id="linhas-tec"></tbody>
             </table>
         </div>

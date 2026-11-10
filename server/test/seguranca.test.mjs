@@ -209,6 +209,19 @@ test('acesso técnico: só técnico e admin usam o /tecnico; teste "técnico" de
     assert.equal((await est.dono.get('/')).status, 200, 'administrador continua no /');
     assert.equal((await est.navC.get('/')).status, 200, 'cliente continua no /');
 
+    // HubSoft: só técnico consulta; sem configuração, nada muda; só o dono configura
+    assert.equal((await est.navC.get('/api/tecnico/hubsoft/conexao')).status, 403, 'cliente comum não consulta o HubSoft');
+    const hs = await est.navB.get('/api/tecnico/hubsoft/conexao');
+    assert.equal(hs.status, 200);
+    assert.equal(hs.body.ativo, false, 'sem configuração: desligado');
+    assert.equal((await est.navB.post('/api/tecnico/hubsoft/conexao', {})).status, 405, 'só GET');
+    assert.equal((await est.navB.get('/api/admin/hubsoft')).status, 403, 'técnico não vê a configuração');
+    assert.equal((await est.navB.post('/api/admin/hubsoft', { url: 'https://api.x.hubsoft.com.br' })).status, 403, 'técnico não configura');
+    const cfgHs = await est.dono.get('/api/admin/hubsoft');
+    assert.equal(cfgHs.status, 200);
+    assert.equal(cfgHs.body.configurado, false);
+    assert.equal((await est.dono.post('/api/admin/hubsoft', { url: 'http://outro-servidor.com', clientId: '1', clientSecret: 's', usuario: 'u', senha: 'p' })).status, 400, 'endereço fora do HubSoft é recusado');
+
     const tec = await est.navB.post('/api/results', { mode: 'completo', download: 480, upload: 240, ping: 6, jitter: 1, origem: 'tecnico', atendimento: { cliente: 'Cliente 123', plano: 500, obs: 'teste no cabo' } });
     assert.equal(tec.status, 201);
     const lista = await est.navB.get('/api/tecnico/tests?limit=50');

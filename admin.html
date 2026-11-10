@@ -41,6 +41,7 @@
             <hr>
             <button type="button" data-v="auditoria"><span data-i="history"></span>Auditoria</button>
             <button type="button" data-v="zap"><span data-i="whatsapp"></span>WhatsApp</button>
+            <button type="button" data-v="hubsoft"><span data-i="building"></span>HubSoft</button>
             <button type="button" data-v="tutoriais"><span data-i="video"></span>Tutoriais</button>
             <button type="button" data-v="sistema"><span data-i="server"></span>Sistema</button>
         </nav>
@@ -87,7 +88,7 @@
                     <article class="painel total">
                         <div class="painel-cabeca"><div><h2>Últimos testes</h2><p>Os novos aparecem aqui na hora.</p></div>
                             <button type="button" class="botao botao-fantasma botao-pequeno" data-ir="testes">Ver todos</button></div>
-                        <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Quando</th><th>Quem</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th>Local</th><th>Operadora</th></tr></thead><tbody id="geral-recentes"></tbody></table></div>
+                        <div class="tabela-wrap"><table class="tabela lista lista-testes"><thead class="cabecalho-testes"></thead><tbody id="geral-recentes"></tbody></table></div>
                     </article>
                 </div>
             </section>
@@ -113,7 +114,7 @@
                     <button type="button" class="botao botao-secundario botao-pequeno" id="testes-csv"></button></div>
                 <form class="painel filtros" id="testes-filtros">
                     <div class="campo busca"><label for="f-q">Buscar</label>
-                        <div class="busca-wrap"><span data-i="search"></span><input class="entrada" id="f-q" placeholder="Protocolo (SPD-…), e-mail ou nome" autocomplete="off"></div></div>
+                        <div class="busca-wrap"><span data-i="search"></span><input class="entrada" id="f-q" placeholder="Protocolo, cliente, código HubSoft, nome ou e-mail" autocomplete="off"></div></div>
                     <div class="campo"><label for="f-modo">Tipo</label>
                         <select class="entrada" id="f-modo"><option value="">Todos</option><option value="rapido">Teste rápido</option><option value="completo">Diagnóstico completo</option></select></div>
                     <div class="campo"><label for="f-de">De</label><input class="entrada" type="date" id="f-de"></div>
@@ -126,9 +127,7 @@
                 </form>
                 <div id="testes-usuarios"></div>
                 <div class="painel">
-                    <div class="tabela-wrap"><table class="tabela"><thead><tr>
-                        <th>Data e hora</th><th>Quem</th><th class="n">Download</th><th class="n">Upload</th><th class="n">Ping</th><th class="n">Perda</th><th>Local</th><th>Operadora</th><th>Conferido</th>
-                    </tr></thead><tbody id="testes-linhas"></tbody></table></div>
+                    <div class="tabela-wrap"><table class="tabela lista lista-testes"><thead class="cabecalho-testes"></thead><tbody id="testes-linhas"></tbody></table></div>
                     <div class="mais" id="testes-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
                 </div>
             </section>
@@ -145,7 +144,7 @@
                     <button type="submit" class="botao botao-primario botao-pequeno" style="min-height:40px">Buscar</button>
                 </form>
                 <div class="painel">
-                    <div class="tabela-wrap"><table class="tabela tabela-usuarios"><thead><tr>
+                    <div class="tabela-wrap"><table class="tabela lista lista-usuarios"><thead><tr>
                         <th>Pessoa</th><th>Acesso</th><th class="n">Testes</th><th>Criada em</th><th>Último acesso</th><th>Situação</th>
                     </tr></thead><tbody id="usuarios-linhas"></tbody></table></div>
                     <div class="mais" id="usuarios-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
@@ -156,7 +155,7 @@
             <section id="v-admins" aria-labelledby="h-admins" hidden>
                 <div class="admin-titulo"><div><h1 id="h-admins">Administradores e técnicos</h1><p>Quem tem acesso além do próprio histórico: administradores veem e gerenciam tudo; técnicos usam o /tecnico.</p></div></div>
                 <div class="painel">
-                    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Pessoa</th><th>Acesso</th><th>Último acesso</th><th></th></tr></thead><tbody id="admins-linhas"></tbody></table></div>
+                    <div class="tabela-wrap"><table class="tabela lista lista-admins"><thead><tr><th>Pessoa</th><th>Acesso</th><th>Último acesso</th><th></th></tr></thead><tbody id="admins-linhas"></tbody></table></div>
                 </div>
                 <div class="grade-admins">
                     <form class="painel" id="admins-form" method="post" novalidate>
@@ -185,7 +184,7 @@
             <section id="v-auditoria" aria-labelledby="h-auditoria" hidden>
                 <div class="admin-titulo"><div><h1 id="h-auditoria">Auditoria</h1><p>Registro de tudo o que os administradores fizeram.</p></div></div>
                 <div class="painel">
-                    <div class="tabela-wrap"><table class="tabela"><thead><tr><th>Quando</th><th>Quem fez</th><th>O quê</th><th>Com quem</th><th>IP</th></tr></thead><tbody id="auditoria-linhas"></tbody></table></div>
+                    <div class="tabela-wrap"><table class="tabela lista lista-auditoria"><thead><tr><th>Quando</th><th>Quem fez</th><th>O quê</th><th>Com quem</th><th>IP</th></tr></thead><tbody id="auditoria-linhas"></tbody></table></div>
                     <div class="mais" id="auditoria-mais" hidden><button type="button" class="botao botao-secundario botao-pequeno">Carregar mais</button></div>
                 </div>
             </section>
@@ -194,6 +193,11 @@
             <section id="v-zap" aria-labelledby="h-zap" hidden>
                 <div class="admin-titulo"><div><h1 id="h-zap">WhatsApp</h1><p>Conecte um WhatsApp da empresa para os técnicos enviarem os testes, com fotos, para os grupos e contatos que você liberar.</p></div></div>
                 <div id="zap-conteudo"><div class="esqueleto" style="height:160px"></div></div>
+            </section>
+
+            <section id="v-hubsoft" aria-labelledby="h-hubsoft" hidden>
+                <div class="admin-titulo"><div><h1 id="h-hubsoft">HubSoft</h1><p>Com o HubSoft ligado, o teste do técnico acha o cliente pelo IP da conexão e preenche o nome e o plano sozinho. Só consulta: nada é alterado no HubSoft.</p></div></div>
+                <div id="hubsoft-conteudo"><div class="esqueleto" style="height:160px"></div></div>
             </section>
 
             <section id="v-tutoriais" aria-labelledby="h-tutoriais" hidden>

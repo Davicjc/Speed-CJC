@@ -1,5 +1,6 @@
 // Busca de testes, usada pela administração e pelo /tecnico: por protocolo
-// SPD-…, pelo id, ou pelo nome/e-mail de quem fez, com filtros de modo,
+// SPD-…, pelo id, pelo nome/e-mail de quem fez ou pelo cliente do atendimento
+// (nome ou código do HubSoft), com filtros de modo,
 // origem (página do cliente ou técnica), período e paginação.
 
 import { isId } from './ids.js';
@@ -15,6 +16,7 @@ export function buscarTestes({ store, users, url }) {
     let uid = url.searchParams.get('uid') || undefined;
     if (uid === 'anon') uid = null;
     let matchedUsers = null;
+    let cliente = null;
     if (q) {
         // protocolo: PREFIXO-AAMMDD-HHMM-XXXX (qualquer prefixo, inclusive o de antes de trocar)
         if (/^[A-Z0-9]{2,6}-\d{6}-\d{4}-/i.test(q)) {
@@ -25,10 +27,10 @@ export function buscarTestes({ store, users, url }) {
             const t = store.get(q);
             return { items: t ? [store.summary(t)] : [], next: null };
         }
-        matchedUsers = users.list({ q, limit: 8 }).items;
-        if (!matchedUsers.length) return { items: [], next: null, matchedUsers };
-        if (uid === undefined) uid = matchedUsers[0].uid;
+        // número: código do cliente no HubSoft; texto: conta de quem fez ou, se nenhuma, o cliente do atendimento
+        matchedUsers = /^\d+$/.test(q) ? [] : users.list({ q, limit: 8 }).items;
+        if (matchedUsers.length) { if (uid === undefined) uid = matchedUsers[0].uid; } else cliente = q;
     }
-    const page = store.list({ uid, mode, origem, from: n('from'), to: n('to'), after: url.searchParams.get('after'), limit: n('limit') || 50 });
+    const page = store.list({ uid, mode, origem, from: n('from'), to: n('to'), after: url.searchParams.get('after'), limit: n('limit') || 50, cliente });
     return { ...page, matchedUsers };
 }

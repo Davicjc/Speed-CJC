@@ -124,8 +124,9 @@ export function createZapRoutes({ authn, users, store, zap, config, siteOrigin, 
                 cliente: texto(veio.cliente, 80) ?? (t.atendimento || {}).cliente ?? null,
                 plano: Number.isFinite(planoVeio) && planoVeio > 0 && planoVeio <= 100_000 ? Math.round(planoVeio) : (t.atendimento || {}).plano ?? null,
                 obs: texto(veio.obs, 500) ?? texto(body.obs, 500) ?? (t.atendimento || {}).obs ?? null,
+                codigo: /^\d{1,9}$/.test(String(veio.codigo ?? '')) ? Number(veio.codigo) : (t.atendimento || {}).codigo ?? null,
             };
-            const temAt = at.cliente || at.plano || at.obs;
+            const temAt = at.cliente || at.plano || at.obs || at.codigo != null;
             if (temAt && JSON.stringify(at) !== JSON.stringify(t.atendimento || null)) store.setAtendimento(t.id, at);
             t.atendimento = temAt ? at : null;
             const ocultar = zap.ocultar();

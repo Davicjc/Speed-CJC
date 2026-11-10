@@ -10,6 +10,7 @@ import { config } from './config.js';
 import { createCotas } from './cotas.js';
 import { createBackups, openDatabase } from './db.js';
 import { createGeocoder } from './geo.js';
+import { createHubsoft } from './hubsoft.js';
 import { configurarRedeInterna, lookupIsp } from './isp.js';
 import { createMailer } from './mail.js';
 import { createMeasurementLog } from './measurements.js';
@@ -21,6 +22,7 @@ import { renderResultPage } from './result-page.js';
 import { validateResult, verifyAgainstServer } from './results.js';
 import { handleAccount } from './routes-account.js';
 import { createAdminRoutes } from './routes-admin.js';
+import { createHubsoftRoutes } from './routes-hubsoft.js';
 import { createTecnicoRoutes } from './routes-tecnico.js';
 import { createZapRoutes } from './routes-zap.js';
 import { createZap } from './zap.js';
@@ -93,6 +95,8 @@ const handleAdmin = createAdminRoutes(ctx);
 const handleTecnico = createTecnicoRoutes({ authn, store, users });
 const zap = createZap({ db, dataDir: config.dataDir, log });
 const handleZap = createZapRoutes({ authn, users, store, zap, config, siteOrigin, createRateLimiter, log });
+const hubsoft = createHubsoft({ db, dataDir: config.dataDir, log });
+const handleHubsoft = createHubsoftRoutes({ authn, users, hubsoft, createRateLimiter, log });
 
 const err = (status, message, code) => Object.assign(new Error(message), { status, code });
 
@@ -419,6 +423,7 @@ async function handleApi(req, res, url, ip) {
     }
 
     if (await handleAccount(ctx, req, res, url, ip)) return;
+    if (await handleHubsoft(req, res, url, ip)) return;
     if (await handleZap(req, res, url, ip)) return;
     if (await handleAdmin(req, res, url, ip)) return;
     if (await handleTecnico(req, res, url, ip)) return;
