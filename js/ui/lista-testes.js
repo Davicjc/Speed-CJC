@@ -2,22 +2,23 @@
 // duas, para ficarem iguais: no computador, colunas de largura fixa com o
 // texto longo cortado em "…"; no celular (CSS em base.css, .tabela.lista),
 // cada linha vira um cartão.
-// O destaque é quem foi atendido (cliente e código do HubSoft); quem fez o
-// teste vem embaixo.
+// Em cima quem fez o teste (o técnico); embaixo o cliente atendido, com o
+// código do HubSoft.
 
 import { esc, fmtDiaCurto, fmtHora, fmtMbps, fmtMs, fmtPct } from '../core/util.js';
 
 export const CABECALHO_TESTES = `<tr>
-    <th class="c-quando">Quando</th><th class="c-quem">Cliente / quem fez</th><th class="c-origem">Origem</th>
+    <th class="c-quando">Quando</th><th class="c-quem">Quem fez / cliente</th><th class="c-origem">Origem</th>
     <th class="n">Down <small>Mbps</small></th><th class="n">Up <small>Mbps</small></th><th class="n">Ping <small>ms</small></th><th class="n">Perda</th>
     <th class="c-rede">Operadora e local</th></tr>`;
 
 export function linhaTeste(t, { novo = false } = {}) {
     const at = t.atendimento || {};
     const pessoa = t.user ? (t.user.name || t.user.email) : null;
-    const titulo = at.cliente || pessoa || 'Sem conta';
+    // em cima quem fez (o técnico); embaixo o cliente atendido, com o código do HubSoft
+    const titulo = pessoa || 'Sem conta';
     const sub = at.cliente
-        ? [at.codigo != null ? `cód. ${at.codigo}` : null, pessoa ? `por ${pessoa}` : 'sem conta'].filter(Boolean).join(' · ')
+        ? `Cliente: ${at.cliente}${at.codigo != null ? ` · cód. ${at.codigo}` : ''}`
         : (t.user ? t.user.email || '' : 'teste sem login');
     const origem = t.origem === 'tecnico' ? '<span class="selo origem-tecnico">Técnico</span>' : '<span class="selo origem-cliente">Cliente</span>';
     const rede = [t.isp, t.place && t.place.label].filter(Boolean).join(' · ') || '–';
