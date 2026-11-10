@@ -46,7 +46,7 @@ curl -fsSL https://raw.githubusercontent.com/davicjc/audicom-speedtest/main/serv
 ```
 
 Abra `http://IP-DA-VM:8080`. Testado num Debian 12 mínimo recém-criado: cerca de
-1 minuto, e os 24 testes automáticos passam na instalação nova. O passo a passo
+1 minuto, e os testes automáticos passam na instalação nova. O passo a passo
 completo (requisitos, administrador, domínio com HTTPS, instalação manual,
 atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
 
@@ -67,8 +67,16 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
 
 **Contas** (`/entrar`, `/cadastro`)
 - Cadastro com captcha (próprio, sem serviço externo, ou Cloudflare Turnstile).
-- "Manter conectado", confirmação de e-mail e "esqueci minha senha" (com SMTP,
-  opcional).
+  O WhatsApp com DDD é obrigatório: é por ele que a pessoa recupera a senha.
+- **Esqueci minha senha pelo WhatsApp**: a pessoa digita o e-mail ou o WhatsApp
+  da conta e recebe um código de 6 números no WhatsApp já cadastrado (nunca num
+  número digitado na hora). Com o código ela cria a senha nova e já entra; os
+  outros aparelhos saem e ela é avisada no WhatsApp. Contra abuso: captcha,
+  resposta igual exista a conta ou não, código que vale 10 minutos, 5
+  tentativas e uso único, e limites por IP, conta, número e no total. A conta
+  de dono não usa esse caminho (só pelo terminal do servidor).
+- "Manter conectado", confirmação de e-mail e "esqueci minha senha" por e-mail
+  (com SMTP, opcional).
 - Teste feito sem login vai para a conta ao entrar (até 24 h).
 
 **Meu painel** (`/painel`)
@@ -76,7 +84,8 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
   horário, comparação com o plano.
 - Cada teste abre com **tudo o que foi medido**: curva de velocidade, latência
   detalhada, conexão, aparelho e o diagnóstico completo com a rota e os IPs.
-- Aparelhos conectados (encerrar à distância), troca de senha.
+- Aparelhos conectados (encerrar à distância), troca de senha. Trocar o
+  WhatsApp pede a senha de novo (ele recupera a conta).
 - Baixar e excluir os próprios dados (LGPD).
 
 **Administração** (`/admin`)
@@ -84,8 +93,11 @@ atualização) está em **[docs/INSTALAR.md](docs/INSTALAR.md)**.
 - **Ao vivo**: quem está no site agora, quem está testando, testes e cadastros
   chegando na hora.
 - Todos os testes de todos os usuários, com busca e planilha.
-- Usuários: dar e tirar administrador, link de nova senha (com botão de
-  WhatsApp), encerrar sessões, desativar, excluir.
+- Usuários: **editar dados** (nome, e-mail, WhatsApp, cidade e plano),
+  **definir uma senha nova** (a pessoa sai dos aparelhos e é avisada no
+  WhatsApp), dar e tirar administrador, link de nova senha, encerrar sessões,
+  desativar, excluir. Tudo pede a senha de novo e fica na auditoria; senha,
+  e-mail e WhatsApp de outro administrador só o dono muda.
 - Auditoria de toda ação de administrador e estado do sistema.
 
 **Speed Teste Técnico** (`/tecnico`): para técnicos e administradores, com
@@ -98,7 +110,7 @@ honesto e sem alarme, para o teste não virar chamado por susto.
 perguntas frequentes, sitemap e robots gerados pelo servidor; Google Analytics 4
 opcional, com faixa de cookies e consentimento (LGPD).
 
-**WhatsApp dos técnicos**: a administração conecta um WhatsApp por QR code e libera grupos e contatos; o técnico manda qualquer teste, com até 6 fotos, com um clique (processo isolado, fotos sem metadados e não gravadas). Sem login, cada aparelho faz até 6 testes por dia.
+**WhatsApp dos técnicos**: a administração conecta um WhatsApp por QR code e libera grupos e contatos; o técnico manda qualquer teste, com até 6 fotos, em 3 passos (grupo, fotos, o que foi feito), e a mensagem sai formatada para o WhatsApp (processo isolado, fotos sem metadados e não gravadas). Na mesma aba, a administração liga e desliga a **recuperação de senha pelo WhatsApp** (desligar é na hora; ligar pede a senha). Sem login, cada aparelho faz até 6 testes por dia.
 
 **HubSoft (opcional, só leitura)**: com a integração ligada em Administração → HubSoft, o teste do técnico acha o cliente pelo IP da conexão (a sessão do Radius aberta agora, o que funciona com CGNAT) e pergunta "É o cliente deste teste?", com nome, código, plano, rua, bairro e "conectado desde". Sim preenche o cliente e o plano; Não pede o código; quem não sabe preenche à mão. Se o IP mudar, ele pergunta de novo. Só GET (o único POST é o login do token), endereço travado em `https://….hubsoft.com.br`, credenciais criptografadas no servidor, CPF/telefone/senha PPPoE descartados, cada consulta na auditoria. Sem configuração, nada muda.
 
@@ -145,7 +157,8 @@ página `/como-medimos`.
   pedem a senha de novo; auditoria.
 - CSP por página sem script inline, HSTS, nada de arquivo interno servido (lista
   fechada).
-- 34 testes automáticos cobrem a medição, a segurança e a integração com o HubSoft: `cd server && npm test`.
+- 42 testes automáticos cobrem a medição, a segurança, a integração com o HubSoft e a
+  recuperação de senha pelo WhatsApp: `cd server && npm test`.
 
 Tabela completa na seção 13 do [MANUAL.md](docs/MANUAL.md#13-como-a-segurança-funciona).
 
