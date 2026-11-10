@@ -179,6 +179,33 @@ export async function handleAccount(ctx, req, res, url, ip) {
         return sendJson(res, 200, { ok: true, email: alvo.email }), true;
     }
 
+    // ---------- esqueci minha senha, pelo WhatsApp (ver senha-zap.js) ----------
+    if (p === '/api/auth/esqueci-zap' && m === 'POST') {
+        const body = await readJsonBody(req, 4 * 1024);
+        if (!ctx.senhaZap.disponivel()) throw err(503, 'O envio pelo WhatsApp está fora do ar agora. Fale com o suporte.', 'zap_off');
+        const cap = await captcha.verify(body.captcha, ip);
+        if (!cap.ok) throw err(400, cap.reason, 'captcha');
+        ctx.senhaZap.pedir({ login: body.login, ip });
+        // a mesma resposta exista a conta ou não (não revela quem tem cadastro)
+        return sendJson(res, 200, { ok: true }), true;
+    }
+    if (p === '/api/auth/redefinir-zap' && m === 'POST') {
+        if (!limits.codigos.take(ip)) throw err(429, 'Muitas tentativas. Aguarde alguns minutos.');
+        const body = await readJsonBody(req, 4 * 1024);
+        const candidato = ctx.senhaZap.conta(body.login);
+        const senha = validatePassword(body.password, candidato ? candidato.email : ''); // senha fraca não gasta tentativa
+        const alvo = ctx.senhaZap.conferir({ login: body.login, codigo: body.codigo });
+        await users.setPassword(alvo.id, senha);
+        sessions.encerrarTodas(alvo.id); // quem tinha a senha antiga sai de todos os aparelhos
+        errosPorEmail.delete(alvo.email.toLowerCase());
+        users.audit({ actor: { uid: alvo.id, email: alvo.email, name: alvo.name }, action: 'trocou a senha pelo código do WhatsApp', target: { uid: alvo.id, email: alvo.email }, ip });
+        ctx.senhaZap.avisarTroca(alvo);
+        log.info(`[contas] nova senha definida pelo WhatsApp para ${alvo.email} (${ip})`);
+        const u = users.get(alvo.id);
+        await entrarNaConta(u, { lembrar: body.lembrar !== false });
+        return sendJson(res, 200, { ok: true, ...me(u) }), true;
+    }
+
     // ---------- confirmar a senha (ações sensíveis) ----------
     if (p === '/api/auth/reauth' && m === 'POST') {
         const { sess, profile } = authn.requireUser(req, ip);
@@ -229,6 +256,8 @@ export async function handleAccount(ctx, req, res, url, ip) {
         const body = await readJsonBody(req, 4 * 1024);
         const patch = validateProfilePatch(body, { withName: true });
         if (!Object.keys(patch).length) throw err(400, 'Nada para alterar.');
+        // o WhatsApp recupera a senha: trocar ele pede a senha de novo
+        if (patch.phone !== undefined && patch.phone !== (profile.phone || null)) authn.requireRecentLogin(sess);
         return sendJson(res, 200, me(users.update(profile.id, patch))), true;
     }
 

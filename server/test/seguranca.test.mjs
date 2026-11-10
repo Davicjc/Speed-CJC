@@ -68,8 +68,11 @@ test('pedido vindo de outro site é recusado (CSRF)', async () => {
 
 test('cadastro exige captcha válido, uma vez só, e senha forte; e já entra na conta', async () => {
     const n = navegador(BASE);
-    const base = { name: A.nome, email: A.email, password: A.senha, terms: true };
-    let r = await n.post('/api/auth/signup', base);
+    const base = { name: A.nome, email: A.email, password: A.senha, terms: true, phone: '(34) 99123-4567' };
+    let r = await n.post('/api/auth/signup', { ...base, phone: undefined, captcha: 'x' });
+    assert.equal(r.status, 400, 'sem WhatsApp não cria a conta');
+    assert.match(r.body.error || r.body.message || '', /WhatsApp/);
+    r = await n.post('/api/auth/signup', base);
     assert.equal(r.status, 400); assert.equal(r.body.code, 'captcha');
     r = await n.post('/api/auth/signup', { ...base, captcha: Buffer.from('{"salt":"x"}').toString('base64') });
     assert.equal(r.status, 400);
@@ -92,11 +95,11 @@ test('cadastro exige captcha válido, uma vez só, e senha forte; e já entra na
     est.navA = n;
 
     const outro = navegador(BASE);
-    r = await outro.post('/api/auth/signup', { name: B.nome, email: B.email, password: B.senha, terms: true, captcha: cap });
+    r = await outro.post('/api/auth/signup', { name: B.nome, email: B.email, password: B.senha, terms: true, phone: '(34) 99234-5678', captcha: cap });
     assert.equal(r.status, 400, 'o mesmo captcha não vale duas vezes');
     r = await outro.post('/api/auth/signup', { ...base, captcha: await resolverCaptcha() });
     assert.equal(r.status, 409, 'e-mail repetido');
-    r = await outro.post('/api/auth/signup', { name: B.nome, email: B.email, password: B.senha, terms: true, captcha: await resolverCaptcha() });
+    r = await outro.post('/api/auth/signup', { name: B.nome, email: B.email, password: B.senha, terms: true, phone: '(34) 99234-5678', captcha: await resolverCaptcha() });
     assert.equal(r.status, 201);
     est.uidB = r.body.profile.uid;
     est.navB = outro;
@@ -148,7 +151,7 @@ test('teste com login vai para a conta; outra pessoa não enxerga', async () => 
     const intruso = navegador(BASE);
     await intruso.post('/api/auth/login', { email: A.email, password: 'chute1234' });
     assert.equal((await est.navA.get('/api/me/tests/' + est.testeA)).status, 200);
-    const s = await intruso.post('/api/auth/signup', { name: 'Carla', email: 'carla@teste.local', password: 'Teste1234c', terms: true, captcha: await resolverCaptcha() });
+    const s = await intruso.post('/api/auth/signup', { name: 'Carla', email: 'carla@teste.local', password: 'Teste1234c', terms: true, phone: '(34) 99345-6789', captcha: await resolverCaptcha() });
     assert.equal(s.status, 201);
     assert.equal((await intruso.get('/api/me/tests/' + est.testeA)).status, 404);
     assert.equal((await intruso.del('/api/me/tests/' + est.testeA)).status, 404);
@@ -340,6 +343,58 @@ test('quem está online aparece para o admin; auditoria registra; planilha sem f
     assert.equal(csv.status, 200);
     assert.match(csv.headers.get('content-type'), /text\/csv/);
     if (csv.texto.includes('HYPERLINK')) assert.ok(csv.texto.includes(`"'=HYPERLINK`), 'nome que parece fórmula vira texto');
+});
+
+test('esqueci a senha pelo WhatsApp; dados e senha pela administração, com as travas certas', async () => {
+    // WhatsApp desligado nos testes: o pedido avisa e nada é enviado
+    const site = await (await fetch(`${BASE}/api/config`)).json();
+    assert.equal(site.zapSenha, false);
+    const anon = navegador(BASE);
+    let r = await anon.post('/api/auth/esqueci-zap', { login: A.email, captcha: 'x' });
+    assert.equal(r.status, 503);
+    assert.equal(r.body.code, 'zap_off');
+    r = await anon.post('/api/auth/redefinir-zap', { login: A.email, codigo: '123456', password: 'NovaSenha123' });
+    assert.equal(r.status, 400, 'sem código pedido, nada passa');
+    assert.equal(r.body.code, 'codigo');
+    r = await anon.post('/api/auth/redefinir-zap', { login: '(34) 99123-4567', codigo: '000000', password: 'NovaSenha123' });
+    assert.equal(r.status, 400);
+
+    // trocar o WhatsApp em "Meus dados" pede a senha de novo (ele recupera a conta)
+    const db = banco();
+    db.prepare('UPDATE sessions SET reauth_at = 0').run();
+    db.close();
+    r = await est.navB.patch('/api/me', { phone: '(34) 98888-7777' });
+    assert.equal(r.status, 401);
+    assert.equal(r.body.code, 'reauth');
+    assert.equal((await est.navB.patch('/api/me', { city: 'Uberlândia' })).status, 200, 'o resto não pede');
+
+    // a administração edita os dados e define a senha
+    assert.equal((await est.dono.post('/api/auth/reauth', { password: DONO.senha })).status, 200);
+    r = await est.dono.patch(`/api/admin/users/${est.uidB}`, { name: 'Beto Editado', planMbps: 500 });
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    assert.equal(r.body.user.name, 'Beto Editado');
+    assert.equal((await est.dono.patch(`/api/admin/users/${est.uidB}`, { email: 'carla@teste.local' })).status, 409, 'e-mail de outra conta');
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidB}/senha`, { password: 'fraca' })).status, 400);
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidB}/senha`, { password: 'SenhaNova2026' })).status, 200);
+    assert.equal((await est.navB.get('/api/me')).status, 401, 'senha definida pelo admin derruba as sessões');
+    const b = navegador(BASE);
+    assert.equal((await b.post('/api/auth/login', { email: B.email, password: 'SenhaNova2026' })).status, 200);
+    est.navB = b;
+
+    // administrador comum não troca senha, e-mail nem WhatsApp de OUTRO administrador
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidA}/role`, { role: 'admin' })).status, 200);
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidB}/role`, { role: 'admin' })).status, 200);
+    assert.equal((await est.navA.post('/api/auth/reauth', { password: A.senha })).status, 200);
+    assert.equal((await est.navA.post(`/api/admin/users/${est.uidB}/senha`, { password: 'Tomada12345' })).status, 403);
+    assert.equal((await est.navA.patch(`/api/admin/users/${est.uidB}`, { phone: '(34) 97777-6666' })).status, 403);
+    assert.equal((await est.navA.patch(`/api/admin/users/${est.uidB}`, { city: 'Araguari' })).status, 200, 'dado que não é de acesso, pode');
+    const uidDono = (await est.dono.get('/api/me')).body.profile.uid;
+    assert.equal((await est.navA.post(`/api/admin/users/${uidDono}/senha`, { password: 'Tomada12345' })).status, 403, 'ninguém troca a senha do dono pelo painel');
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidA}/role`, { role: 'user' })).status, 200);
+    assert.equal((await est.dono.post(`/api/admin/users/${est.uidB}/role`, { role: 'user' })).status, 200);
+    const db2 = banco(); // volta ao "senha digitada há muito tempo" que o próximo teste espera
+    db2.prepare('UPDATE sessions SET reauth_at = 0').run();
+    db2.close();
 });
 
 test('excluir a própria conta pede a senha e apaga tudo', async () => {

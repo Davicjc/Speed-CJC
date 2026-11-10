@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { buscarTestes } from './busca-testes.js';
-import { MODES, validateEmail } from './results.js';
+import { MODES, validateEmail, validatePassword, validateProfilePatch } from './results.js';
 import { readJsonBody, sendJson } from './util.js';
 
 // Painel de administração. Toda rota aqui exige login de administrador
@@ -76,6 +76,12 @@ export function createAdminRoutes(ctx) {
         if (!target) throw err(404, 'Usuário não encontrado.');
         if (target.id === actor.id) throw err(400, 'Você não pode alterar a sua própria conta por aqui.');
         if (users.isOwner(target)) throw err(403, 'Contas de dono não podem ser alteradas pelo painel. Use o comando "npm run admin" no servidor.');
+    }
+
+    /** Senha, e-mail e WhatsApp de OUTRO administrador: só o dono muda (senão um admin tomaria a conta do outro). */
+    function guardDadosSensiveis(actor, target) {
+        guardTarget(actor, target);
+        if (target.role === 'admin' && !users.isOwner(actor)) throw err(403, 'Só o dono troca a senha, o e-mail ou o WhatsApp de outro administrador. Para dados que não são de acesso, use "Editar dados" sem mexer neles.');
     }
 
     function linkNovaSenha(req, alvo, actor) {
@@ -214,7 +220,7 @@ export function createAdminRoutes(ctx) {
             return sendJson(res, 200, { ok: true, created, link, emailSent, user: users.view(alvo) }), true;
         }
 
-        const um = /^\/api\/admin\/users\/([A-Za-z0-9]{20})(\/(role|tecnico|status|revoke|reset-link))?$/.exec(p);
+        const um = /^\/api\/admin\/users\/([A-Za-z0-9]{20})(\/(role|tecnico|status|revoke|reset-link|senha))?$/.exec(p);
         if (um) {
             const uid = um[1];
             const action = um[3];
@@ -284,6 +290,41 @@ export function createAdminRoutes(ctx) {
                 if (body.enviar && mailer.enabled) emailSent = await mailer.novaSenha(target, link).then(() => true, () => false);
                 users.audit({ actor: actorInfo, action: 'gerou link de nova senha', target: users.view(target), detail: emailSent ? { enviado: 'por e-mail' } : null, ip });
                 return sendJson(res, 200, { link, emailSent, validadeHoras: PRAZO_LINK_ADMIN / 3600_000 }), true;
+            }
+
+            // editar dados da conta (nome, e-mail, WhatsApp, cidade, plano)
+            if (!action && m === 'PATCH') {
+                authn.requireRecentLogin(sess);
+                guardTarget(actor, target);
+                const body = await readJsonBody(req, 4 * 1024);
+                const patch = validateProfilePatch(body, { withName: true });
+                const email = body.email !== undefined ? validateEmail(body.email) : null;
+                const mudaEmail = email && email !== target.email;
+                const mudaFone = patch.phone !== undefined && patch.phone !== (target.phone || null);
+                if (mudaEmail || mudaFone) guardDadosSensiveis(actor, target);
+                const campos = Object.keys(patch).filter((k) => (patch[k] ?? null) !== (({ name: target.name, phone: target.phone, city: target.city, planMbps: target.plan_mbps })[k] ?? null));
+                if (!campos.length && !mudaEmail) return sendJson(res, 200, { user: users.view(target) }), true;
+                if (mudaEmail) users.setEmail(uid, email);
+                const updated = users.update(uid, patch);
+                if (mudaEmail || mudaFone) sessions.encerrarTodas(uid); // dado de acesso mudou: entra de novo
+                users.audit({ actor: actorInfo, action: 'alterou os dados da conta', target: { uid, email: updated.email }, detail: { campos: [...(mudaEmail ? ['e-mail'] : []), ...campos.map((k) => ({ name: 'nome', phone: 'WhatsApp', city: 'cidade', planMbps: 'plano' })[k] || k)].join(', ') }, ip });
+                hub.publish('user-updated', { uid });
+                return sendJson(res, 200, { user: users.view(updated) }), true;
+            }
+
+            // definir uma senha nova para a pessoa (ela é avisada pelo WhatsApp e sai de todos os aparelhos)
+            if (action === 'senha' && m === 'POST') {
+                authn.requireRecentLogin(sess);
+                guardDadosSensiveis(actor, target);
+                const body = await readJsonBody(req, 2 * 1024);
+                const senha = validatePassword(body.password, target.email);
+                await users.setPassword(uid, senha);
+                const nSess = sessions.encerrarTodas(uid);
+                presence.bye(uid);
+                if (ctx.senhaZap) ctx.senhaZap.avisarTroca(target, { porAdmin: true });
+                users.audit({ actor: actorInfo, action: 'definiu uma senha nova', target: users.view(target), detail: { sessoes: nSess }, ip });
+                log.info(`[contas] ${actor.email} definiu uma senha nova para ${target.email}`);
+                return sendJson(res, 200, { ok: true, sessions: nSess }), true;
             }
 
             if (!action && m === 'DELETE') {

@@ -84,9 +84,9 @@
                     <input class="entrada" id="c-email" name="email" type="email" autocomplete="email" inputmode="email" maxlength="254" required>
                 </div>
                 <div class="campo">
-                    <label for="c-tel">WhatsApp ou telefone <span class="opcional">(opcional)</span></label>
-                    <input class="entrada" id="c-tel" name="telefone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="(34) 99999-9999" maxlength="16">
-                    <span class="ajuda">Ajuda o suporte da Audicom a falar com você sobre um teste.</span>
+                    <label for="c-tel">WhatsApp</label>
+                    <input class="entrada" id="c-tel" name="telefone" type="tel" autocomplete="tel-national" inputmode="tel" placeholder="(34) 99999-9999" maxlength="16" required>
+                    <span class="ajuda">Com DDD. É por ele que você recupera a senha se esquecer, e o suporte fala com você sobre um teste.</span>
                 </div>
                 <div class="campo">
                     <label for="c-senha">Senha</label>
@@ -129,6 +129,44 @@
             <p class="erro-form" role="alert" hidden></p>
             <button type="submit" class="botao botao-primario botao-largo">Enviar link</button>
             <p class="acesso-rodape"><button type="button" class="link-botao" data-ir="entrar">Voltar para entrar</button></p>
+        </form>
+
+        <form id="form-esqueci-zap" class="acesso-form" method="post" novalidate hidden>
+            <h1>Esqueceu a senha?</h1>
+            <p class="acesso-sub">Mandamos um código de 6 números para o WhatsApp cadastrado na sua conta.</p>
+            <div class="campo">
+                <label for="z-login">E-mail ou WhatsApp da conta</label>
+                <input class="entrada" id="z-login" autocomplete="username" maxlength="254" placeholder="voce@email.com ou (34) 99999-9999" required>
+            </div>
+            <div class="captcha" id="captcha-zap"></div>
+            <p class="erro-form" role="alert" hidden></p>
+            <button type="submit" class="botao botao-primario botao-largo">Enviar código pelo WhatsApp</button>
+            <p class="acesso-rodape"><button type="button" class="link-botao" data-ir="entrar">Voltar para entrar</button></p>
+        </form>
+
+        <form id="form-codigo-zap" class="acesso-form" method="post" novalidate hidden>
+            <h1>Digite o código</h1>
+            <p class="acesso-sub" id="codigo-zap-texto">Se a conta existir e tiver WhatsApp cadastrado, o código chega em instantes. Ele vale por 10 minutos.</p>
+            <div class="campo">
+                <label for="z-codigo">Código de 6 números</label>
+                <input class="entrada entrada-codigo" id="z-codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]*" maxlength="6" placeholder="000000" required>
+            </div>
+            <input type="text" id="z-usuario" autocomplete="username" hidden>
+            <div class="campo">
+                <label for="z-senha">Nova senha</label>
+                <div class="senha-wrap">
+                    <input class="entrada" id="z-senha" type="password" autocomplete="new-password" minlength="8" maxlength="128" required>
+                    <button type="button" class="ver-senha" aria-label="Mostrar senha" aria-pressed="false"></button>
+                </div>
+                <span class="ajuda">Pelo menos 8 caracteres, com letras e números.</span>
+            </div>
+            <div class="campo">
+                <label for="z-senha2">Confirme a nova senha</label>
+                <input class="entrada" id="z-senha2" type="password" autocomplete="new-password" maxlength="128" required>
+            </div>
+            <p class="erro-form" role="alert" hidden></p>
+            <button type="submit" class="botao botao-primario botao-largo">Salvar a senha e entrar</button>
+            <p class="acesso-rodape"><button type="button" class="link-botao" id="z-outro" disabled>Pedir outro código</button> · <button type="button" class="link-botao" data-ir="entrar">Voltar</button></p>
         </form>
 
         <form id="form-nova-senha" class="acesso-form" method="post" novalidate hidden>

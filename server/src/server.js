@@ -11,6 +11,7 @@ import { createCotas } from './cotas.js';
 import { createBackups, openDatabase } from './db.js';
 import { createGeocoder } from './geo.js';
 import { createHubsoft } from './hubsoft.js';
+import { createSenhaZap } from './senha-zap.js';
 import { configurarRedeInterna, lookupIsp } from './isp.js';
 import { createMailer } from './mail.js';
 import { createMeasurementLog } from './measurements.js';
@@ -96,6 +97,7 @@ const handleTecnico = createTecnicoRoutes({ authn, store, users });
 const zap = createZap({ db, dataDir: config.dataDir, log });
 const handleZap = createZapRoutes({ authn, users, store, zap, config, siteOrigin, createRateLimiter, log });
 const hubsoft = createHubsoft({ db, dataDir: config.dataDir, log });
+ctx.senhaZap = createSenhaZap({ users, zap, createRateLimiter, nomeSite: `Teste de velocidade ${config.serverName}`, log });
 const handleHubsoft = createHubsoftRoutes({ authn, users, hubsoft, createRateLimiter, log });
 
 const err = (status, message, code) => Object.assign(new Error(message), { status, code });
@@ -299,6 +301,7 @@ async function handleApi(req, res, url, ip) {
             maxConcurrentTests: config.maxConcurrentTests,
             accounts: true,
             mail: mailer.enabled,
+            zapSenha: ctx.senhaZap.disponivel(), // "esqueci a senha" com código pelo WhatsApp
             captcha: captcha.publicConfig(),
             map: config.map,
             support: config.support,

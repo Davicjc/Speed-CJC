@@ -386,6 +386,14 @@ async function abrirUsuario(uid) {
             acoes.push(raw(`<div class="linha-acao"><div><strong>${u.tecnico ? 'Tirar acesso técnico' : 'Dar acesso técnico'}</strong><p>${u.tecnico ? 'A pessoa deixa de usar o Speed Teste Técnico (/tecnico).' : 'Usa o Speed Teste Técnico (/tecnico), com todas as medidas, e vê os testes de todos os clientes. Não mexe em usuários nem acessos.'}</p></div>
             <button type="button" class="botao botao-secundario botao-pequeno" data-a="tecnico">${u.tecnico ? 'Tirar acesso' : 'Dar acesso técnico'}</button></div>`));
         }
+        // senha, e-mail e WhatsApp de outro administrador: só o dono muda
+        const acessoTravado = u.role === 'admin' && !eu.owner;
+        acoes.unshift(raw(`<div class="linha-acao"><div><strong>Editar dados</strong><p>Nome, e-mail, WhatsApp, cidade e plano.${acessoTravado ? ' O e-mail e o WhatsApp de outro administrador, só o dono muda.' : ''}</p></div>
+            <button type="button" class="botao botao-secundario botao-pequeno" data-a="editar">Editar</button></div>`));
+        if (!acessoTravado) {
+            acoes.push(raw(`<div class="linha-acao"><div><strong>Definir uma senha nova</strong><p>Você escolhe a senha e passa para a pessoa. Ela sai de todos os aparelhos${u.phone ? ' e recebe um aviso no WhatsApp' : ''}.</p></div>
+            <button type="button" class="botao botao-secundario botao-pequeno" data-a="senha">Definir senha</button></div>`));
+        }
         acoes.push(raw(`<div class="linha-acao"><div><strong>Link para nova senha</strong><p>Para quem esqueceu a senha. Você copia e manda pelo WhatsApp${cfg.mail ? ' (ou enviamos por e-mail)' : ''}. Vale 3 dias e funciona uma vez.</p></div>
             <button type="button" class="botao botao-secundario botao-pequeno" data-a="link">Gerar link</button></div>`));
         acoes.push(raw(`<div class="linha-acao"><div><strong>Encerrar sessões</strong><p>Desconecta a pessoa de todos os aparelhos.</p></div>
@@ -399,7 +407,7 @@ async function abrirUsuario(uid) {
         <div class="linha-flex"><span class="avatar grande">${iniciais(u.name, u.email)}</span>
             <div style="min-width:0"><strong style="display:block">${u.email}</strong><div class="linha-flex" style="gap:6px;margin-top:6px">${papel(u)} ${situacao(u)}</div></div></div>
         <div class="det-secao"><h3>Cadastro</h3><dl class="dados">
-            <dt>Telefone</dt><dd>${u.phone ? telefoneBonito(u.phone) : '–'}</dd>
+            <dt>WhatsApp</dt><dd>${u.phone ? telefoneBonito(u.phone) : '– (sem WhatsApp, não recupera a senha sozinha)'}</dd>
             <dt>Cidade</dt><dd>${u.city || '–'}</dd>
             <dt>Plano informado</dt><dd>${u.planMbps ? `${fmtInt(u.planMbps)} Mbps` : '–'}</dd>
             <dt>Conta criada</dt><dd>${fmtDataHora(u.createdAt)} ${u.createdVia === 'admin' ? '(por um administrador)' : u.createdVia === 'terminal' ? '(pelo terminal do servidor)' : '(pelo site, com captcha)'}</dd>
@@ -442,6 +450,8 @@ async function abrirUsuario(uid) {
             mostrarLink({ titulo: `Link para ${u.name} criar a senha`, link: r2.link, para: u, telefone: u.phone });
         } catch (err) { toast(err.message, 'ruim'); }
     }));
+    if (b('editar')) b('editar').addEventListener('click', () => dialogoEditar(u, () => acao(b('editar'), async () => {}, 'Dados salvos.')));
+    if (b('senha')) b('senha').addEventListener('click', () => dialogoSenha(u));
     if (b('sessoes')) b('sessoes').addEventListener('click', async (e) => {
         if (!(await confirmar({ titulo: 'Encerrar as sessões?', texto: `${u.name} vai precisar entrar de novo em todos os aparelhos.`, acao: 'Encerrar' }))) return;
         acao(e.currentTarget, () => api(`/api/admin/users/${encodeURIComponent(uid)}/revoke`, { method: 'POST' }), 'Sessões encerradas.');
@@ -462,6 +472,101 @@ async function abrirUsuario(uid) {
             } catch (err) { toast(err.message, 'ruim'); }
         });
     });
+}
+
+// editar os dados de uma conta (nome, e-mail, WhatsApp, cidade, plano)
+function dialogoEditar(u, depois) {
+    const d = document.createElement('dialog');
+    d.className = 'modal';
+    const travado = u.role === 'admin' && !eu.owner;
+    setHtml(d, html`<form class="modal-corpo" novalidate>
+        <h2>Editar dados de ${u.name}</h2>
+        <div class="campo"><label for="ed-nome">Nome</label><input class="entrada" id="ed-nome" maxlength="80" value="${u.name}" required></div>
+        <div class="campo"><label for="ed-email">E-mail (é o login)</label><input class="entrada" id="ed-email" type="email" maxlength="254" value="${u.email}" ${travado ? 'disabled' : ''}></div>
+        <div class="campo"><label for="ed-tel">WhatsApp</label><input class="entrada" id="ed-tel" type="tel" inputmode="tel" maxlength="16" placeholder="(34) 99999-9999" value="${u.phone ? telefoneBonito(u.phone) : ''}" ${travado ? 'disabled' : ''}>
+            <span class="ajuda">É para ele que vai o código de "esqueci a senha".</span></div>
+        <div class="grade-2">
+            <div class="campo"><label for="ed-cidade">Cidade</label><input class="entrada" id="ed-cidade" maxlength="80" value="${u.city || ''}"></div>
+            <div class="campo"><label for="ed-plano">Plano (Mbps)</label><input class="entrada" id="ed-plano" type="number" min="1" max="100000" inputmode="numeric" value="${u.planMbps || ''}"></div>
+        </div>
+        <p class="suave" style="font-size:var(--t-xs)">Se o e-mail ou o WhatsApp mudar, a pessoa sai de todos os aparelhos e entra de novo.</p>
+        <p class="erro-campo" role="alert" hidden></p>
+        <div class="modal-acoes"><button type="button" class="botao botao-fantasma" data-cancelar>Cancelar</button><button type="submit" class="botao botao-primario">Salvar</button></div></form>`);
+    document.body.appendChild(d);
+    d.addEventListener('close', () => d.remove());
+    d.querySelector('[data-cancelar]').addEventListener('click', () => d.close());
+    d.querySelector('form').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const erro = d.querySelector('.erro-campo');
+        const corpo = { name: d.querySelector('#ed-nome').value.trim(), city: d.querySelector('#ed-cidade').value.trim(), planMbps: d.querySelector('#ed-plano').value || null };
+        if (!travado) {
+            corpo.email = d.querySelector('#ed-email').value.trim();
+            corpo.phone = d.querySelector('#ed-tel').value.trim() || null;
+        }
+        await comCarga(d.querySelector('button[type="submit"]'), async () => {
+            try {
+                await api(`/api/admin/users/${encodeURIComponent(u.uid)}`, { method: 'PATCH', body: corpo });
+                d.close();
+                depois();
+            } catch (e) { erro.textContent = e.message; erro.hidden = false; }
+        });
+    });
+    d.showModal();
+}
+
+// definir uma senha nova para a pessoa (e mostrar para passar a ela)
+function senhaSorteada() {
+    const L = 'abcdefghjkmnpqrstuvwxyz', N = '23456789';
+    const r = (s) => s[crypto.getRandomValues(new Uint32Array(1))[0] % s.length];
+    return r(L).toUpperCase() + Array.from({ length: 4 }, () => r(L)).join('') + Array.from({ length: 4 }, () => r(N)).join('');
+}
+function dialogoSenha(u) {
+    const d = document.createElement('dialog');
+    d.className = 'modal';
+    setHtml(d, html`<form class="modal-corpo" novalidate>
+        <h2>Senha nova para ${u.name}</h2>
+        <p>Ela sai de todos os aparelhos${u.phone ? ' e recebe um aviso no WhatsApp' : ''}. Depois, passe a senha para ela.</p>
+        <div class="campo"><label for="sn-senha">Senha nova</label>
+            <div class="linha-flex" style="gap:8px;flex-wrap:nowrap"><input class="entrada" id="sn-senha" type="text" autocomplete="off" spellcheck="false" maxlength="128" style="flex:1;font-family:ui-monospace,Menlo,Consolas,monospace">
+            <button type="button" class="botao botao-secundario botao-pequeno" data-sortear>Gerar</button></div>
+            <span class="ajuda">Pelo menos 8 caracteres, com letras e números.</span></div>
+        <p class="erro-campo" role="alert" hidden></p>
+        <div class="modal-acoes"><button type="button" class="botao botao-fantasma" data-cancelar>Cancelar</button><button type="submit" class="botao botao-primario">Definir senha</button></div></form>`);
+    document.body.appendChild(d);
+    d.addEventListener('close', () => d.remove());
+    const campo = d.querySelector('#sn-senha');
+    campo.value = senhaSorteada();
+    d.querySelector('[data-sortear]').addEventListener('click', () => { campo.value = senhaSorteada(); });
+    d.querySelector('[data-cancelar]').addEventListener('click', () => d.close());
+    d.querySelector('form').addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const erro = d.querySelector('.erro-campo');
+        const senha = campo.value;
+        await comCarga(d.querySelector('button[type="submit"]'), async () => {
+            try {
+                await api(`/api/admin/users/${encodeURIComponent(u.uid)}/senha`, { method: 'POST', body: { password: senha } });
+            } catch (e) { erro.textContent = e.message; erro.hidden = false; return; }
+            d.close();
+            const fone = u.phone ? String(u.phone).replace(/\D/g, '').replace(/^55/, '') : '';
+            const texto = `Olá, ${u.name}! Sua senha nova no teste de velocidade é: ${senha}\nEntre com ela e, se quiser, troque em Meu painel → Meus dados.`;
+            const m = document.createElement('dialog');
+            m.className = 'modal';
+            setHtml(m, html`<div class="modal-corpo"><h2>Senha definida</h2>
+                <p>Passe a senha para ${u.name}. Ela não aparece de novo depois que você fechar.</p>
+                <div class="link-gerado"><code>${senha}</code></div>
+                <div class="modal-acoes"><button type="button" class="botao botao-fantasma" data-fechar>Fechar</button>
+                    ${fone ? html`<a class="botao botao-secundario" target="_blank" rel="noopener" href="https://wa.me/55${fone}?text=${encodeURIComponent(texto)}">${raw(ICON.whatsapp)}Mandar no WhatsApp</a>` : ''}
+                    <button type="button" class="botao botao-primario" data-copiar>${raw(ICON.copy)}Copiar</button></div></div>`);
+            document.body.appendChild(m);
+            m.addEventListener('close', () => m.remove());
+            m.querySelector('[data-fechar]').addEventListener('click', () => m.close());
+            m.querySelector('[data-copiar]').addEventListener('click', async () => toast((await copiar(senha)) ? 'Senha copiada.' : 'Não foi possível copiar.'));
+            m.showModal();
+            toast('Senha nova definida.');
+        });
+    });
+    d.showModal();
+    campo.select();
 }
 
 // adicionar pessoa (conta nova ou já existente)

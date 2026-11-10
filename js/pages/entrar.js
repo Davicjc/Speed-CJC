@@ -1,4 +1,4 @@
-import { ApiError, cadastrar, conferirLinkSenha, confirmarEmail, entrar, novaSenhaComCodigo, redefinirSenha, sair } from '../core/auth.js';
+import { ApiError, api, cadastrar, conferirLinkSenha, confirmarEmail, entrar, novaSenhaComCodigo, redefinirSenha, sair } from '../core/auth.js';
 import { ICON } from '../core/icons.js';
 import { reivindicarPendentes } from '../core/pendentes.js';
 import { iniciarPagina } from '../core/shell.js';
@@ -17,7 +17,7 @@ const cfg = sessao.cfg || {};
 const sup = cfg.support || {};
 const whatsapp = sup.whatsapp ? `https://wa.me/${encodeURIComponent(sup.whatsapp)}` : null;
 
-const PAINEIS = ['formularios', 'form-esqueci', 'form-nova-senha', 'mensagem', 'ja-logado', 'indisponivel'];
+const PAINEIS = ['formularios', 'form-esqueci', 'form-esqueci-zap', 'form-codigo-zap', 'form-nova-senha', 'mensagem', 'ja-logado', 'indisponivel'];
 function mostrar(id) {
     PAINEIS.forEach((p) => { $('#' + p).hidden = p !== id; });
     const foco = $('#' + id).querySelector('h1');
@@ -67,6 +67,7 @@ $('.abas').addEventListener('keydown', (e) => {
 });
 $$('[data-ir]').forEach((b) => b.addEventListener('click', () => aba(b.dataset.ir)));
 $('#ir-esqueci').addEventListener('click', () => {
+    if (cfg.zapSenha) { abrirEsqueciZap(); return; }
     if (!cfg.mail) {
         mensagem({
             titulo: 'Esqueceu a senha?',
@@ -178,7 +179,7 @@ $('#form-criar').addEventListener('submit', async (ev) => {
     const checagens = [
         [$('#c-nome'), nome.length < 2 || !/\p{L}/u.test(nome), 'Informe seu nome.'],
         [$('#c-email'), !emailValido(email), 'Informe um e-mail válido.'],
-        [$('#c-tel'), tel && ![10, 11].includes(tel.replace(/\D/g, '').length), 'Informe o telefone com DDD, ou deixe em branco.'],
+        [$('#c-tel'), ![10, 11].includes(tel.replace(/\D/g, '').length), 'Informe o seu WhatsApp com DDD. É por ele que você recupera a senha.'],
         [$('#c-senha'), !!problemaSenha(senha, email), problemaSenha(senha, email)],
         [$('#c-senha2'), senha !== senha2, 'As duas senhas não são iguais.'],
     ];
@@ -193,7 +194,7 @@ $('#form-criar').addEventListener('submit', async (ev) => {
     await ocupado(f, async () => {
         let r;
         try {
-            r = await cadastrar({ name: nome, email, phone: tel || null, password: senha, terms: true, website: $('#c-site').value, captcha: resposta, lembrar: true });
+            r = await cadastrar({ name: nome, email, phone: tel, password: senha, terms: true, website: $('#c-site').value, captcha: resposta, lembrar: true });
         } catch (e) {
             if (!(e instanceof ApiError) || e.code !== 'exists') captcha && captcha.reiniciar();
             return erroForm(f, e.message);
@@ -231,6 +232,93 @@ $('#form-esqueci').addEventListener('submit', async (ev) => {
     });
 });
 
+// ---------- esqueci a senha pelo WhatsApp (código de 6 números) ----------
+let captchaZap = null;
+let loginZap = '';
+let esperaOutro = null;
+async function prepararCaptchaZap() {
+    if (captchaZap) { captchaZap.reiniciar(); return; }
+    try { captchaZap = await montarCaptcha($('#captcha-zap'), cfg.captcha); } catch (e) {
+        $('#captcha-zap').innerHTML = `<p class="erro-form">${esc(e.message)}. Recarregue a página.</p>`;
+    }
+}
+function abrirEsqueciZap(login) {
+    $('#z-login').value = login ?? $('#e-email').value.trim();
+    mostrar('form-esqueci-zap');
+    prepararCaptchaZap();
+    $('#z-login').focus();
+}
+/** "Pedir outro código" só libera depois de 1 minuto (o servidor também não manda antes). */
+function contarOutro() {
+    const b = $('#z-outro');
+    let s = 60;
+    clearInterval(esperaOutro);
+    const passo = () => {
+        b.disabled = s > 0;
+        b.textContent = s > 0 ? `Pedir outro código (${s} s)` : 'Pedir outro código';
+        if (s-- <= 0) clearInterval(esperaOutro);
+    };
+    passo();
+    esperaOutro = setInterval(passo, 1000);
+}
+$('#form-esqueci-zap').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const f = ev.currentTarget;
+    const login = $('#z-login').value.trim();
+    const ehEmail = login.includes('@');
+    const digitos = login.replace(/\D/g, '');
+    const ok = ehEmail ? emailValido(login.toLowerCase()) : digitos.length >= 10 && digitos.length <= 13;
+    marcarInvalido($('#z-login'), !ok);
+    if (!ok) return erroForm(f, 'Informe o e-mail ou o WhatsApp com DDD da sua conta.');
+    const resposta = captchaZap && captchaZap.resposta();
+    if (!resposta) return erroForm(f, cfg.captcha && cfg.captcha.provider === 'turnstile' ? 'Conclua a verificação de segurança.' : 'Clique em "Não sou um robô" para confirmar.');
+    erroForm(f, null);
+    await ocupado(f, async () => {
+        try {
+            await api('/api/auth/esqueci-zap', { method: 'POST', body: { login, captcha: resposta } });
+        } catch (e) {
+            if (captchaZap) captchaZap.reiniciar();
+            return erroForm(f, e.message);
+        }
+        loginZap = login;
+        $('#z-usuario').value = ehEmail ? login : '';
+        $('#codigo-zap-texto').textContent = `Se ${ehEmail ? 'o e-mail' : 'o número'} ${login} for de uma conta com WhatsApp cadastrado, o código chega lá em instantes. Ele vale por 10 minutos.`;
+        $('#z-codigo').value = '';
+        mostrar('form-codigo-zap');
+        contarOutro();
+        $('#z-codigo').focus();
+    });
+});
+$('#z-codigo').addEventListener('input', (e) => { e.target.value = e.target.value.replace(/\D/g, '').slice(0, 6); });
+$('#z-outro').addEventListener('click', () => { clearInterval(esperaOutro); abrirEsqueciZap(loginZap); });
+$('#form-codigo-zap').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const f = ev.currentTarget;
+    const codigo = $('#z-codigo').value;
+    const s1 = $('#z-senha').value;
+    const s2 = $('#z-senha2').value;
+    marcarInvalido($('#z-codigo'), codigo.length !== 6);
+    if (codigo.length !== 6) return erroForm(f, 'O código tem 6 números. Confira no WhatsApp.');
+    const problema = problemaSenha(s1, loginZap.includes('@') ? loginZap.toLowerCase() : '');
+    if (problema) return erroForm(f, problema);
+    if (s1 !== s2) return erroForm(f, 'As duas senhas não são iguais.');
+    erroForm(f, null);
+    await ocupado(f, async () => {
+        try {
+            await api('/api/auth/redefinir-zap', { method: 'POST', body: { login: loginZap, codigo, password: s1, lembrar: true } });
+        } catch (e) {
+            return erroForm(f, e.message);
+        }
+        clearInterval(esperaOutro);
+        await reivindicarPendentes({ avisar: false }).catch(() => {});
+        mensagem({
+            titulo: 'Senha trocada',
+            texto: 'Pronto, você já entrou com a senha nova. Por segurança, os outros aparelhos foram desconectados.',
+            acoes: [{ rotulo: destino === '/painel' ? 'Ir para o meu painel' : 'Continuar', primario: true, href: destino }],
+        });
+    });
+});
+
 // ---------- links (confirmar e-mail, criar nova senha) ----------
 async function tratarLink() {
     const confirmar = params.get('confirmar');
@@ -249,7 +337,8 @@ async function tratarLink() {
         try { info = await conferirLinkSenha(codigo); } catch (e) {
             mensagem({
                 titulo: 'Link inválido', texto: e.message, icone: ICON.alert, atencao: true,
-                acoes: cfg.mail ? [{ rotulo: 'Pedir um novo link', primario: true, acao: () => mostrar('form-esqueci') }] : (whatsapp ? [{ rotulo: 'Falar com o suporte', primario: true, href: whatsapp, novaAba: true }] : []),
+                acoes: cfg.zapSenha ? [{ rotulo: 'Pedir um código pelo WhatsApp', primario: true, acao: () => abrirEsqueciZap('') }]
+                    : cfg.mail ? [{ rotulo: 'Pedir um novo link', primario: true, acao: () => mostrar('form-esqueci') }] : (whatsapp ? [{ rotulo: 'Falar com o suporte', primario: true, href: whatsapp, novaAba: true }] : []),
             });
             return true;
         }

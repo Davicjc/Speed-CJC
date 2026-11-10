@@ -124,6 +124,7 @@ export function validateSignup(b) {
     const email = validateEmail(b.email);
     const password = validatePassword(b.password, email);
     if (b.terms !== true) throw err(400, 'É preciso aceitar os termos de uso e a política de privacidade.');
+    if (b.phone == null || String(b.phone).replace(/\D/g, '') === '') throw err(400, 'Informe o seu WhatsApp com DDD. É por ele que você recupera a senha se esquecer.');
     return { name, email, password, ...validateProfilePatch(b) };
 }
 
