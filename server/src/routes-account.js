@@ -182,7 +182,7 @@ export async function handleAccount(ctx, req, res, url, ip) {
     // ---------- esqueci minha senha, pelo WhatsApp (ver senha-zap.js) ----------
     if (p === '/api/auth/esqueci-zap' && m === 'POST') {
         const body = await readJsonBody(req, 4 * 1024);
-        if (!ctx.senhaZap.disponivel()) throw err(503, 'O envio pelo WhatsApp está fora do ar agora. Fale com o suporte.', 'zap_off');
+        if (!ctx.senhaZap.disponivel()) throw err(503, 'A recuperação de senha pelo WhatsApp não está disponível agora. Fale com o suporte.', 'zap_off');
         const cap = await captcha.verify(body.captcha, ip);
         if (!cap.ok) throw err(400, cap.reason, 'captcha');
         ctx.senhaZap.pedir({ login: body.login, ip });

@@ -97,7 +97,7 @@ export async function abrirEnvioZap(t) {
 
         <fieldset class="zap-passo">
             <legend><span class="zap-num">1</span>Para qual grupo?</legend>
-            <div class="zap-destinos">${info.destinos.map((x) => `<label class="zap-destino"><input type="radio" name="zap-destino" value="${esc(x.jid)}" ${x.jid === escolhido ? 'checked' : ''}><span>${x.tipo === 'grupo' ? ICON.users : ICON.user}${esc(x.nome)}</span></label>`).join('')}</div>
+            <div class="zap-opcoes">${info.destinos.map((x) => `<label class="zap-opcao"><input type="radio" name="zap-destino" value="${esc(x.jid)}" ${x.jid === escolhido ? 'checked' : ''}><span>${x.tipo === 'grupo' ? ICON.users : ICON.user}${esc(x.nome)}</span></label>`).join('')}</div>
         </fieldset>
 
         <fieldset class="zap-passo">
