@@ -71,6 +71,8 @@ test('download entrega bytes sem compressão e upload é medido no servidor', as
     assert.equal(n, 20 * 1024 * 1024);
 
     ws.send(JSON.stringify({ type: 'ul-begin', token: vaga.token }));
+    const pronto = await proximoJson(ws, 'ul-ready');
+    assert.equal(pronto.token, vaga.token);
     const corpo = Buffer.alloc(16 * 1024 * 1024, 7);
     const up = await fetch(`${BASE}/api/upload?t=${vaga.token}`, { method: 'POST', body: corpo });
     assert.equal((await up.json()).bytes, corpo.length);
@@ -81,6 +83,67 @@ test('download entrega bytes sem compressão e upload é medido no servidor', as
     ws.send(JSON.stringify({ type: 'slot-release', token: vaga.token }));
     const depois = await fetch(`${BASE}/api/download?bytes=10&t=${vaga.token}`);
     assert.equal(depois.status, 403, 'vaga liberada não serve mais');
+});
+
+test('upload progressivo mede vários blocos, cai para 0 em pausa e recupera se o cliente perder ul-result', async () => {
+    const s = await abrirWs();
+    try {
+        s.send(JSON.stringify({ type: 'hello' }));
+        const { connId: cid } = await proximoJson(s, 'hello');
+        s.send(JSON.stringify({ type: 'slot-request' }));
+        const { token } = await proximoJson(s, 'slot-granted');
+
+        const snaps = [];
+        const ouvir = (d) => {
+            const txt = d.toString();
+            if (txt[0] === 'p') return;
+            const m = JSON.parse(txt);
+            if (m.type === 'ul-progress') snaps.push(m);
+        };
+        s.on('message', ouvir);
+
+        s.send(JSON.stringify({ type: 'ul-begin', token }));
+        await proximoJson(s, 'ul-ready');
+
+        const tamanhos = [256 * 1024, 512 * 1024, 1024 * 1024];
+        let esperado = 0;
+        for (const tam of tamanhos) {
+            const r = await fetch(`${BASE}/api/upload?t=${token}`, { method: 'POST', body: Buffer.alloc(tam, 3) });
+            const j = await r.json();
+            assert.equal(j.bytes, tam);
+            esperado += tam;
+            await new Promise((res) => setTimeout(res, 120));
+        }
+
+        // pausa > 1s sem enviar bytes: o progresso ao vivo precisa cair para 0 em vez de congelar
+        await new Promise((res) => setTimeout(res, 1250));
+        s.off('message', ouvir);
+        assert.ok(snaps.some((x) => x.mbpsNow > 0), 'teve leitura positiva durante o envio');
+        assert.equal(snaps[snaps.length - 1].mbpsNow, 0, 'leitura ao vivo cai para 0 quando o envio para');
+
+        s.send(JSON.stringify({ type: 'ul-end', token, graceMs: 0 }));
+        const r1 = await proximoJson(s, 'ul-result');
+        assert.ok(r1.mbps > 0 && r1.totalBytes === esperado);
+
+        // ul-end repetido não duplica medição
+        s.send(JSON.stringify({ type: 'ul-end', token, graceMs: 0 }));
+        const r2 = await proximoJson(s, 'ul-result');
+        assert.equal(r2.totalBytes, esperado);
+
+        s.send(JSON.stringify({ type: 'slot-release', token }));
+
+        // simula cliente que deu timeout no ul-result e mandou upload: null — servidor recupera a medida real
+        const save = await fetch(`${BASE}/api/results`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'rapido', connId: cid, download: null, upload: null, ping: 5, jitter: 0.5 }),
+        });
+        assert.equal(save.status, 201);
+        const saved = await save.json();
+        assert.equal(saved.verified, true);
+        assert.ok(Math.abs(saved.upload - r1.mbps) < 1e-6, 'servidor recupera o upload real quando o cliente perde ul-result');
+    } finally {
+        s.close();
+    }
 });
 
 test('perda de pacotes por UDP (WebRTC) responde', async () => {

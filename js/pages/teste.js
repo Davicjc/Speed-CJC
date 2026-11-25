@@ -414,7 +414,7 @@ async function salvar(r, geo) {
         return;
     }
 
-    if (res.upload != null && Math.abs(res.upload - (r.upload ?? res.upload)) > 0.01) {
+    if (res.upload != null && (r.upload == null || Math.abs(res.upload - r.upload) > 0.01)) {
         r.upload = res.upload; // o upload medido pelo servidor é o que vale
         leitura('upload', r.upload, { selo: true });
     }

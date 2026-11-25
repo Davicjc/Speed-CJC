@@ -130,7 +130,7 @@ export async function executarTeste({ modo = 'rapido', eventos, sinal }) {
             } catch (e) { cancelou(); r.erros.push('download: ' + e.message); }
 
             cancelou();
-            await pausa(400); // deixa as filas da rede esvaziarem antes do upload
+            await pausa(500); // deixa as filas da rede e as conexões do download fecharem antes do upload
             ev.etapa('upload');
             ev.status('Medindo o upload…');
             try {

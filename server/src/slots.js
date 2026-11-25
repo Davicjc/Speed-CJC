@@ -53,19 +53,22 @@ class Session {
     ulSnapshot() {
         const ul = this.ul;
         if (!ul || ul.start == null) return { bytes: 0, elapsedMs: 0, mbpsNow: 0 };
-        const elapsed = ul.last - ul.start;
+        // usa o relógio atual (não ul.last): se o envio parar, a leitura cai para 0
+        // em vez de congelar na última velocidade medida
+        const elapsed = Math.max(0, (ul.endAt ?? now()) - ul.start);
         const win = 1000;
         const recent = this.ulBytesBetween(Math.max(0, elapsed - win), elapsed + BUCKET_MS);
-        const span = Math.min(win, elapsed + BUCKET_MS);
+        const span = Math.min(win, Math.max(BUCKET_MS, elapsed));
         return { bytes: ul.total, elapsedMs: elapsed, mbpsNow: span > 0 ? (recent * 8) / (span * 1000) : 0 };
     }
 
     ulFinish(graceMs) {
         const ul = this.ul;
         if (!ul || ul.start == null) return null;
-        ul.endAt = now();
+        if (ul.endAt == null) ul.endAt = now();
         const end = Math.min(ul.last, ul.endAt) - ul.start;
-        const from = Math.min(graceMs, Math.max(0, end - 1000)); // conexão curta: ainda mede algo honesto
+        const rawFrom = Math.min(graceMs, Math.max(0, end - 1000)); // conexão curta: ainda mede algo honesto
+        const from = Math.floor(rawFrom / BUCKET_MS) * BUCKET_MS;
         const windowMs = end - from;
         if (windowMs <= 0) return null;
         const bytes = this.ulBytesBetween(from, end + BUCKET_MS);
