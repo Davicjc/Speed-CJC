@@ -42,6 +42,8 @@ teste.exemplo.com.br {
 			versions 1.1
 			response_header_timeout 5m
 			read_buffer 64KB
+			write_buffer 256KB
+			keepalive 30s
 		}
 	}
 

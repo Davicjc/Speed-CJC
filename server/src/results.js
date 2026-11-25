@@ -101,6 +101,10 @@ export function verifyAgainstServer(r, m) {
             if (Math.abs(serverUl - r.upload) > Math.max(0.5, serverUl * 0.01)) out.uploadFromClient = r.upload;
             r.upload = serverUl;
         }
+    } else if (m.uploads.length) {
+        // se o ul-result atrasou no navegador (ex.: bufferbloat), mas o servidor mediu, aproveita a medida real
+        r.upload = m.uploads[m.uploads.length - 1].mbps;
+        out.uploadRecovered = true;
     }
     if (r.download != null) {
         const win = Number(r.dlWindowMs);

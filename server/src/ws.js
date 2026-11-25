@@ -102,15 +102,17 @@ export function attachWebSocket(server, { slots, clock, measurements, trustProxy
                     s.ulReset();
                     stopUl(msg.token);
                     ulTimers.set(msg.token, setInterval(() => send({ type: 'ul-progress', ...s.ulSnapshot() }), 200));
+                    send({ type: 'ul-ready', token: msg.token });
                     break;
                 }
                 case 'ul-end': {
                     const s = slots.get(msg.token);
                     stopUl(msg.token);
                     if (!s || s.owner !== ws) return send({ type: 'ul-result', error: 'vaga inválida' });
+                    const jaFinalizado = Boolean(s.ul && s.ul.endAt != null);
                     const grace = Math.min(Math.max(Number(msg.graceMs) || 0, 0), 10_000);
                     const result = s.ulFinish(grace);
-                    if (result) measurements.addUpload(connId, result);
+                    if (result && !jaFinalizado) measurements.addUpload(connId, result);
                     send({ type: 'ul-result', ...(result || { error: 'nenhum byte recebido' }) });
                     break;
                 }

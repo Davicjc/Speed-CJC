@@ -539,8 +539,8 @@ async function handle(req, res) {
 
 // ---------- inicialização ----------
 const server = http.createServer(handle);
-server.keepAliveTimeout = 10_000;
-server.headersTimeout = 15_000;
+server.keepAliveTimeout = 65_000;
+server.headersTimeout = 70_000;
 server.requestTimeout = 120_000;
 
 attachWebSocket(server, { slots, clock, measurements, trustProxy: config.trustProxy, authn, cotas, log });

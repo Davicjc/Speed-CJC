@@ -5,7 +5,7 @@
  * por UDP (WebRTC não existe dentro de workers).
  */
 
-const WORKER_URL = '/js/engine/net-worker.js?v=2';
+const WORKER_URL = '/js/engine/net-worker.js?v=3';
 let worker = null;
 let config = null;
 let conexao = null;

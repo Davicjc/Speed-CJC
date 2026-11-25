@@ -260,60 +260,155 @@ async function cmdDownload({ base, token, durationMs = 10000, graceMs = 2000, st
     };
 }
 
-let uploadPayload = null;
-function payload() {
-    if (uploadPayload) return uploadPayload;
-    const block = new Uint8Array(1024 * 1024);
-    for (let i = 0; i < block.length; i += 65536) crypto.getRandomValues(block.subarray(i, i + 65536));
-    uploadPayload = new Blob(Array.from({ length: 16 }, () => block)); // 16 MiB incompressíveis
-    return uploadPayload;
+// Tamanhos progressivos de envio (256 KiB até 8 MiB):
+//  - Cada faixa usa um Blob simples de parte única (em vez de 16 partes repetidas em XHR),
+//    enviado por fetch(): no Chromium evita a cópia pesada de Uint8Array por IPC (atinge
+//    múltiplos Gbps), e no Safari/WebKit evita o bug do XHR+Blob em Web Worker.
+//  - Se algum navegador ainda mandar corpo vazio (bytes === 0), cai automaticamente para
+//    o Uint8Array puro na hora, sem ficar em loop vazio.
+//  - Começar pequeno e crescer conforme a velocidade real evita entupir a fila do roteador
+//    (bufferbloat/colapso TCP) em redes móveis ou congestionadas, e satura links de 500M–1G+.
+const UPLOAD_SIZES = [256 * 1024, 512 * 1024, 1024 * 1024, 2 * 1024 * 1024, 4 * 1024 * 1024, 8 * 1024 * 1024];
+const uploadRawChunks = new Map();
+const uploadBlobChunks = new Map();
+function uploadChunk(size, raw = false) {
+    if (!raw) {
+        const cached = uploadBlobChunks.get(size);
+        if (cached) return cached;
+    }
+    let buf = uploadRawChunks.get(size);
+    if (!buf) {
+        buf = new Uint8Array(size);
+        for (let i = 0; i < size; i += 65536) {
+            crypto.getRandomValues(buf.subarray(i, Math.min(i + 65536, size)));
+        }
+        uploadRawChunks.set(size, buf);
+    }
+    if (raw) return buf;
+    const blob = new Blob([buf]);
+    uploadBlobChunks.set(size, blob);
+    return blob;
 }
 
 async function cmdUpload({ base, token, durationMs = 10000, graceMs = 3000, streams = 4, loaded = true }, progress) {
     const ctrl = new AbortController();
     activeAbort = ctrl;
-    const blob = payload();
-    const xhrs = new Set();
     let serverMbpsNow = 0;
     let serverBytes = 0;
     const onProg = (m) => { if (m.type === 'ul-progress') { serverMbpsNow = m.mbpsNow; serverBytes = m.bytes; } };
     listeners.add(onProg);
-    sendJson({ type: 'ul-begin', token });
+
+    // Espera o servidor zerar os contadores antes do 1º POST (elimina corrida entre WS e HTTP).
+    sendJson({ type: 'ul-begin', token, durationMs });
+    await waitJson('ul-ready', 1500).catch(() => {});
+
     const lp = loaded ? startLoadedPings() : null;
     let failure = null;
+    let stopping = false;
+    let tier = 0;
+    let activeStreams = 0;
+    let useRawBody = false;
+    let zeroBodyHits = 0;
+    const maxStreams = Math.max(1, Math.min(streams, 6));
+    const timers = [];
 
-    const stream = () => {
-        if (ctrl.signal.aborted) return;
-        const xhr = new XMLHttpRequest();
-        xhrs.add(xhr);
-        xhr.open('POST', `${base}/api/upload?t=${encodeURIComponent(token)}&r=${Math.random().toString(36).slice(2)}`, true);
-        xhr.onload = () => {
-            xhrs.delete(xhr);
-            if (xhr.status === 403) { failure = new Error('A vaga de teste expirou'); ctrl.abort(); return; }
-            stream();
-        };
-        xhr.onerror = () => { xhrs.delete(xhr); if (!ctrl.signal.aborted) setTimeout(stream, 200); };
-        xhr.send(blob);
+    const runStream = async () => {
+        while (!stopping && !ctrl.signal.aborted) {
+            const size = UPLOAD_SIZES[tier];
+            const body = uploadChunk(size, useRawBody);
+            const url = `${base}/api/upload?t=${encodeURIComponent(token)}&r=${Math.random().toString(36).slice(2)}`;
+            const reqT0 = now();
+            try {
+                const res = await fetch(url, {
+                    method: 'POST',
+                    body,
+                    cache: 'no-store',
+                    credentials: 'omit',
+                    signal: ctrl.signal,
+                });
+                if (res.status === 403) {
+                    failure = new Error('A vaga de teste expirou');
+                    stopping = true;
+                    ctrl.abort();
+                    return;
+                }
+                if (!res.ok) { await sleep(200); continue; }
+                const data = await res.json().catch(() => null);
+                if (data && data.bytes === 0) {
+                    zeroBodyHits++;
+                    // fallback automático: se o navegador descartou o Blob, muda para Uint8Array puro
+                    if (!useRawBody) { useRawBody = true; continue; }
+                    await sleep(200);
+                    continue;
+                }
+                const dt = now() - reqT0;
+                // Ajusta o tamanho do bloco à velocidade real confirmada pelo servidor:
+                // envio rápido (< 600 ms) sobe o bloco; envio demorado (> 2500 ms) reduz.
+                if (size === UPLOAD_SIZES[tier] && dt < 600 && tier < UPLOAD_SIZES.length - 1) tier++;
+                else if (size === UPLOAD_SIZES[tier] && dt > 2500 && tier > 0) tier--;
+                // Só abre mais fluxos paralelos quando o link responde sem engasgar.
+                if (dt < 800 && activeStreams < maxStreams) spawnStream();
+            } catch {
+                if (ctrl.signal.aborted || stopping) return;
+                await sleep(200);
+            }
+        }
     };
-    for (let i = 0; i < streams; i++) stream();
+
+    const spawnStream = () => {
+        if (stopping || ctrl.signal.aborted || activeStreams >= maxStreams) return;
+        activeStreams++;
+        runStream();
+    };
+
+    // Inicia com 2 fluxos escalonados (evita colisão no slow-start TCP) e sobe até maxStreams conforme a banda.
+    spawnStream();
+    if (maxStreams >= 2) timers.push(setTimeout(spawnStream, 100));
+    timers.push(setTimeout(() => {
+        if (stopping || ctrl.signal.aborted || serverMbpsNow < 15 || activeStreams >= maxStreams) return;
+        const falta = maxStreams - activeStreams;
+        for (let i = 0; i < falta; i++) timers.push(setTimeout(spawnStream, i * 100));
+    }, 1000));
 
     const t0 = now();
     while (!ctrl.signal.aborted) {
         await sleep(200);
         const t = now() - t0;
         progress({ mbps: serverMbpsNow, progress: Math.min(1, t / durationMs) });
-        if (t > 6000 && serverBytes === 0) { failure = new Error('O servidor não recebeu dados do envio'); break; }
+        if (t > 6000 && serverBytes === 0) {
+            failure = new Error(zeroBodyHits > 0
+                ? 'O navegador enviou os pacotes vazios ao servidor'
+                : 'O servidor não recebeu dados do envio');
+            break;
+        }
         if (t >= durationMs) break;
     }
-    ctrl.abort();
+
+    for (const id of timers) clearTimeout(id);
+    const abortedExternally = ctrl.signal.aborted && !failure;
+    stopping = true;
     activeAbort = null;
-    for (const x of xhrs) x.abort();
     const loadedSamples = lp ? lp.stop() : [];
     listeners.delete(onProg);
-    if (failure) { try { sendJson({ type: 'ul-end', token, graceMs }); } catch { /* ok */ } throw failure; }
 
+    if (failure || abortedExternally) {
+        ctrl.abort();
+        try { sendJson({ type: 'ul-end', token, graceMs }); } catch { /* ok */ }
+        throw failure || new DOMException('Teste interrompido', 'AbortError');
+    }
+
+    // Pede o fechamento no servidor ANTES de abortar os POSTs: o servidor congela o
+    // relógio ainda em fluxo cheio (sem cauda vazia diluindo a média). Se o link estiver
+    // com bufferbloat e a resposta não voltar em 600 ms, aborta os envios para destravar o WS.
     sendJson({ type: 'ul-end', token, graceMs });
-    const r = await waitJson('ul-result', 5000);
+    const abortFallback = setTimeout(() => ctrl.abort(), 600);
+    let r;
+    try {
+        r = await waitJson('ul-result', 12000);
+    } finally {
+        clearTimeout(abortFallback);
+        ctrl.abort();
+    }
     if (r.error) throw new Error('O servidor não conseguiu medir o envio');
     return { mbps: r.mbps, bytes: r.totalBytes, windowMs: r.windowMs, loadedPing: median(loadedSamples), loadedSamples: loadedSamples.length };
 }
